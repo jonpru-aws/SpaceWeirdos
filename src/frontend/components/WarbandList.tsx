@@ -162,8 +162,8 @@ export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps
           >
             <div className="warband-header">
               <h2>{warband.name}</h2>
-              <span className="warband-ability" aria-label={`Ability: ${warband.ability}`}>
-                {warband.ability}
+              <span className="warband-ability" aria-label={`Ability: ${warband.ability || 'No Ability'}`}>
+                {warband.ability || 'No Ability'}
               </span>
             </div>
             

@@ -91,6 +91,18 @@ const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =
     leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic', 'Monstrous', 'Political Officer', 'Sorcerer', 'Tactician'), { nil: null }) : fc.constant(null),
     notes: fc.string(),
     totalCost: fc.integer({ min: 0, max: 25 })
+  }).map((weirdo) => {
+    // Ensure ranged weapons require Firepower 2d8 or 2d10
+    if (weirdo.rangedWeapons.length > 0 && weirdo.attributes.firepower === 'None') {
+      return {
+        ...weirdo,
+        attributes: {
+          ...weirdo.attributes,
+          firepower: '2d8' as FirepowerLevel
+        }
+      };
+    }
+    return weirdo;
   });
 
 const warbandGen = fc.record<Warband>({

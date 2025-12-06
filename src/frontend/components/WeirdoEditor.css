@@ -52,6 +52,9 @@
 }
 
 .weirdo-editor .cost-display {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -63,17 +66,20 @@
   font-weight: 600;
   border: 2px solid #2196f3;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .weirdo-editor .cost-display.warning {
   background: linear-gradient(135deg, #fff9e6 0%, #ffe082 100%);
   border-color: #ff9800;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.25);
 }
 
 .weirdo-editor .cost-display.error {
   background: linear-gradient(135deg, #ffebee 0%, #ef9a9a 100%);
   border-color: #f44336;
   animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.25);
 }
 
 .weirdo-editor .cost-label {
@@ -96,6 +102,16 @@
 .weirdo-editor .cost-value.error {
   color: #f44336;
   animation: errorShake 0.5s ease-in-out;
+}
+
+.weirdo-editor .cost-info {
+  color: #2196f3;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .weirdo-editor .cost-warning {
@@ -218,6 +234,13 @@
   opacity: 0.6;
 }
 
+.weirdo-editor .form-group select option {
+  padding: 8px;
+  line-height: 1.5;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
 .weirdo-editor .item-list {
   list-style: none;
   padding: 0;
@@ -248,6 +271,13 @@
   font-weight: 600;
   color: #333;
   font-size: 1rem;
+}
+
+.weirdo-editor .item-description {
+  font-weight: 400;
+  color: #666;
+  font-size: 0.875rem;
+  font-style: italic;
 }
 
 .weirdo-editor .item-cost {
@@ -330,6 +360,23 @@
   margin-bottom: 0;
 }
 
+/* Sticky cost display enhancements */
+.weirdo-editor .cost-display::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.weirdo-editor .cost-display.sticky::after {
+  opacity: 1;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .weirdo-editor {
@@ -350,6 +397,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
+    border-radius: 0;
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    width: calc(100% + 2.5rem);
   }
   
   .weirdo-editor .cost-warning,
@@ -389,5 +440,11 @@
   
   .weirdo-editor .close-button {
     align-self: flex-end;
+  }
+  
+  .weirdo-editor .cost-display {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
   }
 }

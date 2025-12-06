@@ -120,7 +120,7 @@ export const apiClient = {
   async createWarband(data: {
     name: string;
     pointLimit: 75 | 125;
-    ability: WarbandAbility;
+    ability: WarbandAbility | null;
   }): Promise<Warband> {
     return fetchWithRetry<Warband>('/warbands', {
       method: 'POST',

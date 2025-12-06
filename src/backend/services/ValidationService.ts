@@ -3,9 +3,33 @@ import {
   Warband,
   ValidationError,
   ValidationResult,
-  WarbandAbility
+  WarbandAbility,
+  Attributes
 } from '../models/types';
 import { CostEngine } from './CostEngine';
+import {
+  POINT_LIMITS,
+  TROOPER_LIMITS,
+  EQUIPMENT_LIMITS
+} from '../constants/costs';
+import {
+  VALIDATION_MESSAGES,
+  getValidationMessage,
+  ValidationErrorCode
+} from '../constants/validationMessages';
+
+/**
+ * Generic validator factory function
+ * Creates reusable validators with consistent error handling
+ */
+type ValidatorFunction<T> = (value: T) => boolean;
+
+interface ValidatorConfig<T> {
+  field: string;
+  message: string;
+  code: ValidationErrorCode;
+  condition: ValidatorFunction<T>;
+}
 
 /**
  * Validation Service
@@ -19,44 +43,60 @@ export class ValidationService {
   }
 
   /**
+   * Generic validator factory
+   * Creates a validator function from a configuration
+   */
+  private createValidator<T>(config: ValidatorConfig<T>): (value: T) => ValidationError | null {
+    return (value: T): ValidationError | null => {
+      if (!config.condition(value)) {
+        return {
+          field: config.field,
+          message: config.message,
+          code: config.code
+        };
+      }
+      return null;
+    };
+  }
+
+  /**
+   * Validate non-empty string helper
+   */
+  private validateNonEmptyString(value: string, field: string, code: ValidationErrorCode): ValidationError | null {
+    const validator = this.createValidator<string>({
+      field,
+      message: VALIDATION_MESSAGES[code],
+      code,
+      condition: (val) => Boolean(val && val.trim().length > 0)
+    });
+    return validator(value);
+  }
+
+  /**
    * Validate warband name (non-empty string)
    */
   private validateWarbandName(name: string): ValidationError | null {
-    if (!name || name.trim().length === 0) {
-      return {
-        field: 'name',
-        message: 'Warband name is required',
-        code: 'WARBAND_NAME_REQUIRED'
-      };
-    }
-    return null;
+    return this.validateNonEmptyString(name, 'name', 'WARBAND_NAME_REQUIRED');
   }
 
   /**
    * Validate point limit (75 or 125)
    */
   private validatePointLimit(pointLimit: number): ValidationError | null {
-    if (pointLimit !== 75 && pointLimit !== 125) {
-      return {
-        field: 'pointLimit',
-        message: 'Point limit must be 75 or 125',
-        code: 'INVALID_POINT_LIMIT'
-      };
-    }
-    return null;
+    const validator = this.createValidator<number>({
+      field: 'pointLimit',
+      message: VALIDATION_MESSAGES.INVALID_POINT_LIMIT,
+      code: 'INVALID_POINT_LIMIT',
+      condition: (val) => val === POINT_LIMITS.STANDARD_LIMIT || val === POINT_LIMITS.EXTENDED_LIMIT
+    });
+    return validator(pointLimit);
   }
 
   /**
-   * Validate warband ability (required selection)
+   * Validate warband ability (optional - no validation needed)
    */
-  private validateWarbandAbility(ability: WarbandAbility | null | undefined): ValidationError | null {
-    if (!ability) {
-      return {
-        field: 'ability',
-        message: 'Warband ability must be selected',
-        code: 'WARBAND_ABILITY_REQUIRED'
-      };
-    }
+  private validateWarbandAbility(_ability: WarbandAbility | null | undefined): ValidationError | null {
+    // Warband ability is now optional, so no validation needed
     return null;
   }
 
@@ -64,18 +104,16 @@ export class ValidationService {
    * Validate weirdo name (non-empty string)
    */
   private validateWeirdoName(weirdo: Weirdo): ValidationError | null {
-    if (!weirdo.name || weirdo.name.trim().length === 0) {
-      return {
-        field: `weirdo.${weirdo.id}.name`,
-        message: 'Weirdo name is required',
-        code: 'WEIRDO_NAME_REQUIRED'
-      };
-    }
-    return null;
+    return this.validateNonEmptyString(
+      weirdo.name,
+      `weirdo.${weirdo.id}.name`,
+      'WEIRDO_NAME_REQUIRED'
+    );
   }
 
   /**
    * Validate attribute completeness (all 5 required)
+   * Uses iteration to reduce duplication
    */
   private validateAttributeCompleteness(weirdo: Weirdo): ValidationError | null {
     const { attributes } = weirdo;
@@ -83,60 +121,84 @@ export class ValidationService {
     if (!attributes) {
       return {
         field: `weirdo.${weirdo.id}.attributes`,
-        message: 'All five attributes must be selected',
+        message: VALIDATION_MESSAGES.ATTRIBUTES_INCOMPLETE,
         code: 'ATTRIBUTES_INCOMPLETE'
       };
     }
 
-    // Check each attribute is defined
-    if (attributes.speed === null || attributes.speed === undefined) {
-      return {
-        field: `weirdo.${weirdo.id}.attributes.speed`,
-        message: 'All five attributes must be selected',
-        code: 'ATTRIBUTES_INCOMPLETE'
-      };
-    }
-    if (!attributes.defense) {
-      return {
-        field: `weirdo.${weirdo.id}.attributes.defense`,
-        message: 'All five attributes must be selected',
-        code: 'ATTRIBUTES_INCOMPLETE'
-      };
-    }
-    if (!attributes.firepower) {
-      return {
-        field: `weirdo.${weirdo.id}.attributes.firepower`,
-        message: 'All five attributes must be selected',
-        code: 'ATTRIBUTES_INCOMPLETE'
-      };
-    }
-    if (!attributes.prowess) {
-      return {
-        field: `weirdo.${weirdo.id}.attributes.prowess`,
-        message: 'All five attributes must be selected',
-        code: 'ATTRIBUTES_INCOMPLETE'
-      };
-    }
-    if (!attributes.willpower) {
-      return {
-        field: `weirdo.${weirdo.id}.attributes.willpower`,
-        message: 'All five attributes must be selected',
-        code: 'ATTRIBUTES_INCOMPLETE'
-      };
+    // Define all required attributes
+    const requiredAttributes: Array<keyof Attributes> = [
+      'speed',
+      'defense',
+      'firepower',
+      'prowess',
+      'willpower'
+    ];
+
+    // Check each attribute using iteration
+    for (const attrName of requiredAttributes) {
+      const attrValue = attributes[attrName];
+      
+      // Special handling for speed which can be 0 (falsy but valid)
+      const isInvalid = attrName === 'speed' 
+        ? (attrValue === null || attrValue === undefined)
+        : !attrValue;
+      
+      if (isInvalid) {
+        return {
+          field: `weirdo.${weirdo.id}.attributes.${String(attrName)}`,
+          message: VALIDATION_MESSAGES.ATTRIBUTES_INCOMPLETE,
+          code: 'ATTRIBUTES_INCOMPLETE'
+        };
+      }
     }
 
     return null;
   }
 
   /**
+   * Validate array has at least one item (common pattern)
+   */
+  private validateArrayNotEmpty<T>(
+    array: T[] | null | undefined,
+    field: string,
+    code: ValidationErrorCode
+  ): ValidationError | null {
+    const validator = this.createValidator<T[] | null | undefined>({
+      field,
+      message: VALIDATION_MESSAGES[code],
+      code,
+      condition: (arr) => arr !== null && arr !== undefined && arr.length > 0
+    });
+    return validator(array);
+  }
+
+  /**
    * Validate close combat weapon requirement
    */
   private validateCloseCombatWeaponRequirement(weirdo: Weirdo): ValidationError | null {
-    if (!weirdo.closeCombatWeapons || weirdo.closeCombatWeapons.length === 0) {
+    return this.validateArrayNotEmpty(
+      weirdo.closeCombatWeapons,
+      `weirdo.${weirdo.id}.closeCombatWeapons`,
+      'CLOSE_COMBAT_WEAPON_REQUIRED'
+    );
+  }
+
+  /**
+   * Validate conditional requirement (common pattern)
+   * If condition is met, then requirement must be satisfied
+   */
+  private validateConditionalRequirement(
+    condition: boolean,
+    requirement: boolean,
+    field: string,
+    code: ValidationErrorCode
+  ): ValidationError | null {
+    if (condition && !requirement) {
       return {
-        field: `weirdo.${weirdo.id}.closeCombatWeapons`,
-        message: 'At least one close combat weapon is required',
-        code: 'CLOSE_COMBAT_WEAPON_REQUIRED'
+        field,
+        message: VALIDATION_MESSAGES[code],
+        code
       };
     }
     return null;
@@ -144,6 +206,7 @@ export class ValidationService {
 
   /**
    * Validate ranged weapon requirement (based on Firepower)
+   * Requirements: 3.2, 3.3, 3.4, 7.4, 7.5
    */
   private validateRangedWeaponRequirement(weirdo: Weirdo): ValidationError | null {
     // Skip if attributes are not set (will be caught by attribute completeness check)
@@ -152,43 +215,65 @@ export class ValidationService {
     }
 
     const firepower = weirdo.attributes.firepower;
+    const hasRangedWeapons = weirdo.rangedWeapons && weirdo.rangedWeapons.length > 0;
     
     // Ranged weapon required if Firepower is 2d8 or 2d10
-    if (firepower === '2d8' || firepower === '2d10') {
-      if (!weirdo.rangedWeapons || weirdo.rangedWeapons.length === 0) {
-        return {
-          field: `weirdo.${weirdo.id}.rangedWeapons`,
-          message: 'Ranged weapon required when Firepower is 2d8 or 2d10',
-          code: 'RANGED_WEAPON_REQUIRED'
-        };
-      }
-    }
+    const requiresRangedWeapon = firepower === '2d8' || firepower === '2d10';
+    const rangedWeaponError = this.validateConditionalRequirement(
+      requiresRangedWeapon,
+      hasRangedWeapons,
+      `weirdo.${weirdo.id}.rangedWeapons`,
+      'RANGED_WEAPON_REQUIRED'
+    );
+    if (rangedWeaponError) return rangedWeaponError;
     
-    return null;
+    // Firepower level 2d8 or 2d10 required if ranged weapon is selected
+    const requiresFirepower = hasRangedWeapons && firepower === 'None';
+    return this.validateConditionalRequirement(
+      requiresFirepower,
+      false, // This condition should never be true
+      `weirdo.${weirdo.id}.attributes.firepower`,
+      'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON'
+    );
+  }
+
+  /**
+   * Validate value does not exceed limit (common pattern)
+   */
+  private validateLimit(
+    value: number,
+    limit: number,
+    field: string,
+    code: ValidationErrorCode,
+    params?: Record<string, string | number>
+  ): ValidationError | null {
+    const message = params ? getValidationMessage(code, params) : VALIDATION_MESSAGES[code];
+    const validator = this.createValidator<number>({
+      field,
+      message,
+      code,
+      condition: (val) => val <= limit
+    });
+    return validator(value);
   }
 
   /**
    * Validate equipment limit (based on type and Cyborgs ability)
    */
-  private validateEquipmentLimit(weirdo: Weirdo, warbandAbility: WarbandAbility): ValidationError | null {
+  private validateEquipmentLimit(weirdo: Weirdo, warbandAbility: WarbandAbility | null): ValidationError | null {
     const equipmentCount = weirdo.equipment ? weirdo.equipment.length : 0;
-    let maxEquipment = 0;
+    
+    const maxEquipment = weirdo.type === 'leader'
+      ? (warbandAbility === 'Cyborgs' ? EQUIPMENT_LIMITS.LEADER_CYBORGS : EQUIPMENT_LIMITS.LEADER_STANDARD)
+      : (warbandAbility === 'Cyborgs' ? EQUIPMENT_LIMITS.TROOPER_CYBORGS : EQUIPMENT_LIMITS.TROOPER_STANDARD);
 
-    if (weirdo.type === 'leader') {
-      maxEquipment = warbandAbility === 'Cyborgs' ? 3 : 2;
-    } else {
-      maxEquipment = warbandAbility === 'Cyborgs' ? 2 : 1;
-    }
-
-    if (equipmentCount > maxEquipment) {
-      return {
-        field: `weirdo.${weirdo.id}.equipment`,
-        message: `Equipment limit exceeded: ${weirdo.type} can have ${maxEquipment} items`,
-        code: 'EQUIPMENT_LIMIT_EXCEEDED'
-      };
-    }
-
-    return null;
+    return this.validateLimit(
+      equipmentCount,
+      maxEquipment,
+      `weirdo.${weirdo.id}.equipment`,
+      'EQUIPMENT_LIMIT_EXCEEDED',
+      { type: weirdo.type, limit: maxEquipment }
+    );
   }
 
   /**
@@ -205,28 +290,29 @@ export class ValidationService {
     const has25PointWeirdo = warband.weirdos.some(w => {
       if (w.id === weirdo.id) return false; // Don't count the current weirdo
       const cost = this.costEngine.calculateWeirdoCost(w, warband.ability);
-      return cost >= 21 && cost <= 25;
+      return cost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && cost <= TROOPER_LIMITS.SPECIAL_SLOT_MAX;
     });
 
     // If there's already a 21-25 point weirdo, this trooper must be <= 20
-    if (has25PointWeirdo && weirdoCost > 20) {
-      return {
-        field: `weirdo.${weirdo.id}.totalCost`,
-        message: `Trooper cost (${weirdoCost}) exceeds 20-point limit`,
-        code: 'TROOPER_POINT_LIMIT_EXCEEDED'
-      };
+    if (has25PointWeirdo) {
+      const limitError = this.validateLimit(
+        weirdoCost,
+        TROOPER_LIMITS.STANDARD_LIMIT,
+        `weirdo.${weirdo.id}.totalCost`,
+        'TROOPER_POINT_LIMIT_EXCEEDED',
+        { cost: weirdoCost, limit: TROOPER_LIMITS.STANDARD_LIMIT }
+      );
+      if (limitError) return limitError;
     }
 
     // If this is the potential 21-25 point weirdo, it must be <= 25
-    if (weirdoCost > 25) {
-      return {
-        field: `weirdo.${weirdo.id}.totalCost`,
-        message: `Trooper cost (${weirdoCost}) exceeds 25-point maximum`,
-        code: 'TROOPER_POINT_LIMIT_EXCEEDED'
-      };
-    }
-
-    return null;
+    return this.validateLimit(
+      weirdoCost,
+      TROOPER_LIMITS.MAXIMUM_LIMIT,
+      `weirdo.${weirdo.id}.totalCost`,
+      'TROOPER_POINT_LIMIT_EXCEEDED',
+      { cost: weirdoCost, limit: TROOPER_LIMITS.MAXIMUM_LIMIT }
+    );
   }
 
   /**
@@ -235,13 +321,16 @@ export class ValidationService {
   private validate25PointWeirdoLimit(warband: Warband): ValidationError | null {
     const weirdosOver20 = warband.weirdos.filter(w => {
       const cost = this.costEngine.calculateWeirdoCost(w, warband.ability);
-      return cost >= 21 && cost <= 25;
+      return cost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && cost <= TROOPER_LIMITS.SPECIAL_SLOT_MAX;
     });
 
     if (weirdosOver20.length > 1) {
       return {
         field: 'warband.weirdos',
-        message: 'Only one weirdo may cost 21-25 points',
+        message: getValidationMessage('MULTIPLE_25_POINT_WEIRDOS', {
+          min: TROOPER_LIMITS.SPECIAL_SLOT_MIN,
+          max: TROOPER_LIMITS.SPECIAL_SLOT_MAX
+        }),
         code: 'MULTIPLE_25_POINT_WEIRDOS'
       };
     }
@@ -255,15 +344,13 @@ export class ValidationService {
   private validateWarbandPointLimit(warband: Warband): ValidationError | null {
     const totalCost = this.costEngine.calculateWarbandCost(warband);
 
-    if (totalCost > warband.pointLimit) {
-      return {
-        field: 'warband.totalCost',
-        message: `Warband total cost (${totalCost}) exceeds point limit (${warband.pointLimit})`,
-        code: 'WARBAND_POINT_LIMIT_EXCEEDED'
-      };
-    }
-
-    return null;
+    return this.validateLimit(
+      totalCost,
+      warband.pointLimit,
+      'warband.totalCost',
+      'WARBAND_POINT_LIMIT_EXCEEDED',
+      { totalCost, pointLimit: warband.pointLimit }
+    );
   }
 
   /**
@@ -273,7 +360,7 @@ export class ValidationService {
     if (weirdo.type === 'trooper' && weirdo.leaderTrait !== null) {
       return {
         field: `weirdo.${weirdo.id}.leaderTrait`,
-        message: 'Leader trait can only be assigned to leaders',
+        message: VALIDATION_MESSAGES.LEADER_TRAIT_INVALID,
         code: 'LEADER_TRAIT_INVALID'
       };
     }
@@ -281,7 +368,12 @@ export class ValidationService {
   }
 
   /**
-   * Validate a single weirdo
+   * Validates a single weirdo against all game rules and constraints.
+   * Checks name, attributes, weapons, equipment limits, point limits, and leader traits.
+   * 
+   * @param weirdo - The weirdo to validate
+   * @param warband - The warband context (needed for ability modifiers and point limit checks)
+   * @returns Array of validation errors (empty if valid)
    */
   validateWeirdo(weirdo: Weirdo, warband: Warband): ValidationError[] {
     const errors: ValidationError[] = [];
@@ -311,7 +403,12 @@ export class ValidationService {
   }
 
   /**
-   * Validate an entire warband
+   * Validates an entire warband against all game rules and constraints.
+   * Checks warband-level properties (name, point limit, ability), all weirdos,
+   * and warband-level constraints (25-point limit, total cost).
+   * 
+   * @param warband - The warband to validate
+   * @returns Validation result with valid flag and array of errors
    */
   validateWarband(warband: Warband): ValidationResult {
     const errors: ValidationError[] = [];
@@ -346,7 +443,12 @@ export class ValidationService {
   }
 
   /**
-   * Validate weapon requirements for a weirdo
+   * Validates weapon requirements for a weirdo.
+   * Checks that at least one close combat weapon is present and that
+   * ranged weapon requirements match firepower level.
+   * 
+   * @param weirdo - The weirdo to validate weapon requirements for
+   * @returns Array of validation errors (empty if valid)
    */
   validateWeaponRequirements(weirdo: Weirdo): ValidationError[] {
     const errors: ValidationError[] = [];
@@ -361,14 +463,25 @@ export class ValidationService {
   }
 
   /**
-   * Validate equipment limits for a weirdo
+   * Validates equipment limits for a weirdo based on type and warband ability.
+   * Leaders can carry more equipment than troopers, and Cyborgs ability increases limits.
+   * 
+   * @param weirdo - The weirdo to validate equipment limits for
+   * @param warbandAbility - The warband ability that may modify equipment limits
+   * @returns Validation error if limit exceeded, null if valid
    */
-  validateEquipmentLimits(weirdo: Weirdo, warbandAbility: WarbandAbility): ValidationError | null {
+  validateEquipmentLimits(weirdo: Weirdo, warbandAbility: WarbandAbility | null): ValidationError | null {
     return this.validateEquipmentLimit(weirdo, warbandAbility);
   }
 
   /**
-   * Validate weirdo point limit (public method)
+   * Validates that a weirdo's point cost does not exceed allowed limits.
+   * Troopers are limited to 20 points normally, or 25 points if they are the
+   * only weirdo in the 21-25 point range (special slot).
+   * 
+   * @param weirdo - The weirdo to validate point limit for
+   * @param warband - The warband context (needed to check for other 21-25 point weirdos)
+   * @returns Validation error if limit exceeded, null if valid
    */
   validateWeirdoPointLimit(weirdo: Weirdo, warband: Warband): ValidationError | null {
     return this.validateTrooperPointLimit(weirdo, warband);

@@ -69,16 +69,18 @@ describe('Warband API Routes', () => {
       expect(response.body.error).toContain('Invalid point limit');
     });
 
-    it('should reject warband creation with missing ability', async () => {
+    it('should accept warband creation with null ability', async () => {
       const response = await request(app)
         .post('/api/warbands')
         .send({
           name: 'Test Warband',
-          pointLimit: 75
+          pointLimit: 75,
+          ability: null
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.ability).toBe(null);
     });
   });
 

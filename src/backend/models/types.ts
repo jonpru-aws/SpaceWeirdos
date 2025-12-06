@@ -1,5 +1,7 @@
 // Core type definitions for Space Weirdos Warband Builder
 
+import type { ValidationErrorCode } from '../constants/validationMessages';
+
 export type SpeedLevel = 1 | 2 | 3;
 export type DiceLevel = '2d6' | '2d8' | '2d10';
 export type FirepowerLevel = 'None' | '2d8' | '2d10';
@@ -75,7 +77,7 @@ export interface Weirdo {
 export interface Warband {
   id: string;
   name: string;
-  ability: WarbandAbility;
+  ability: WarbandAbility | null;
   pointLimit: 75 | 125;
   totalCost: number;
   weirdos: Weirdo[];
@@ -86,7 +88,7 @@ export interface Warband {
 export interface ValidationError {
   field: string;
   message: string;
-  code: string;
+  code: ValidationErrorCode;
 }
 
 export interface ValidationResult {

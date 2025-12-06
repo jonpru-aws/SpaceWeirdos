@@ -32,11 +32,13 @@ The system will provide a user interface for warband creation, validate all sele
 
 #### Acceptance Criteria
 
-1. WHEN a user creates a new warband THEN the Warband Builder SHALL require the user to provide a warband name
-2. WHEN a user creates a new warband THEN the Warband Builder SHALL require the user to select a point limit of either 75 or 125 points
-3. WHEN a warband is created THEN the Warband Builder SHALL initialize the warband with a total point cost of zero
-4. WHEN a warband is created THEN the Warband Builder SHALL require the user to select one warband ability from the available options
-5. WHEN a warband name is provided THEN the Warband Builder SHALL accept any non-empty string as a valid name
+1. WHEN a user creates a new warband THEN the Warband Builder SHALL initialize the warband name with the default value "New Warband"
+2. WHEN a user creates a new warband THEN the Warband Builder SHALL allow the user to modify the default warband name
+3. WHEN a user creates a new warband THEN the Warband Builder SHALL require the user to select a point limit of either 75 or 125 points
+4. WHEN a warband is created THEN the Warband Builder SHALL initialize the warband with a total point cost of zero
+5. WHEN a warband is created THEN the Warband Builder SHALL allow the user to optionally select one warband ability from the available options
+6. WHEN a warband name is provided THEN the Warband Builder SHALL accept any non-empty string as a valid name
+7. WHEN no warband ability is selected THEN the Warband Builder SHALL apply no cost modifiers to any selections
 
 ### Requirement 2
 
@@ -71,8 +73,9 @@ The system will provide a user interface for warband creation, validate all sele
 1. WHEN a leader is created THEN the Warband Builder SHALL require the user to select at least one close combat weapon
 2. WHEN a leader has Firepower level 2d8 or 2d10 THEN the Warband Builder SHALL require the user to select at least one ranged weapon
 3. WHEN a leader has Firepower level None THEN the Warband Builder SHALL NOT require the user to select a ranged weapon
-4. WHEN a user selects a weapon THEN the Warband Builder SHALL add the weapon's point cost to the leader's total cost
-5. WHEN a user selects multiple weapons THEN the Warband Builder SHALL add all weapon point costs to the leader's total cost
+4. WHEN a leader selects a ranged weapon THEN the Warband Builder SHALL require the leader to have Firepower level 2d8 or 2d10
+5. WHEN a user selects a weapon THEN the Warband Builder SHALL add the weapon's point cost to the leader's total cost
+6. WHEN a user selects multiple weapons THEN the Warband Builder SHALL add all weapon point costs to the leader's total cost
 
 ### Requirement 4
 
@@ -115,10 +118,11 @@ The system will provide a user interface for warband creation, validate all sele
 2. WHEN a trooper is created THEN the Warband Builder SHALL require the user to select a level for each of the five attributes using the same point costs as leaders
 3. WHEN a trooper is created THEN the Warband Builder SHALL require the user to select at least one close combat weapon
 4. WHEN a trooper has Firepower level 2d8 or 2d10 THEN the Warband Builder SHALL require the user to select at least one ranged weapon
-5. WHEN a trooper is created THEN the Warband Builder SHALL allow the user to select up to 1 equipment item
-6. WHEN the warband has the Cyborgs ability THEN the Warband Builder SHALL allow troopers to select up to 2 equipment items
-7. WHEN a trooper is created THEN the Warband Builder SHALL allow the user to select zero or more psychic powers
-8. WHEN a trooper's total point cost is calculated THEN the Warband Builder SHALL sum all attribute, weapon, equipment, and psychic power costs
+5. WHEN a trooper selects a ranged weapon THEN the Warband Builder SHALL require the trooper to have Firepower level 2d8 or 2d10
+6. WHEN a trooper is created THEN the Warband Builder SHALL allow the user to select up to 1 equipment item
+7. WHEN the warband has the Cyborgs ability THEN the Warband Builder SHALL allow troopers to select up to 2 equipment items
+8. WHEN a trooper is created THEN the Warband Builder SHALL allow the user to select zero or more psychic powers
+9. WHEN a trooper's total point cost is calculated THEN the Warband Builder SHALL sum all attribute, weapon, equipment, and psychic power costs
 
 ### Requirement 8
 
@@ -213,6 +217,35 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN point costs are displayed THEN the Warband Builder SHALL show both the individual weirdo costs and the warband total cost
 4. WHEN a weirdo approaches their point limit THEN the Warband Builder SHALL display a warning indicator
 5. WHEN the warband approaches its point limit THEN the Warband Builder SHALL display a warning indicator
+6. WHEN a weirdo fails validation checks THEN the Warband Builder SHALL apply visual highlighting to that weirdo in the warband editor
+7. WHEN a weirdo has validation errors THEN the Warband Builder SHALL distinguish the weirdo from valid weirdos through visual styling
+8. WHEN a weirdo has the error CSS class applied THEN the Warband Builder SHALL display the specific validation error message in a tooltip
+9. WHEN a user hovers over a weirdo with validation errors THEN the Warband Builder SHALL show a tooltip containing the validation error details
+
+### Requirement 16
+
+**User Story:** As a player, I want to see descriptions and point costs for all available selections, so that I can make informed decisions about what to add to my warband.
+
+#### Acceptance Criteria
+
+1. WHEN a user views available warband abilities THEN the Warband Builder SHALL display the description for each ability option
+2. WHEN a user views available attributes THEN the Warband Builder SHALL display the point cost for each attribute level option
+3. WHEN a user views available weapons THEN the Warband Builder SHALL display the name, point cost, and notes for each weapon option
+4. WHEN a user views available equipment THEN the Warband Builder SHALL display the name, point cost, and effect description for each equipment option
+5. WHEN a user views available psychic powers THEN the Warband Builder SHALL display the name, point cost, and effect description for each psychic power option
+6. WHEN a user views available leader traits THEN the Warband Builder SHALL display the description for each leader trait option
+7. WHEN warband abilities modify costs THEN the Warband Builder SHALL display the modified cost alongside the base cost
+
+### Requirement 17
+
+**User Story:** As a player, I want the total point costs for my leader and troopers to remain visible while scrolling through selection options, so that I can always see how my choices affect the total cost.
+
+#### Acceptance Criteria
+
+1. WHEN a user scrolls within the weirdo editor THEN the Warband Builder SHALL keep the weirdo's total point cost visible at the top of the editor
+2. WHEN a user scrolls within the warband editor THEN the Warband Builder SHALL keep the warband's total point cost visible at the top of the editor
+3. WHEN the weirdo total cost display is fixed THEN the Warband Builder SHALL ensure it does not obscure selection controls
+4. WHEN the warband total cost display is fixed THEN the Warband Builder SHALL ensure it does not obscure weirdo management controls
 
 ## Items Requiring Clarification
 
@@ -255,7 +288,7 @@ The following items from the source document require clarification before implem
 ### 7. Warband Ability Selection Timing
 **Question:** Must the warband ability be selected before adding weirdos, or can it be changed after weirdos are added?
 
-**Current Assumption:** The warband ability must be selected when creating the warband and affects all subsequent cost calculations. Changing the ability after weirdos are added will recalculate all costs.
+**Current Assumption:** The warband ability is optional. If selected, it affects all subsequent cost calculations. Changing the ability after weirdos are added will recalculate all costs. If no ability is selected, no cost modifiers are applied.
 
 ### 8. Leader Trait Requirement
 **Question:** Is a leader trait optional (can be none) or must one be selected?

@@ -4,6 +4,35 @@ import { DataRepository } from '../services/DataRepository';
 import { CostEngine } from '../services/CostEngine';
 import { ValidationService } from '../services/ValidationService';
 import { Weirdo } from '../models/types';
+import { AppError, ValidationError, NotFoundError } from '../errors/AppError';
+
+/**
+ * Error handler middleware
+ * Converts errors to consistent API responses
+ */
+function handleError(error: any, res: Response): void {
+  // Log error with context
+  console.error('API Error:', {
+    name: error.name,
+    message: error.message,
+    code: error.code,
+    context: error.context,
+    stack: error.stack
+  });
+
+  // Handle custom AppError instances
+  if (error instanceof AppError) {
+    res.status(error.statusCode).json(error.toJSON());
+    return;
+  }
+
+  // Handle generic errors
+  res.status(500).json({
+    error: 'Internal server error',
+    code: 'INTERNAL_ERROR',
+    details: error.message
+  });
+}
 
 /**
  * Warband API Router
@@ -23,29 +52,28 @@ export function createWarbandRouter(repository: DataRepository): Router {
     try {
       const { name, pointLimit, ability } = req.body;
 
-      // Validate required fields
-      if (!name || !pointLimit || !ability) {
-        return res.status(400).json({
-          error: 'Missing required fields',
-          details: 'name, pointLimit, and ability are required'
-        });
+      // Validate required fields (ability is now optional)
+      if (!name || !pointLimit) {
+        throw new ValidationError(
+          'Missing required fields',
+          'MISSING_REQUIRED_FIELDS',
+          { required: ['name', 'pointLimit'] }
+        );
       }
 
       // Validate point limit
       if (pointLimit !== 75 && pointLimit !== 125) {
-        return res.status(400).json({
-          error: 'Invalid point limit',
-          details: 'Point limit must be 75 or 125'
-        });
+        throw new ValidationError(
+          'Invalid point limit',
+          'INVALID_POINT_LIMIT',
+          { pointLimit, validValues: [75, 125] }
+        );
       }
 
       const warband = warbandService.createWarband({ name, pointLimit, ability });
       res.status(201).json(warband);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to create warband',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -58,10 +86,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const warbands = warbandService.getAllWarbands();
       res.json(warbands);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to retrieve warbands',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -75,18 +100,12 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const warband = warbandService.getWarband(id);
 
       if (!warband) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: `No warband found with id: ${id}`
-        });
+        throw new NotFoundError('Warband', id);
       }
 
       res.json(warband);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to retrieve warband',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -102,16 +121,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const warband = warbandService.updateWarband(id, updates);
       res.json(warband);
     } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: error.message
-        });
-      }
-      res.status(500).json({
-        error: 'Failed to update warband',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -125,18 +135,12 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const deleted = warbandService.deleteWarband(id);
 
       if (!deleted) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: `No warband found with id: ${id}`
-        });
+        throw new NotFoundError('Warband', id);
       }
 
       res.status(204).send();
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to delete warband',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -152,10 +156,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       // Load existing warband
       const warband = warbandService.getWarband(id);
       if (!warband) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: `No warband found with id: ${id}`
-        });
+        throw new NotFoundError('Warband', id);
       }
 
       // Add weirdo to warband
@@ -165,10 +166,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const updatedWarband = warbandService.updateWarband(id, warband);
       res.status(201).json(updatedWarband);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to add weirdo',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -184,19 +182,13 @@ export function createWarbandRouter(repository: DataRepository): Router {
       // Load existing warband
       const warband = warbandService.getWarband(id);
       if (!warband) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: `No warband found with id: ${id}`
-        });
+        throw new NotFoundError('Warband', id);
       }
 
       // Find and update weirdo
       const weirdoIndex = warband.weirdos.findIndex(w => w.id === weirdoId);
       if (weirdoIndex === -1) {
-        return res.status(404).json({
-          error: 'Weirdo not found',
-          details: `No weirdo found with id: ${weirdoId}`
-        });
+        throw new NotFoundError('Weirdo', weirdoId);
       }
 
       warband.weirdos[weirdoIndex] = updatedWeirdo;
@@ -205,10 +197,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const updatedWarband = warbandService.updateWarband(id, warband);
       res.json(updatedWarband);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to update weirdo',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -223,19 +212,13 @@ export function createWarbandRouter(repository: DataRepository): Router {
       // Load existing warband
       const warband = warbandService.getWarband(id);
       if (!warband) {
-        return res.status(404).json({
-          error: 'Warband not found',
-          details: `No warband found with id: ${id}`
-        });
+        throw new NotFoundError('Warband', id);
       }
 
       // Find and remove weirdo
       const weirdoIndex = warband.weirdos.findIndex(w => w.id === weirdoId);
       if (weirdoIndex === -1) {
-        return res.status(404).json({
-          error: 'Weirdo not found',
-          details: `No weirdo found with id: ${weirdoId}`
-        });
+        throw new NotFoundError('Weirdo', weirdoId);
       }
 
       warband.weirdos.splice(weirdoIndex, 1);
@@ -244,10 +227,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const updatedWarband = warbandService.updateWarband(id, warband);
       res.json(updatedWarband);
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to remove weirdo',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -259,9 +239,17 @@ export function createWarbandRouter(repository: DataRepository): Router {
     try {
       const { weirdo, warband, warbandAbility } = req.body;
 
-      if (weirdo && warbandAbility) {
-        // Calculate weirdo cost
-        const cost = costEngine.calculateWeirdoCost(weirdo, warbandAbility);
+      // Log request for debugging
+      console.log('Calculate cost request:', {
+        hasWeirdo: weirdo !== undefined,
+        hasWarband: warband !== undefined,
+        warbandAbility,
+        bodyKeys: Object.keys(req.body)
+      });
+
+      if (weirdo !== undefined) {
+        // Calculate weirdo cost (warbandAbility can be null)
+        const cost = costEngine.calculateWeirdoCost(weirdo, warbandAbility || null);
         return res.json({ cost });
       }
 
@@ -271,15 +259,16 @@ export function createWarbandRouter(repository: DataRepository): Router {
         return res.json({ cost });
       }
 
-      res.status(400).json({
-        error: 'Invalid request',
-        details: 'Must provide either (weirdo + warbandAbility) or warband'
-      });
+      throw new ValidationError(
+        'Invalid request',
+        'INVALID_REQUEST',
+        { 
+          details: 'Must provide either weirdo or warband',
+          received: { hasWeirdo: weirdo !== undefined, hasWarband: warband !== undefined }
+        }
+      );
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to calculate cost',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 
@@ -306,15 +295,13 @@ export function createWarbandRouter(repository: DataRepository): Router {
         return res.json(result);
       }
 
-      res.status(400).json({
-        error: 'Invalid request',
-        details: 'Must provide either (weirdo + warband) or warband'
-      });
+      throw new ValidationError(
+        'Invalid request',
+        'INVALID_REQUEST',
+        { details: 'Must provide either (weirdo + warband) or warband' }
+      );
     } catch (error: any) {
-      res.status(500).json({
-        error: 'Failed to validate',
-        details: error.message
-      });
+      handleError(error, res);
     }
   });
 

@@ -137,6 +137,18 @@ describe('WarbandService', () => {
           leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic'), { nil: null }) : fc.constant(null),
           notes: fc.string(),
           totalCost: fc.integer({ min: 0, max: 20 })
+        }).map((weirdo) => {
+          // Ensure ranged weapons require Firepower 2d8 or 2d10
+          if (weirdo.rangedWeapons.length > 0 && weirdo.attributes.firepower === 'None') {
+            return {
+              ...weirdo,
+              attributes: {
+                ...weirdo.attributes,
+                firepower: '2d8' as 'None' | '2d8' | '2d10'
+              }
+            };
+          }
+          return weirdo;
         });
 
       const warbandGen = fc.record({
@@ -364,6 +376,337 @@ describe('WarbandService', () => {
         }),
         { numRuns: 50 }
       );
+    });
+  });
+
+  describe('Centralized cost recalculation', () => {
+    /**
+     * Unit tests for recalculateAllCosts method
+     * Requirements: 7.4
+     */
+    
+    it('should recalculate weirdo costs accurately', () => {
+      // Create a warband with Mutants ability
+      const warband = service.createWarband({
+        name: 'Test Warband',
+        pointLimit: 75,
+        ability: 'Mutants'
+      });
+
+      // Create a weirdo with known costs
+      const weirdo = {
+        id: 'test-weirdo-1',
+        name: 'Test Weirdo',
+        type: 'leader' as const,
+        attributes: {
+          speed: 1 as const,
+          defense: '2d6' as const,
+          firepower: 'None' as const,
+          prowess: '2d6' as const,
+          willpower: '2d6' as const
+        },
+        closeCombatWeapons: [{
+          id: 'weapon-1',
+          name: 'Claws & Teeth',
+          type: 'close' as const,
+          baseCost: 0,
+          maxActions: 2,
+          notes: ''
+        }],
+        rangedWeapons: [],
+        equipment: [],
+        psychicPowers: [],
+        leaderTrait: null,
+        notes: '',
+        totalCost: 999 // Intentionally wrong cost
+      };
+
+      // Add weirdo to warband
+      const warbandWithWeirdo = {
+        ...warband,
+        weirdos: [weirdo]
+      };
+
+      // Recalculate costs
+      const recalculated = service.recalculateAllCosts(warbandWithWeirdo);
+
+      // Verify weirdo cost was recalculated (should not be 999)
+      expect(recalculated.weirdos[0].totalCost).not.toBe(999);
+      expect(recalculated.weirdos[0].totalCost).toBeGreaterThanOrEqual(0);
+      
+      // Verify warband total cost matches sum of weirdo costs
+      const expectedTotal = recalculated.weirdos.reduce((sum, w) => sum + w.totalCost, 0);
+      expect(recalculated.totalCost).toBe(expectedTotal);
+    });
+
+    it('should cascade cost updates from weirdos to warband', () => {
+      // Create a warband
+      const warband = service.createWarband({
+        name: 'Test Warband',
+        pointLimit: 125,
+        ability: 'Soldiers'
+      });
+
+      // Create multiple weirdos with incorrect costs
+      const weirdos = [
+        {
+          id: 'weirdo-1',
+          name: 'Leader',
+          type: 'leader' as const,
+          attributes: {
+            speed: 2 as const,
+            defense: '2d8' as const,
+            firepower: '2d8' as const,
+            prowess: '2d8' as const,
+            willpower: '2d6' as const
+          },
+          closeCombatWeapons: [{
+            id: 'weapon-1',
+            name: 'Sword',
+            type: 'close' as const,
+            baseCost: 1,
+            maxActions: 2,
+            notes: ''
+          }],
+          rangedWeapons: [{
+            id: 'weapon-2',
+            name: 'Pistol',
+            type: 'ranged' as const,
+            baseCost: 2,
+            maxActions: 1,
+            notes: ''
+          }],
+          equipment: [],
+          psychicPowers: [],
+          leaderTrait: null,
+          notes: '',
+          totalCost: 100 // Wrong
+        },
+        {
+          id: 'weirdo-2',
+          name: 'Trooper',
+          type: 'trooper' as const,
+          attributes: {
+            speed: 1 as const,
+            defense: '2d6' as const,
+            firepower: 'None' as const,
+            prowess: '2d6' as const,
+            willpower: '2d6' as const
+          },
+          closeCombatWeapons: [{
+            id: 'weapon-3',
+            name: 'Unarmed',
+            type: 'close' as const,
+            baseCost: 0,
+            maxActions: 1,
+            notes: ''
+          }],
+          rangedWeapons: [],
+          equipment: [],
+          psychicPowers: [],
+          leaderTrait: null,
+          notes: '',
+          totalCost: 50 // Wrong
+        }
+      ];
+
+      const warbandWithWeirdos = {
+        ...warband,
+        weirdos,
+        totalCost: 999 // Wrong warband total
+      };
+
+      // Recalculate all costs
+      const recalculated = service.recalculateAllCosts(warbandWithWeirdos);
+
+      // Verify each weirdo cost was recalculated
+      expect(recalculated.weirdos[0].totalCost).not.toBe(100);
+      expect(recalculated.weirdos[1].totalCost).not.toBe(50);
+
+      // Verify warband total cascaded correctly
+      const sumOfWeirdoCosts = recalculated.weirdos[0].totalCost + recalculated.weirdos[1].totalCost;
+      expect(recalculated.totalCost).toBe(sumOfWeirdoCosts);
+      expect(recalculated.totalCost).not.toBe(999);
+    });
+
+    it('should handle ability changes correctly', () => {
+      // Create a weirdo with equipment that Soldiers get for free
+      const weirdo = {
+        id: 'weirdo-1',
+        name: 'Soldier',
+        type: 'trooper' as const,
+        attributes: {
+          speed: 1 as const,
+          defense: '2d6' as const,
+          firepower: 'None' as const,
+          prowess: '2d6' as const,
+          willpower: '2d6' as const
+        },
+        closeCombatWeapons: [{
+          id: 'weapon-1',
+          name: 'Unarmed',
+          type: 'close' as const,
+          baseCost: 0,
+          maxActions: 1,
+          notes: ''
+        }],
+        rangedWeapons: [],
+        equipment: [{
+          id: 'equip-1',
+          name: 'Heavy Armor',
+          type: 'Passive' as const,
+          baseCost: 2,
+          effect: 'Protection'
+        }],
+        psychicPowers: [],
+        leaderTrait: null,
+        notes: '',
+        totalCost: 0
+      };
+
+      // Create warband with Soldiers ability (Heavy Armor is free)
+      const warbandWithSoldiers = {
+        id: 'warband-1',
+        name: 'Soldier Warband',
+        ability: 'Soldiers' as WarbandAbility,
+        pointLimit: 75 as const,
+        weirdos: [weirdo],
+        totalCost: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Recalculate with Soldiers ability
+      const withSoldiers = service.recalculateAllCosts(warbandWithSoldiers);
+      const costWithSoldiers = withSoldiers.weirdos[0].totalCost;
+
+      // Change ability to Cyborgs (no discount for Heavy Armor)
+      const warbandWithCyborgs = {
+        ...warbandWithSoldiers,
+        ability: 'Cyborgs' as WarbandAbility
+      };
+
+      // Recalculate with Cyborgs ability
+      const withCyborgs = service.recalculateAllCosts(warbandWithCyborgs);
+      const costWithCyborgs = withCyborgs.weirdos[0].totalCost;
+
+      // Costs should be different due to ability change
+      // (Soldiers get Heavy Armor for free, Cyborgs pay full price)
+      expect(costWithSoldiers).not.toBe(costWithCyborgs);
+      expect(costWithCyborgs).toBeGreaterThan(costWithSoldiers);
+      
+      // Both should be non-negative
+      expect(costWithSoldiers).toBeGreaterThanOrEqual(0);
+      expect(costWithCyborgs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle empty warband correctly', () => {
+      const emptyWarband = {
+        id: 'warband-1',
+        name: 'Empty Warband',
+        ability: 'Cyborgs' as WarbandAbility,
+        pointLimit: 75 as const,
+        weirdos: [],
+        totalCost: 999, // Wrong
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const recalculated = service.recalculateAllCosts(emptyWarband);
+
+      // Empty warband should have zero cost
+      expect(recalculated.totalCost).toBe(0);
+      expect(recalculated.weirdos.length).toBe(0);
+    });
+
+    it('should handle complex weirdo with all components', () => {
+      const complexWeirdo = {
+        id: 'weirdo-1',
+        name: 'Complex Weirdo',
+        type: 'leader' as const,
+        attributes: {
+          speed: 3 as const,
+          defense: '2d10' as const,
+          firepower: '2d10' as const,
+          prowess: '2d10' as const,
+          willpower: '2d10' as const
+        },
+        closeCombatWeapons: [
+          {
+            id: 'weapon-1',
+            name: 'Sword',
+            type: 'close' as const,
+            baseCost: 1,
+            maxActions: 2,
+            notes: ''
+          },
+          {
+            id: 'weapon-2',
+            name: 'Horrible Claws & Teeth',
+            type: 'close' as const,
+            baseCost: 1,
+            maxActions: 3,
+            notes: ''
+          }
+        ],
+        rangedWeapons: [{
+          id: 'weapon-3',
+          name: 'Rifle',
+          type: 'ranged' as const,
+          baseCost: 3,
+          maxActions: 2,
+          notes: ''
+        }],
+        equipment: [
+          {
+            id: 'equip-1',
+            name: 'Heavy Armor',
+            type: 'Passive' as const,
+            baseCost: 2,
+            effect: 'Protection'
+          },
+          {
+            id: 'equip-2',
+            name: 'Medkit',
+            type: 'Action' as const,
+            baseCost: 1,
+            effect: 'Healing'
+          }
+        ],
+        psychicPowers: [{
+          id: 'power-1',
+          name: 'Mind Blast',
+          type: 'Attack' as const,
+          cost: 2,
+          effect: 'Damage'
+        }],
+        leaderTrait: null,
+        notes: '',
+        totalCost: 0 // Will be calculated
+      };
+
+      const warband = {
+        id: 'warband-1',
+        name: 'Complex Warband',
+        ability: 'Heavily Armed' as WarbandAbility,
+        pointLimit: 125 as const,
+        weirdos: [complexWeirdo],
+        totalCost: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const recalculated = service.recalculateAllCosts(warband);
+
+      // Verify cost is calculated (should be high due to all max attributes)
+      expect(recalculated.weirdos[0].totalCost).toBeGreaterThan(0);
+      
+      // Verify warband total matches weirdo cost
+      expect(recalculated.totalCost).toBe(recalculated.weirdos[0].totalCost);
+      
+      // Verify cost is reasonable (not negative, not absurdly high)
+      expect(recalculated.totalCost).toBeGreaterThanOrEqual(0);
+      expect(recalculated.totalCost).toBeLessThan(200); // Sanity check
     });
   });
 });

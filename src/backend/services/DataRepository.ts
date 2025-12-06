@@ -21,7 +21,10 @@ export class DataRepository {
   /**
    * Saves a warband to in-memory storage and triggers async file persistence.
    * Generates a unique ID if the warband doesn't have one.
-   * Updates the updatedAt timestamp.
+   * Updates the updatedAt timestamp and sets createdAt for new warbands.
+   * 
+   * @param warband - The warband to save
+   * @returns The saved warband with generated/updated ID and timestamps
    */
   saveWarband(warband: Warband): Warband {
     // Generate ID if not present
@@ -52,7 +55,9 @@ export class DataRepository {
 
   /**
    * Loads a warband from in-memory storage by ID.
-   * Returns null if the warband is not found.
+   * 
+   * @param id - The unique identifier of the warband
+   * @returns The warband if found, null otherwise
    */
   loadWarband(id: string): Warband | null {
     return this.warbands.get(id) || null;
@@ -60,6 +65,8 @@ export class DataRepository {
 
   /**
    * Returns all warbands from in-memory storage as an array.
+   * 
+   * @returns Array of all warbands (empty array if none exist)
    */
   loadAllWarbands(): Warband[] {
     return Array.from(this.warbands.values());
@@ -67,7 +74,9 @@ export class DataRepository {
 
   /**
    * Deletes a warband from in-memory storage and triggers async file persistence.
-   * Returns true if the warband was deleted, false if it didn't exist.
+   * 
+   * @param id - The unique identifier of the warband to delete
+   * @returns True if the warband was deleted, false if it didn't exist
    */
   deleteWarband(id: string): boolean {
     const existed = this.warbands.delete(id);
@@ -85,6 +94,10 @@ export class DataRepository {
   /**
    * Serializes the in-memory Map to JSON and writes to file.
    * Creates the directory if it doesn't exist.
+   * This is called automatically after save/delete operations.
+   * 
+   * @returns Promise that resolves when file write is complete
+   * @throws {Error} If file write fails
    */
   async persistToFile(): Promise<void> {
     // Convert Map to array of warbands
@@ -104,8 +117,11 @@ export class DataRepository {
 
   /**
    * Reads JSON file and populates the in-memory Map.
-   * Should be called on server startup.
+   * Should be called on server startup to restore persisted data.
    * Creates an empty file if it doesn't exist.
+   * 
+   * @returns Promise that resolves when file read and parsing is complete
+   * @throws {Error} If file read fails (except ENOENT which creates new file)
    */
   async loadFromFile(): Promise<void> {
     try {
@@ -135,7 +151,8 @@ export class DataRepository {
   }
 
   /**
-   * Clears all warbands from memory (useful for testing).
+   * Clears all warbands from in-memory storage.
+   * Useful for testing and resetting state. Does not affect persisted file.
    */
   clear(): void {
     this.warbands.clear();

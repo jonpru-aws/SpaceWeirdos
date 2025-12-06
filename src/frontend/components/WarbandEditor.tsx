@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Warband, Weirdo, WarbandAbility, ValidationError } from '../../backend/models/types';
 import { apiClient, ApiError } from '../services/apiClient';
+import { useGameData } from '../contexts/GameDataContext';
 import { WeirdoEditor } from './WeirdoEditor';
+import { WarbandProperties } from './WarbandProperties';
+import { WarbandCostDisplay } from './WarbandCostDisplay';
+import { WeirdosList } from './WeirdosList';
 import './WarbandEditor.css';
 
 /**
@@ -10,23 +14,13 @@ import './WarbandEditor.css';
  * Manages warband-level properties and weirdos.
  * Provides real-time cost calculations and validation.
  * 
- * Requirements: 1.1, 1.2, 1.4, 9.4, 10.3, 11.1, 11.4, 15.1, 15.2, 15.3, 15.4, 15.5
+ * Requirements: 1.1, 1.2, 1.4, 9.4, 10.3, 11.1, 11.4, 15.1, 15.2, 15.3, 15.4, 15.5, 4.1, 4.3, 4.4
  */
 
 interface WarbandEditorProps {
   warbandId?: string;
   onBack?: () => void;
 }
-
-const WARBAND_ABILITIES: WarbandAbility[] = [
-  'Cyborgs',
-  'Fanatics',
-  'Living Weapons',
-  'Heavily Armed',
-  'Mutants',
-  'Soldiers',
-  'Undead'
-];
 
 export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
   const [warband, setWarband] = useState<Warband | null>(null);
@@ -35,6 +29,21 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  
+  // Use GameDataContext to get warband abilities
+  const { data: gameData } = useGameData();
+  
+  // Build ability descriptions map from context data (memoized)
+  // Requirements: 9.1 - useMemo for expensive calculations
+  const abilityDescriptions = useMemo(() => {
+    const descriptions: Record<string, string> = {};
+    if (gameData?.warbandAbilities) {
+      gameData.warbandAbilities.forEach((ability) => {
+        descriptions[ability.name] = ability.description;
+      });
+    }
+    return descriptions;
+  }, [gameData?.warbandAbilities]);
 
   /**
    * Load existing warband or initialize new one
@@ -59,11 +68,11 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
         }
       } else {
         // Initialize new warband with default values
-        // Requirement 1.1, 1.2, 1.4: Name, point limit, and ability required
+        // Requirement 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7: Default name "New Warband", point limit required, ability optional
         setWarband({
           id: '',
-          name: '',
-          ability: 'Cyborgs',
+          name: 'New Warband',
+          ability: null,
           pointLimit: 75,
           totalCost: 0,
           weirdos: [],
@@ -78,20 +87,20 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
 
   /**
    * Handle warband name change
-   * Requirements: 1.1, 1.5
+   * Requirements: 1.1, 1.5, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleNameChange = (name: string) => {
+  const handleNameChange = useCallback((name: string) => {
     if (warband) {
       setWarband({ ...warband, name });
       setSaveSuccess(false);
     }
-  };
+  }, [warband]);
 
   /**
    * Handle warband ability change and trigger cost recalculation
-   * Requirements: 1.4, 15.1, 15.2
+   * Requirements: 1.4, 1.6, 15.1, 15.2, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleAbilityChange = async (ability: WarbandAbility) => {
+  const handleAbilityChange = useCallback(async (ability: WarbandAbility | null) => {
     if (!warband) return;
 
     setWarband({ ...warband, ability });
@@ -106,18 +115,18 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
         console.error('Failed to recalculate costs:', err);
       }
     }
-  };
+  }, [warband]);
 
   /**
    * Handle point limit change
-   * Requirements: 1.2
+   * Requirements: 1.2, 9.2 - useCallback for callbacks passed to child components
    */
-  const handlePointLimitChange = (pointLimit: 75 | 125) => {
+  const handlePointLimitChange = useCallback((pointLimit: 75 | 125) => {
     if (warband) {
       setWarband({ ...warband, pointLimit });
       setSaveSuccess(false);
     }
-  };
+  }, [warband]);
 
   /**
    * Handle adding a new weirdo (leader or trooper)
@@ -275,46 +284,64 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
   };
 
   /**
-   * Calculate total cost of all weirdos
-   * Requirements: 10.1, 15.2, 15.3
+   * Calculate total cost of all weirdos (memoized)
+   * Requirements: 10.1, 15.2, 15.3, 9.1 - useMemo for expensive calculations
    */
-  const calculateTotalCost = (): number => {
+  const calculateTotalCost = useMemo((): number => {
     if (!warband) return 0;
     return warband.weirdos.reduce((sum, weirdo) => sum + weirdo.totalCost, 0);
-  };
-
-  /**
-   * Update warband total cost whenever weirdos change
-   * Requirements: 15.1, 15.2
-   */
-  useEffect(() => {
-    if (warband) {
-      const newTotalCost = calculateTotalCost();
-      if (warband.totalCost !== newTotalCost) {
-        setWarband({ ...warband, totalCost: newTotalCost });
-      }
-    }
   }, [warband?.weirdos]);
 
   /**
-   * Check if warband is approaching point limit
-   * Requirements: 15.4, 15.5
+   * Validate warband whenever it's loaded or weirdos change
+   * Requirements: 15.1, 15.2, 8.1, 8.2, 8.3
    */
-  const isApproachingLimit = (): boolean => {
-    if (!warband) return false;
-    const totalCost = calculateTotalCost();
-    const threshold = warband.pointLimit * 0.9; // 90% threshold
-    return totalCost >= threshold && totalCost <= warband.pointLimit;
-  };
+  useEffect(() => {
+    if (!warband) return;
+    
+    if (warband.weirdos.length > 0) {
+      // Run validation for warbands with weirdos
+      apiClient.validate({ warband })
+        .then(validation => {
+          console.log('Validation result:', validation);
+          setValidationErrors(validation.errors);
+        })
+        .catch(err => {
+          console.error('Validation failed:', err);
+        });
+    } else {
+      // Clear validation errors when no weirdos
+      setValidationErrors([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [warband?.id, warband?.weirdos]);
 
   /**
-   * Check if warband exceeds point limit
-   * Requirements: 10.3
+   * Check if warband is approaching point limit (memoized)
+   * Requirements: 15.4, 15.5, 9.1 - useMemo for expensive calculations
    */
-  const exceedsLimit = (): boolean => {
+  const isApproachingLimit = useMemo((): boolean => {
     if (!warband) return false;
-    return calculateTotalCost() > warband.pointLimit;
-  };
+    const threshold = warband.pointLimit * 0.9; // 90% threshold
+    return warband.totalCost >= threshold && warband.totalCost <= warband.pointLimit;
+  }, [warband?.totalCost, warband?.pointLimit]);
+
+  /**
+   * Check if warband exceeds point limit (memoized)
+   * Requirements: 10.3, 9.1 - useMemo for expensive calculations
+   */
+  const exceedsLimit = useMemo((): boolean => {
+    if (!warband) return false;
+    return warband.totalCost > warband.pointLimit;
+  }, [warband?.totalCost, warband?.pointLimit]);
+
+  // Check for 21-25 point rule violation (memoized)
+  // Requirements: 9.1 - useMemo for expensive calculations
+  // Must be before early returns to follow React hooks rules
+  const has25PointViolation = useMemo(() => 
+    validationErrors.some(err => err.code === 'MULTIPLE_25_POINT_WEIRDOS'),
+    [validationErrors]
+  );
 
   if (loading && !warband) {
     return (
@@ -337,9 +364,14 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
     );
   }
 
-  const totalCost = calculateTotalCost();
-  const approaching = isApproachingLimit();
-  const exceeds = exceedsLimit();
+  const approaching = isApproachingLimit;
+  const exceeds = exceedsLimit;
+  
+  console.log('Validation state:', {
+    validationErrors,
+    has25PointViolation,
+    weirdoCosts: warband.weirdos.map(w => ({ name: w.name, cost: w.totalCost }))
+  });
 
   return (
     <div className="warband-editor">
@@ -358,6 +390,12 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
           <button onClick={() => setError(null)}>×</button>
         </div>
       )}
+      
+      {has25PointViolation && (
+        <div className="error-banner">
+          ✗ Only one weirdo may cost 21-25 points!
+        </div>
+      )}
 
       {saveSuccess && (
         <div className="success-banner">
@@ -366,148 +404,34 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
         </div>
       )}
 
-      <div className="warband-properties">
-        <h2>Warband Properties</h2>
-        
-        <div className="form-group">
-          <label htmlFor="warband-name">
-            Name <span className="required">*</span>
-          </label>
-          <input
-            id="warband-name"
-            type="text"
-            value={warband.name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Enter warband name"
-            className={validationErrors.some(e => e.field === 'name') ? 'error' : ''}
-          />
-        </div>
+      <WarbandProperties
+        name={warband.name}
+        ability={warband.ability}
+        pointLimit={warband.pointLimit}
+        validationErrors={validationErrors}
+        abilityDescriptions={abilityDescriptions}
+        onNameChange={handleNameChange}
+        onAbilityChange={handleAbilityChange}
+        onPointLimitChange={handlePointLimitChange}
+      />
 
-        <div className="form-group">
-          <label htmlFor="warband-ability">
-            Warband Ability <span className="required">*</span>
-          </label>
-          <select
-            id="warband-ability"
-            value={warband.ability}
-            onChange={(e) => handleAbilityChange(e.target.value as WarbandAbility)}
-          >
-            {WARBAND_ABILITIES.map(ability => (
-              <option key={ability} value={ability}>
-                {ability}
-              </option>
-            ))}
-          </select>
-        </div>
+      <WarbandCostDisplay
+        totalCost={warband.totalCost}
+        pointLimit={warband.pointLimit}
+        approaching={approaching}
+        exceeds={exceeds}
+      />
 
-        <div className="form-group">
-          <label htmlFor="point-limit">
-            Point Limit <span className="required">*</span>
-          </label>
-          <select
-            id="point-limit"
-            value={warband.pointLimit}
-            onChange={(e) => handlePointLimitChange(Number(e.target.value) as 75 | 125)}
-          >
-            <option value={75}>75 Points</option>
-            <option value={125}>125 Points</option>
-          </select>
-        </div>
-
-        <div 
-          className={`cost-display ${approaching && !exceeds ? 'warning' : ''} ${exceeds ? 'error' : ''}`}
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <div className="cost-label">Total Cost:</div>
-          <div 
-            className={`cost-value ${approaching ? 'warning' : ''} ${exceeds ? 'error' : ''}`}
-            aria-label={`${totalCost} points used out of ${warband.pointLimit} points limit`}
-          >
-            {totalCost} / {warband.pointLimit}
-          </div>
-          {approaching && !exceeds && (
-            <div className="cost-warning" role="alert">
-              Approaching point limit
-            </div>
-          )}
-          {exceeds && (
-            <div className="cost-error" role="alert">
-              Exceeds point limit!
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="weirdos-section">
-        <div className="section-header">
-          <h2>Weirdos ({warband.weirdos.length})</h2>
-          <div className="add-buttons">
-            <button
-              onClick={() => handleAddWeirdo('leader')}
-              disabled={warband.weirdos.some(w => w.type === 'leader')}
-              className="add-leader-button"
-              aria-label={warband.weirdos.some(w => w.type === 'leader') ? 'Leader already added' : 'Add a leader to your warband'}
-            >
-              + Add Leader
-            </button>
-            <button
-              onClick={() => handleAddWeirdo('trooper')}
-              className="add-trooper-button"
-              aria-label="Add a trooper to your warband"
-            >
-              + Add Trooper
-            </button>
-          </div>
-        </div>
-
-        {warband.weirdos.length === 0 ? (
-          <p className="empty-state">No weirdos yet. Add a leader to get started!</p>
-        ) : (
-          <div className="weirdos-list">
-            {warband.weirdos.map(weirdo => (
-              <div
-                key={weirdo.id}
-                className={`weirdo-card ${selectedWeirdoId === weirdo.id ? 'selected' : ''}`}
-                onClick={() => setSelectedWeirdoId(weirdo.id)}
-              >
-                <div className="weirdo-header">
-                  <div className="weirdo-info">
-                    <h3>{weirdo.name}</h3>
-                    <span className={`weirdo-type ${weirdo.type}`}>
-                      {weirdo.type === 'leader' ? '👑 Leader' : '⚔ Trooper'}
-                    </span>
-                  </div>
-                  <div className="weirdo-cost">
-                    {weirdo.totalCost} pts
-                  </div>
-                </div>
-                <div className="weirdo-actions">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedWeirdoId(weirdo.id);
-                    }}
-                    className="edit-button"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveWeirdo(weirdo.id);
-                    }}
-                    className="remove-button"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <WeirdosList
+        weirdos={warband.weirdos}
+        selectedWeirdoId={selectedWeirdoId}
+        validationErrors={validationErrors}
+        hasLeader={warband.weirdos.some(w => w.type === 'leader')}
+        onAddLeader={() => handleAddWeirdo('leader')}
+        onAddTrooper={() => handleAddWeirdo('trooper')}
+        onSelectWeirdo={setSelectedWeirdoId}
+        onRemoveWeirdo={handleRemoveWeirdo}
+      />
 
       {validationErrors.length > 0 && (
         <div className="validation-errors">
@@ -548,6 +472,7 @@ export function WarbandEditor({ warbandId, onBack }: WarbandEditorProps) {
               <WeirdoEditor
                 weirdo={selectedWeirdo}
                 warbandAbility={warband.ability}
+                allWeirdos={warband.weirdos}
                 onChange={async (updatedWeirdo) => {
                   // Update weirdo in warband and cascade cost changes
                   // Requirements: 15.1, 15.2

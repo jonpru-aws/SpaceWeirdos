@@ -342,6 +342,7 @@
 
 
     - Implement component with state for warband, selected weirdo, and validation errors
+    - Initialize new warbands with default name "New Warband"
     - Implement handleNameChange method
     - Implement handleAbilityChange method (trigger cost recalculation)
     - Implement handlePointLimitChange method
@@ -349,15 +350,32 @@
     - Implement handleRemoveWeirdo method
     - Implement handleSaveWarband method (validate and save)
     - Implement calculateTotalCost method
+    - Implement weirdoHasErrors method to check validation errors per weirdo
+    - Apply error CSS class to weirdos with validation errors
     - Display real-time cost calculations
     - Display validation errors
     - Display warning indicators when approaching limits
-    - _Requirements: 1.1, 1.2, 1.4, 9.4, 10.3, 11.1, 11.4, 15.1, 15.2, 15.3, 15.4, 15.5_
+    - _Requirements: 1.1, 1.2, 1.4, 9.4, 10.3, 11.1, 11.4, 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7_
 
-  - [x] 10.2 Write unit tests for WarbandEditorComponent
+  - [x] 10.2 Implement validation error tooltips
 
 
-    - Test creating new warband
+
+
+
+
+
+    - Add tooltip component or use HTML title attribute for error display
+    - Display specific validation error messages when hovering over weirdos with errors
+    - Handle multiple errors per weirdo (display as list)
+    - Ensure tooltip positioning doesn't obscure other UI elements
+    - Style tooltip for readability and consistency with design
+    - _Requirements: 15.8, 15.9_
+
+  - [x] 10.3 Write unit tests for WarbandEditorComponent
+
+
+    - Test creating new warband with default name "New Warband"
     - Test loading existing warband
     - Test changing warband name
     - Test changing warband ability
@@ -365,9 +383,9 @@
     - Test adding weirdos
     - Test removing weirdos
     - Test saving warband
-    - Test validation errors
+    - Test validation errors and visual highlighting
     - Test cost calculations
-    - _Requirements: 1.1-1.5, 9.4, 10.3, 11.1-11.4, 15.1-15.5_
+    - _Requirements: 1.1-1.5, 9.4, 10.3, 11.1-11.4, 15.1-15.7_
 
 - [x] 11. Implement Weirdo Editor Component
 
@@ -438,15 +456,231 @@
     - Create consistent styling for all components
     - Add responsive design for mobile and desktop
     - Add visual indicators for warnings and errors
+    - Style error CSS class for weirdos with validation errors (red border, background tint, etc.)
+    - Style tooltips for validation error messages
     - Add loading spinners and transitions
     - Ensure accessibility compliance
-    - _Requirements: 15.3, 15.4, 15.5_
+    - _Requirements: 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9_
 
 - [x] 14. Final checkpoint - Ensure all tests pass
 
 
 
 
+
+
+
+
+
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 15. Update warband ability to be optional
+
+
+
+
+
+
+  - [x] 15.1 Update data models and types
+
+
+    - Change `ability` field in Warband interface to `ability: WarbandAbility | null`
+    - Update CostEngine interface to accept `warbandAbility: WarbandAbility | null`
+    - Update ValidationService interface to accept `warbandAbility: WarbandAbility | null`
+    - Update all type definitions and interfaces
+    - _Requirements: 1.4, 1.6_
+
+  - [x] 15.2 Update Cost Engine to handle null ability
+
+
+    - Modify all cost calculation methods to handle null warband ability
+    - When ability is null, apply no cost modifiers
+    - Ensure all cost calculations work correctly with null ability
+    - _Requirements: 1.6, 8.1-8.9_
+
+  - [x] 15.3 Update Validation Service to handle null ability
+
+
+    - Modify equipment limit validation to handle null ability
+    - Remove validation that requires warband ability selection
+    - Ensure all validation rules work correctly with null ability
+    - _Requirements: 1.4, 1.6_
+
+  - [x] 15.4 Update frontend components for optional ability
+
+
+    - Modify WarbandEditorComponent to make ability selection optional
+    - Add "None" or "No Ability" option to ability selector
+    - Update UI to show when no ability is selected
+    - _Requirements: 1.4, 1.6_
+
+  - [x] 15.5 Update API endpoints for optional ability
+
+
+    - Modify POST /api/warbands to accept optional ability
+    - Update all endpoints to handle null ability
+    - _Requirements: 1.4, 1.6_
+
+  - [x] 15.6 Write property test for optional ability
+
+
+    - **Property 1 (updated): Warband creation requires all mandatory fields**
+    - **Validates: Requirements 1.1, 1.2, 1.4, 1.5, 1.6**
+
+  - [x] 15.7 Update existing tests for optional ability
+
+
+    - Update all tests that assume ability is required
+    - Add test cases for null ability scenarios
+    - _Requirements: 1.4, 1.6_
+
+- [x] 16. Add descriptive information to selection interfaces
+
+
+
+
+
+
+
+
+
+
+  - [x] 16.1 Update WeirdoEditorComponent to show selection details
+
+
+    - Display point cost for each attribute level option
+    - Display name, point cost, and notes for each weapon option
+    - Display name, point cost, and effect for each equipment option
+    - Display name, point cost, and effect for each psychic power option
+    - Display description for each leader trait option
+    - Show modified costs alongside base costs when ability modifiers apply
+    - _Requirements: 16.2, 16.3, 16.4, 16.5, 16.6, 16.7_
+
+
+
+  - [x] 16.2 Update WarbandEditorComponent to show ability descriptions
+
+
+    - Display description for each warband ability option
+
+
+    - Show "No Ability" option with appropriate description
+    - _Requirements: 16.1_
+
+  - [x] 16.3 Style selection interfaces for readability
+
+
+    - Create clear visual hierarchy for selection options
+    - Format costs and descriptions consistently
+    - Ensure descriptions are readable and not cluttered
+    - _Requirements: 16.1-16.7_
+
+  - [x] 16.4 Write property test for selection information display
+
+
+    - **Property 26: Selection options display descriptive information**
+    - **Validates: Requirements 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7**
+
+- [x] 17. Implement sticky cost displays
+
+
+
+
+
+
+
+  - [x] 17.1 Add sticky positioning to weirdo cost display
+
+
+    - Implement CSS sticky positioning for weirdo total cost
+    - Ensure cost display stays at top when scrolling
+    - Ensure display doesn't obscure selection controls
+    - Test on different screen sizes
+    - _Requirements: 17.1, 17.3_
+
+  - [x] 17.2 Add sticky positioning to warband cost display
+
+
+    - Implement CSS sticky positioning for warband total cost
+    - Ensure cost display stays at top when scrolling
+    - Ensure display doesn't obscure weirdo management controls
+    - Test on different screen sizes
+    - _Requirements: 17.2, 17.4_
+
+  - [x] 17.3 Style sticky cost displays
+
+
+    - Create visually distinct styling for sticky headers
+    - Ensure readability against scrolling content
+    - Add appropriate spacing and padding
+    - _Requirements: 17.1, 17.2, 17.3, 17.4_
+
+  - [x] 17.4 Write property test for sticky cost displays
+
+
+
+
+
+
+
+
+
+
+
+
+
+    - **Property 27: Cost displays remain visible during scrolling**
+    - **Validates: Requirements 17.1, 17.2, 17.3, 17.4**
+
+- [-] 18. Implement firepower requirement for ranged weapons
+
+
+
+
+  - [x] 18.1 Update Validation Service to enforce firepower requirement for ranged weapons
+
+
+
+    - Add validation rule: weirdos with ranged weapons must have Firepower level 2d8 or 2d10
+    - Reject weirdos with ranged weapons and Firepower level None
+    - Add error message: "Firepower level 2d8 or 2d10 required to use ranged weapons"
+    - Update validateWeaponRequirements method to check both directions (ranged weapon requires firepower, firepower requires ranged weapon)
+    - _Requirements: 3.4, 7.5_
+
+  - [x] 18.2 Write property test for firepower requirement
+
+
+
+    - **Property 6a: Ranged weapon selection requires non-zero Firepower**
+    - **Validates: Requirements 3.4, 7.5**
+
+  - [x] 18.3 Update frontend validation to prevent invalid selections
+
+
+
+    - Disable ranged weapon selection when Firepower is None
+    - Show warning message when user attempts to select ranged weapon without proper Firepower
+    - Update WeirdoEditorComponent to enforce this constraint in UI
+    - _Requirements: 3.4, 7.5_
+
+  - [x] 18.4 Update existing tests for new validation rule
+
+
+
+
+
+
+
+
+
+
+
+
+    - Update any tests that create weirdos with ranged weapons to ensure they have Firepower 2d8 or 2d10
+    - Add test cases for the new validation error
+    - _Requirements: 3.4, 7.5_
+
+- [x] 19. Final checkpoint - Ensure all tests pass
 
 
 

@@ -1,3 +1,7 @@
+---
+inclusion: manual
+---
+
 # Project Setup Complete
 
 ## ✅ Installation Summary

@@ -89,6 +89,18 @@ const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =
     leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic', 'Monstrous', 'Political Officer', 'Sorcerer', 'Tactician'), { nil: null }) : fc.constant(null),
     notes: fc.string(),
     totalCost: fc.constant(0)
+  }).map((weirdo) => {
+    // Ensure ranged weapons require Firepower 2d8 or 2d10
+    if (weirdo.rangedWeapons.length > 0 && weirdo.attributes.firepower === 'None') {
+      return {
+        ...weirdo,
+        attributes: {
+          ...weirdo.attributes,
+          firepower: '2d8' as FirepowerLevel
+        }
+      };
+    }
+    return weirdo;
   });
 
 describe('ValidationService', () => {
@@ -96,12 +108,12 @@ describe('ValidationService', () => {
 
   describe('Property 1: Warband creation requires all mandatory fields', () => {
     // **Feature: space-weirdos-warband, Property 1: Warband creation requires all mandatory fields**
-    // **Validates: Requirements 1.1, 1.2, 1.4, 1.5**
+    // **Validates: Requirements 1.1, 1.2, 1.4, 1.5, 1.6**
     it('should reject warband creation if name is missing or empty', () => {
       fc.assert(
         fc.property(
           fc.constantFrom('', '   ', '\t', '\n'),
-          warbandAbilityGen,
+          fc.option(warbandAbilityGen, { nil: null }),
           fc.constantFrom(75 as const, 125 as const),
           (name, ability, pointLimit) => {
             const warband: Warband = {
@@ -127,7 +139,7 @@ describe('ValidationService', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1 }),
-          warbandAbilityGen,
+          fc.option(warbandAbilityGen, { nil: null }),
           fc.integer({ min: -100, max: 200 }).filter(n => n !== 75 && n !== 125),
           (name, ability, pointLimit) => {
             const warband: Warband = {
@@ -149,36 +161,11 @@ describe('ValidationService', () => {
       );
     });
 
-    it('should reject warband creation if ability is missing', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1 }),
-          fc.constantFrom(75 as const, 125 as const),
-          (name, pointLimit) => {
-            const warband: Warband = {
-              id: 'test-id',
-              name,
-              ability: null as any,
-              pointLimit,
-              totalCost: 0,
-              weirdos: [],
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-
-            const result = validationService.validateWarband(warband);
-            return !result.valid && result.errors.some(e => e.code === 'WARBAND_ABILITY_REQUIRED');
-          }
-        ),
-        testConfig
-      );
-    });
-
-    it('should accept warband creation with all mandatory fields', () => {
+    it('should accept warband creation with all mandatory fields (ability optional)', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
-          warbandAbilityGen,
+          fc.option(warbandAbilityGen, { nil: null }),
           fc.constantFrom(75 as const, 125 as const),
           (name, ability, pointLimit) => {
             const warband: Warband = {
@@ -194,6 +181,32 @@ describe('ValidationService', () => {
 
             const result = validationService.validateWarband(warband);
             // Should be valid (no weirdos means no other validation errors)
+            return result.valid;
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should accept warband creation with null ability', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          fc.constantFrom(75 as const, 125 as const),
+          (name, pointLimit) => {
+            const warband: Warband = {
+              id: 'test-id',
+              name,
+              ability: null,
+              pointLimit,
+              totalCost: 0,
+              weirdos: [],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const result = validationService.validateWarband(warband);
+            // Should be valid with null ability
             return result.valid;
           }
         ),
@@ -540,6 +553,589 @@ describe('ValidationService', () => {
 
             const errors = validationService.validateWeirdo(weirdo, warband);
             return !errors.some(e => e.code === 'RANGED_WEAPON_REQUIRED');
+          }
+        ),
+        testConfig
+      );
+    });
+  });
+
+  describe('Property 6a: Ranged weapon selection requires non-zero Firepower', () => {
+    // **Feature: space-weirdos-warband, Property 6a: Ranged weapon selection requires non-zero Firepower**
+    // **Validates: Requirements 3.4, 7.5**
+    it('should reject weirdo with ranged weapons and Firepower None', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          fc.array(rangedWeaponGen, { minLength: 1, maxLength: 2 }),
+          (name, ability, rangedWeapons) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None', // Firepower is None
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons, // Has ranged weapons
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should accept weirdo with ranged weapons and Firepower 2d8 or 2d10', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          fc.constantFrom<FirepowerLevel>('2d8', '2d10'),
+          fc.array(rangedWeaponGen, { minLength: 1, maxLength: 2 }),
+          (name, ability, firepower, rangedWeapons) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower, // Firepower is 2d8 or 2d10
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons, // Has ranged weapons
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            return !errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+          }
+        ),
+        testConfig
+      );
+    });
+
+    // Additional test cases for the new validation rule (Requirements 3.4, 7.5)
+    it('should reject trooper with ranged weapons and Firepower None', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          (name, ability) => {
+            const trooper: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'trooper',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None', // Firepower is None
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [{
+                id: 'weapon-2',
+                name: 'Pistol',
+                type: 'ranged',
+                baseCost: 1,
+                maxActions: 2,
+                notes: ''
+              }],
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [trooper],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(trooper, warband);
+            return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should reject weirdo with multiple ranged weapons and Firepower None', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          (name, ability) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None', // Firepower is None
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [
+                {
+                  id: 'weapon-2',
+                  name: 'Pistol',
+                  type: 'ranged',
+                  baseCost: 1,
+                  maxActions: 2,
+                  notes: ''
+                },
+                {
+                  id: 'weapon-3',
+                  name: 'Rifle',
+                  type: 'ranged',
+                  baseCost: 2,
+                  maxActions: 2,
+                  notes: ''
+                }
+              ],
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should accept weirdo with no ranged weapons and Firepower None', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          (name, ability) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None', // Firepower is None
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [], // No ranged weapons
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            return !errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+          }
+        ),
+        testConfig
+      );
+    });
+  });
+
+  describe('Property 1: Refactoring preserves validation behavior', () => {
+    // **Feature: code-refactoring, Property 1: Refactoring preserves validation behavior**
+    // **Validates: Requirements 1.4**
+    
+    it('should consistently validate warband name across all inputs', () => {
+      fc.assert(
+        fc.property(
+          fc.oneof(
+            fc.constant(''),
+            fc.constant('   '),
+            fc.constant('\t\n'),
+            fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)
+          ),
+          fc.option(warbandAbilityGen, { nil: null }),
+          fc.constantFrom(75 as const, 125 as const),
+          (name, ability, pointLimit) => {
+            const warband: Warband = {
+              id: 'test-id',
+              name,
+              ability,
+              pointLimit,
+              totalCost: 0,
+              weirdos: [],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const result = validationService.validateWarband(warband);
+            const hasNameError = result.errors.some(e => e.code === 'WARBAND_NAME_REQUIRED');
+            const isEmptyName = !name || name.trim().length === 0;
+            
+            // Validation behavior: empty names should produce error, non-empty should not
+            return hasNameError === isEmptyName;
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should consistently validate attribute completeness using iteration', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          fc.oneof(
+            fc.constant(null),
+            fc.record({
+              speed: fc.option(speedLevelGen, { nil: null }),
+              defense: fc.option(diceLevelGen, { nil: null }),
+              firepower: fc.option(firepowerLevelGen, { nil: null }),
+              prowess: fc.option(diceLevelGen, { nil: null }),
+              willpower: fc.option(diceLevelGen, { nil: null })
+            })
+          ),
+          (name, ability, attributes) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: attributes as any,
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [],
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            const hasAttributeError = errors.some(e => e.code === 'ATTRIBUTES_INCOMPLETE');
+            
+            // Check if attributes are complete
+            const isComplete = attributes !== null && 
+              attributes.speed !== null && attributes.speed !== undefined &&
+              attributes.defense !== null && attributes.defense !== undefined &&
+              attributes.firepower !== null && attributes.firepower !== undefined &&
+              attributes.prowess !== null && attributes.prowess !== undefined &&
+              attributes.willpower !== null && attributes.willpower !== undefined;
+            
+            // Validation behavior: incomplete attributes should produce error
+            return hasAttributeError === !isComplete;
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should consistently validate conditional requirements (ranged weapon/firepower)', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          firepowerLevelGen,
+          fc.boolean(),
+          (name, ability, firepower, hasRangedWeapon) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower,
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: hasRangedWeapon ? [{
+                id: 'weapon-2',
+                name: 'Pistol',
+                type: 'ranged',
+                baseCost: 1,
+                maxActions: 2,
+                notes: ''
+              }] : [],
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            const hasRangedWeaponError = errors.some(e => e.code === 'RANGED_WEAPON_REQUIRED');
+            const hasFirepowerError = errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
+            
+            // Validation behavior rules:
+            // 1. If firepower is 2d8 or 2d10, ranged weapon is required
+            const requiresRangedWeapon = (firepower === '2d8' || firepower === '2d10') && !hasRangedWeapon;
+            // 2. If has ranged weapon, firepower cannot be None
+            const requiresFirepower = hasRangedWeapon && firepower === 'None';
+            
+            return hasRangedWeaponError === requiresRangedWeapon && 
+                   hasFirepowerError === requiresFirepower;
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should consistently validate equipment limits based on type and ability', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          fc.constantFrom<'leader' | 'trooper'>('leader', 'trooper'),
+          warbandAbilityGen,
+          fc.array(equipmentGen, { minLength: 0, maxLength: 5 }),
+          (name, type, ability, equipment) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type,
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None',
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [],
+              equipment,
+              psychicPowers: [],
+              leaderTrait: type === 'leader' ? null : null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            const hasEquipmentError = errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
+            
+            // Calculate expected limit based on type and ability
+            const maxEquipment = type === 'leader'
+              ? (ability === 'Cyborgs' ? 3 : 2)
+              : (ability === 'Cyborgs' ? 2 : 1);
+            
+            const exceedsLimit = equipment.length > maxEquipment;
+            
+            // Validation behavior: exceeding limit should produce error
+            return hasEquipmentError === exceedsLimit;
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should consistently validate array requirements (close combat weapon)', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          warbandAbilityGen,
+          fc.array(closeCombatWeaponGen, { minLength: 0, maxLength: 3 }),
+          (name, ability, weapons) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'leader',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None',
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: weapons,
+              rangedWeapons: [],
+              equipment: [],
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const errors = validationService.validateWeirdo(weirdo, warband);
+            const hasWeaponError = errors.some(e => e.code === 'CLOSE_COMBAT_WEAPON_REQUIRED');
+            
+            // Validation behavior: empty weapon array should produce error
+            return hasWeaponError === (weapons.length === 0);
           }
         ),
         testConfig

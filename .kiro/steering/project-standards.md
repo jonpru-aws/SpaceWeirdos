@@ -108,3 +108,229 @@ Tasks should:
 - Reference specific requirements
 - Include property-based tests alongside implementation
 - Focus only on coding activities (no deployment, user testing, etc.)
+
+## Task Granularity and Structure
+
+Proper task granularity is essential for token-efficient execution and successful task completion. Follow these guidelines when creating or reviewing task lists.
+
+### Optimal Task Size
+
+Each task should be scoped to minimize token consumption while maintaining clear progress:
+
+- **Maximum 3-4 file modifications per task**
+- **Target 10,000-20,000 tokens per task execution**
+- **Single, focused objective per task**
+- **Estimated completion time: 15-30 minutes**
+
+Tasks that exceed these limits should be broken into smaller sub-tasks.
+
+### Task Structure Patterns
+
+Use a clear hierarchy with implementation and testing separated:
+
+**Well-Structured Pattern:**
+```markdown
+- [ ] 1. Implement feature X
+- [ ] 1.1 Create core interface/type definitions
+  - Define TypeScript interfaces
+  - _Requirements: 2.1_
+- [ ] 1.2 Implement main business logic
+  - Write core functions
+  - _Requirements: 2.2, 2.3_
+- [ ]* 1.3 Write unit tests
+  - Test core functionality
+  - _Requirements: 2.1, 2.2, 2.3_
+- [ ]* 1.4 Write property-based tests
+  - **Property 1: Round trip consistency**
+  - **Validates: Requirements 2.4**
+```
+
+**Key Pattern Elements:**
+- Top-level task describes the feature/component
+- Sub-tasks break down implementation steps
+- Testing tasks are marked optional with `*` suffix
+- Each task references specific requirements
+- Property tests explicitly reference design properties
+
+### Implementation/Testing Separation
+
+Always separate implementation from testing into distinct sub-tasks:
+
+**Implementation Sub-tasks:**
+- Creating interfaces and types
+- Writing business logic
+- Implementing UI components
+- Setting up data structures
+
+**Testing Sub-tasks (marked optional with `*`):**
+- Unit tests for specific examples
+- Property-based tests for universal properties
+- Integration tests for component interaction
+
+This separation allows:
+- Focused implementation without test overhead
+- Flexibility to skip tests when needed
+- Clear progress tracking
+- Token-efficient execution
+
+### When to Break Tasks into Smaller Sub-tasks
+
+Break a task down if it meets any of these criteria:
+
+**File Modification Count:**
+- Task requires modifying more than 4 files
+- Task creates more than 3 new files
+- Task touches multiple unrelated components
+
+**Complexity Indicators:**
+- Task description contains "and" multiple times
+- Task involves multiple distinct algorithms or patterns
+- Task requires understanding multiple existing components
+- Estimated token usage exceeds 25,000
+
+**Scope Indicators:**
+- Task combines multiple user stories
+- Task addresses more than 3 acceptance criteria
+- Task description is longer than 2-3 sentences
+- Task has more than 5 bullet points of details
+
+**Example of Breaking Down a Large Task:**
+
+❌ **Poorly-Structured (Too Large):**
+```markdown
+- [ ] 1. Implement user authentication system
+  - Create User model with validation
+  - Implement password hashing
+  - Create authentication service
+  - Add login/logout endpoints
+  - Create JWT token management
+  - Add authentication middleware
+  - Create login UI component
+  - Create registration UI component
+  - Write all tests
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 3.1, 3.2_
+```
+
+✅ **Well-Structured (Properly Broken Down):**
+```markdown
+- [ ] 1. Implement user data model and validation
+- [ ] 1.1 Create User interface and types
+  - Define User type with required fields
+  - _Requirements: 1.1_
+- [ ] 1.2 Implement password hashing utilities
+  - Create hash and verify functions
+  - _Requirements: 1.2_
+- [ ]* 1.3 Write unit tests for User model
+  - Test validation rules
+  - _Requirements: 1.1, 1.2_
+
+- [ ] 2. Implement authentication service
+- [ ] 2.1 Create authentication service class
+  - Implement login/logout methods
+  - _Requirements: 1.3, 1.4_
+- [ ] 2.2 Implement JWT token management
+  - Create token generation and verification
+  - _Requirements: 1.5_
+- [ ]* 2.3 Write property-based tests for auth service
+  - **Property 1: Token round trip consistency**
+  - **Validates: Requirements 1.5**
+
+- [ ] 3. Implement authentication API endpoints
+- [ ] 3.1 Create login and logout routes
+  - Add Express routes with handlers
+  - _Requirements: 2.1, 2.2_
+- [ ] 3.2 Add authentication middleware
+  - Implement JWT verification middleware
+  - _Requirements: 2.2_
+- [ ]* 3.3 Write integration tests for auth endpoints
+  - Test login/logout flows
+  - _Requirements: 2.1, 2.2_
+
+- [ ] 4. Implement authentication UI components
+- [ ] 4.1 Create login form component
+  - Build React component with form handling
+  - _Requirements: 3.1_
+- [ ] 4.2 Create registration form component
+  - Build React component with validation
+  - _Requirements: 3.2_
+- [ ]* 4.3 Write component tests
+  - Test form submission and validation
+  - _Requirements: 3.1, 3.2_
+```
+
+### Additional Examples
+
+**Example: Simple Feature (Good Size)**
+```markdown
+- [ ] 1. Add cost calculation for equipment
+- [ ] 1.1 Extend CostEngine with equipment cost method
+  - Add calculateEquipmentCost function
+  - _Requirements: 4.1_
+- [ ] 1.2 Update total cost calculation to include equipment
+  - Modify calculateTotalCost to sum equipment costs
+  - _Requirements: 4.2_
+- [ ]* 1.3 Write property-based test for equipment costs
+  - **Property 3: Equipment cost is always non-negative**
+  - **Validates: Requirements 4.1**
+```
+
+**Example: Refactoring Task (Good Size)**
+```markdown
+- [ ] 1. Extract validation logic into ValidationService
+- [ ] 1.1 Create ValidationService class
+  - Move validation methods from WarbandService
+  - _Requirements: 5.1_
+- [ ] 1.2 Update WarbandService to use ValidationService
+  - Replace inline validation with service calls
+  - _Requirements: 5.2_
+- [ ]* 1.3 Verify existing tests still pass
+  - Run validation and warband service tests
+  - _Requirements: 5.1, 5.2_
+```
+
+### Token-Efficient Execution Practices
+
+When executing tasks, follow token-efficient practices (see `efficient-testing.md` for details):
+
+- **Run targeted tests only**: Test only files modified in the current task
+- **Use minimal test reporters**: Add `--reporter=dot --silent` to test commands
+- **Limit verification attempts**: Maximum 2 test runs per task
+- **Strategic file reading**: Use grep/search before reading entire files
+- **Summarize test results**: Report "X/Y passing" format with failures only
+
+These practices reduce token consumption by 60-80% during typical task execution.
+
+### Task Review Checklist
+
+Before finalizing a task list, verify:
+
+- [ ] No single task modifies more than 4 files
+- [ ] Implementation and testing are separated into distinct sub-tasks
+- [ ] Each task has a clear, single-purpose objective
+- [ ] Testing sub-tasks are marked optional with `*`
+- [ ] Each task references specific requirements
+- [ ] Property-based test tasks reference design properties
+- [ ] Complex tasks are broken into focused sub-tasks
+- [ ] Task descriptions are concise (2-3 sentences maximum)
+
+### Final Task: Cleanup
+
+The final task in every `tasks.md` file should include cleanup of temporary build artifacts:
+
+```markdown
+- [ ] X. Final cleanup and verification
+- [ ] X.1 Clean up temporary build artifacts
+  - Remove `*.timestamp-*.mjs` files from workspace root
+  - Verify all tests pass
+- [ ] X.2 Verify feature completeness
+  - Confirm all acceptance criteria are met
+  - Review implementation against design document
+```
+
+**Common temporary artifacts to clean:**
+- Vitest timestamp files: `vitest.config.ts.timestamp-*.mjs`
+- Build cache files
+- Temporary test output files
+- Any `.tmp` or `.cache` files created during development
+
+These files should not be committed to version control and can cause TypeScript compilation errors if left in the workspace.

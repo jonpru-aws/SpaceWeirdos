@@ -1,0 +1,48 @@
+.validation-error-display {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.error-item {
+  padding: 0.25rem 0;
+  color: #c33;
+  font-size: 0.9rem;
+}
+
+.error-item::before {
+  content: '✗ ';
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.error-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.error-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.error-field-name {
+  font-weight: bold;
+  color: #a22;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.error-group .error-list {
+  padding-left: 1rem;
+}

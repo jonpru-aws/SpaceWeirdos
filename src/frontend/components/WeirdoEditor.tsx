@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Weirdo,
   WarbandAbility,
@@ -13,6 +13,15 @@ import {
   FirepowerLevel
 } from '../../backend/models/types';
 import { apiClient } from '../services/apiClient';
+import { useGameData } from '../contexts/GameDataContext';
+import { WeirdoBasicInfo } from './WeirdoBasicInfo';
+import { WeirdoCostDisplay } from './WeirdoCostDisplay';
+import { AttributeSelector } from './AttributeSelector';
+import { WeaponSelector } from './WeaponSelector';
+import { EquipmentSelector } from './EquipmentSelector';
+import { PsychicPowerSelector } from './PsychicPowerSelector';
+import { LeaderTraitSelector } from './LeaderTraitSelector';
+import { ValidationErrorDisplay } from './common/ValidationErrorDisplay';
 import './WeirdoEditor.css';
 
 /**
@@ -20,91 +29,76 @@ import './WeirdoEditor.css';
  * 
  * Handles creation and editing of individual weirdos (leader or trooper).
  * Provides real-time cost calculations and validation.
+ * Refactored into sub-components for better maintainability.
  * 
- * Requirements: 2.1, 2.2, 3.1, 3.2, 3.3, 4.1, 4.2, 4.4, 5.1, 6.1, 6.2, 6.3, 7.1-7.7, 9.4, 15.1, 15.2, 15.3, 15.4
+ * Requirements: 2.1, 2.2, 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 5.1, 6.1, 6.2, 6.3, 7.1-7.7, 9.4, 15.1, 15.2, 15.3, 15.4
  */
 
 interface WeirdoEditorProps {
   weirdo: Weirdo;
-  warbandAbility: WarbandAbility;
+  warbandAbility: WarbandAbility | null;
   onChange: (weirdo: Weirdo) => void;
   onClose?: () => void;
+  allWeirdos?: Weirdo[]; // All weirdos in the warband for validation
 }
 
-// Load game data
-const SPEED_LEVELS: SpeedLevel[] = [1, 2, 3];
-const DICE_LEVELS: DiceLevel[] = ['2d6', '2d8', '2d10'];
-const FIREPOWER_LEVELS: FirepowerLevel[] = ['None', '2d8', '2d10'];
-const LEADER_TRAITS: LeaderTrait[] = [
-  'Bounty Hunter',
-  'Healer',
-  'Majestic',
-  'Monstrous',
-  'Political Officer',
-  'Sorcerer',
-  'Tactician'
-];
-
-export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: WeirdoEditorProps) {
+export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose, allWeirdos = [] }: WeirdoEditorProps) {
   const [localWeirdo, setLocalWeirdo] = useState<Weirdo>(weirdo);
   const [pointCost, setPointCost] = useState<number>(weirdo.totalCost);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [availableCloseCombatWeapons, setAvailableCloseCombatWeapons] = useState<Weapon[]>([]);
-  const [availableRangedWeapons, setAvailableRangedWeapons] = useState<Weapon[]>([]);
-  const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([]);
-  const [availablePsychicPowers, setAvailablePsychicPowers] = useState<PsychicPower[]>([]);
-  const [leaderTraitDescriptions, setLeaderTraitDescriptions] = useState<Record<string, string>>({});
+  
+  // Use GameDataContext instead of loading data locally
+  const { data: gameData, loading: gameDataLoading, error: gameDataError } = useGameData();
+  
+  // Extract game data from context (memoized)
+  // Requirements: 9.1 - useMemo for expensive calculations
+  const availableCloseCombatWeapons = useMemo(() => gameData?.closeCombatWeapons || [], [gameData?.closeCombatWeapons]);
+  const availableRangedWeapons = useMemo(() => gameData?.rangedWeapons || [], [gameData?.rangedWeapons]);
+  const availableEquipment = useMemo(() => gameData?.equipment || [], [gameData?.equipment]);
+  const availablePsychicPowers = useMemo(() => gameData?.psychicPowers || [], [gameData?.psychicPowers]);
+  
+  // Build leader trait descriptions map from context data (memoized)
+  // Requirements: 9.1 - useMemo for expensive calculations
+  const leaderTraitDescriptions = useMemo(() => {
+    const descriptions: Record<string, string> = {};
+    if (gameData?.leaderTraits) {
+      gameData.leaderTraits.forEach((trait) => {
+        descriptions[trait.name] = trait.description;
+      });
+    }
+    return descriptions;
+  }, [gameData?.leaderTraits]);
 
   /**
-   * Load game data on mount
-   */
-  useEffect(() => {
-    const loadGameData = async () => {
-      try {
-        const [ccWeapons, rWeapons, equipment, powers, traits] = await Promise.all([
-          fetch('/data/closeCombatWeapons.json').then(r => r.json()),
-          fetch('/data/rangedWeapons.json').then(r => r.json()),
-          fetch('/data/equipment.json').then(r => r.json()),
-          fetch('/data/psychicPowers.json').then(r => r.json()),
-          fetch('/data/leaderTraits.json').then(r => r.json())
-        ]);
-
-        setAvailableCloseCombatWeapons(ccWeapons);
-        setAvailableRangedWeapons(rWeapons);
-        setAvailableEquipment(equipment);
-        setAvailablePsychicPowers(powers);
-
-        // Build leader trait descriptions map
-        const traitMap: Record<string, string> = {};
-        traits.forEach((trait: any) => {
-          traitMap[trait.name] = trait.description;
-        });
-        setLeaderTraitDescriptions(traitMap);
-      } catch (error) {
-        console.error('Failed to load game data:', error);
-      }
-    };
-
-    loadGameData();
-  }, []);
-
-  /**
-   * Sync local weirdo with prop changes
+   * Sync local weirdo with prop changes and recalculate cost if needed
    */
   useEffect(() => {
     setLocalWeirdo(weirdo);
     setPointCost(weirdo.totalCost);
+    
+    // If cost is 0 and weirdo has attributes, recalculate
+    if (weirdo.totalCost === 0 && weirdo.attributes) {
+      recalculateCost(weirdo);
+    }
   }, [weirdo]);
 
   /**
    * Recalculate cost when weirdo changes
-   * Requirements: 15.1, 15.2
+   * Requirements: 15.1, 15.2, 9.2 - useCallback for callbacks
    */
-  const recalculateCost = async (updatedWeirdo: Weirdo) => {
+  const recalculateCost = useCallback(async (updatedWeirdo: Weirdo) => {
     try {
+      console.log('Recalculating cost for weirdo:', {
+        id: updatedWeirdo.id,
+        name: updatedWeirdo.name,
+        type: updatedWeirdo.type,
+        hasAttributes: !!updatedWeirdo.attributes,
+        warbandAbility
+      });
+
       const result = await apiClient.calculateCost({
         weirdo: updatedWeirdo,
-        warbandAbility
+        warbandAbility: warbandAbility || undefined
       });
       setPointCost(result.cost);
       
@@ -113,19 +107,36 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
       setLocalWeirdo(weirdoWithCost);
       onChange(weirdoWithCost);
 
-      // Validate weirdo
-      const validation = await apiClient.validate({ weirdo: weirdoWithCost });
-      setValidationErrors(validation.errors);
+      // Validate the weirdo
+      // Requirements: 2.1, 2.2, 2.3 - Display validation errors
+      try {
+        const validationResult = await apiClient.validate({
+          weirdo: weirdoWithCost
+        });
+        
+        if (!validationResult.valid && validationResult.errors) {
+          setValidationErrors(validationResult.errors);
+        } else {
+          setValidationErrors([]);
+        }
+      } catch (validationError) {
+        console.error('Failed to validate weirdo:', validationError);
+        // Don't block the UI if validation fails
+        setValidationErrors([]);
+      }
     } catch (error) {
       console.error('Failed to recalculate cost:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     }
-  };
+  }, [warbandAbility, onChange]);
 
   /**
    * Handle attribute change
-   * Requirements: 2.1, 2.2, 7.2, 15.1
+   * Requirements: 2.1, 2.2, 7.2, 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleAttributeChange = (attribute: keyof Attributes, level: SpeedLevel | DiceLevel | FirepowerLevel) => {
+  const handleAttributeChange = useCallback((attribute: keyof Attributes, level: SpeedLevel | DiceLevel | FirepowerLevel) => {
     const updatedWeirdo = {
       ...localWeirdo,
       attributes: {
@@ -134,13 +145,13 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
       }
     };
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
 
   /**
    * Handle adding a weapon
-   * Requirements: 3.1, 3.2, 3.3, 7.3, 7.4, 15.1
+   * Requirements: 3.1, 3.2, 3.3, 7.3, 7.4, 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleAddWeapon = (weapon: Weapon, weaponType: 'close' | 'ranged') => {
+  const handleAddWeapon = useCallback((weapon: Weapon, weaponType: 'close' | 'ranged') => {
     const updatedWeirdo = { ...localWeirdo };
     
     if (weaponType === 'close') {
@@ -150,13 +161,13 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     }
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
 
   /**
    * Handle removing a weapon
-   * Requirements: 15.1
+   * Requirements: 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleRemoveWeapon = (weaponId: string, weaponType: 'close' | 'ranged') => {
+  const handleRemoveWeapon = useCallback((weaponId: string, weaponType: 'close' | 'ranged') => {
     const updatedWeirdo = { ...localWeirdo };
     
     if (weaponType === 'close') {
@@ -166,15 +177,26 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     }
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
+
+  /**
+   * Get maximum equipment allowed (memoized)
+   * Requirements: 4.1, 4.2, 4.4, 7.5, 7.6, 9.1 - useMemo for expensive calculations
+   */
+  const maxEquipment = useMemo((): number => {
+    if (localWeirdo.type === 'leader') {
+      return warbandAbility === 'Cyborgs' ? 3 : 2;
+    } else {
+      return warbandAbility === 'Cyborgs' ? 2 : 1;
+    }
+  }, [localWeirdo.type, warbandAbility]);
 
   /**
    * Handle adding equipment
-   * Requirements: 4.1, 4.2, 4.4, 7.5, 7.6, 15.1
+   * Requirements: 4.1, 4.2, 4.4, 7.5, 7.6, 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleAddEquipment = (equipment: Equipment) => {
+  const handleAddEquipment = useCallback((equipment: Equipment) => {
     // Check equipment limit
-    const maxEquipment = getMaxEquipment();
     if (localWeirdo.equipment.length >= maxEquipment) {
       return; // Silently reject if at limit
     }
@@ -185,52 +207,52 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     };
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, maxEquipment, recalculateCost]);
 
   /**
    * Handle removing equipment
-   * Requirements: 15.1
+   * Requirements: 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleRemoveEquipment = (equipmentId: string) => {
+  const handleRemoveEquipment = useCallback((equipmentId: string) => {
     const updatedWeirdo = {
       ...localWeirdo,
       equipment: localWeirdo.equipment.filter(e => e.id !== equipmentId)
     };
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
 
   /**
    * Handle adding psychic power
-   * Requirements: 5.1, 5.2, 5.3, 7.7, 15.1
+   * Requirements: 5.1, 5.2, 5.3, 7.7, 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleAddPsychicPower = (power: PsychicPower) => {
+  const handleAddPsychicPower = useCallback((power: PsychicPower) => {
     const updatedWeirdo = {
       ...localWeirdo,
       psychicPowers: [...localWeirdo.psychicPowers, power]
     };
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
 
   /**
    * Handle removing psychic power
-   * Requirements: 15.1
+   * Requirements: 15.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleRemovePsychicPower = (powerId: string) => {
+  const handleRemovePsychicPower = useCallback((powerId: string) => {
     const updatedWeirdo = {
       ...localWeirdo,
       psychicPowers: localWeirdo.psychicPowers.filter(p => p.id !== powerId)
     };
     
     recalculateCost(updatedWeirdo);
-  };
+  }, [localWeirdo, recalculateCost]);
 
   /**
    * Handle leader trait change
-   * Requirements: 6.1, 6.2, 6.3
+   * Requirements: 6.1, 6.2, 6.3, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleLeaderTraitChange = (trait: LeaderTrait | null) => {
+  const handleLeaderTraitChange = useCallback((trait: LeaderTrait | null) => {
     if (localWeirdo.type !== 'leader') {
       return; // Only leaders can have traits
     }
@@ -242,13 +264,13 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     
     setLocalWeirdo(updatedWeirdo);
     onChange(updatedWeirdo);
-  };
+  }, [localWeirdo, onChange]);
 
   /**
    * Handle name change
-   * Requirements: 2.1, 7.1
+   * Requirements: 2.1, 7.1, 9.2 - useCallback for callbacks passed to child components
    */
-  const handleNameChange = (name: string) => {
+  const handleNameChange = useCallback((name: string) => {
     const updatedWeirdo = {
       ...localWeirdo,
       name
@@ -256,12 +278,13 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     
     setLocalWeirdo(updatedWeirdo);
     onChange(updatedWeirdo);
-  };
+  }, [localWeirdo, onChange]);
 
   /**
    * Handle notes change
+   * Requirements: 9.2 - useCallback for callbacks passed to child components
    */
-  const handleNotesChange = (notes: string) => {
+  const handleNotesChange = useCallback((notes: string) => {
     const updatedWeirdo = {
       ...localWeirdo,
       notes
@@ -269,42 +292,71 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
     
     setLocalWeirdo(updatedWeirdo);
     onChange(updatedWeirdo);
-  };
+  }, [localWeirdo, onChange]);
 
   /**
-   * Get maximum equipment allowed
-   * Requirements: 4.1, 4.2, 4.4, 7.5, 7.6
+   * Check if weirdo is approaching point limit (memoized)
+   * Requirements: 15.4, 9.1, 14.1 - useMemo for expensive calculations
    */
-  const getMaxEquipment = (): number => {
-    if (localWeirdo.type === 'leader') {
-      return warbandAbility === 'Cyborgs' ? 3 : 2;
-    } else {
-      return warbandAbility === 'Cyborgs' ? 2 : 1;
+  const isApproachingLimit = useMemo((): boolean => {
+    // Requirements: 14.1 - Display "Approaching limit" for 18-20 points
+    return pointCost >= 18 && pointCost <= 20;
+  }, [pointCost]);
+
+  /**
+   * Check if another weirdo in the warband is already in the 21-25 point range (memoized)
+   * Requirements: 9.2, 9.3, 9.1 - useMemo for expensive calculations
+   */
+  const hasOther21To25Weirdo = useMemo((): boolean => {
+    if (!allWeirdos || allWeirdos.length === 0) return false;
+    return allWeirdos.some(w => {
+      if (w.id === localWeirdo.id) return false; // Don't count current weirdo
+      return w.totalCost >= 21 && w.totalCost <= 25;
+    });
+  }, [allWeirdos, localWeirdo.id]);
+
+  /**
+   * Check if weirdo exceeds point limit (memoized)
+   * Requirements: 9.4, 9.2, 9.3, 9.1, 3.2 - useMemo for expensive calculations
+   */
+  const exceedsLimit = useMemo((): boolean => {
+    // Requirements: 3.2 - Display "Exceeds 20 point limit" for cost > 20
+    // If there's already another weirdo in 21-25 range, this one must be <= 20
+    if (hasOther21To25Weirdo && pointCost > 20) {
+      return true;
     }
-  };
+    
+    // Standard limit for troopers is 20 points (can go up to 25 if no other 21-25 weirdo)
+    return pointCost > 20;
+  }, [hasOther21To25Weirdo, pointCost]);
+  
+  // Use memoized validation states
+  const approaching = isApproachingLimit;
+  const exceeds = exceedsLimit;
+  const hasOther21To25 = hasOther21To25Weirdo;
 
-  /**
-   * Check if weirdo is approaching point limit
-   * Requirements: 15.4
-   */
-  const isApproachingLimit = (): boolean => {
-    const limit = localWeirdo.type === 'trooper' ? 20 : 25;
-    const threshold = limit * 0.9; // 90% threshold
-    return pointCost >= threshold && pointCost <= limit;
-  };
+  // Show loading state while game data is loading
+  if (gameDataLoading) {
+    return (
+      <div className="weirdo-editor">
+        <div className="loading" role="status" aria-live="polite">
+          <div className="spinner" aria-hidden="true"></div>
+          <span>Loading game data...</span>
+        </div>
+      </div>
+    );
+  }
 
-  /**
-   * Check if weirdo exceeds point limit
-   * Requirements: 9.4
-   */
-  const exceedsLimit = (): boolean => {
-    const limit = localWeirdo.type === 'trooper' ? 20 : 25;
-    return pointCost > limit;
-  };
-
-  const maxEquipment = getMaxEquipment();
-  const approaching = isApproachingLimit();
-  const exceeds = exceedsLimit();
+  // Show error state if game data failed to load
+  if (gameDataError) {
+    return (
+      <div className="weirdo-editor">
+        <div className="error" role="alert" aria-live="assertive">
+          Failed to load game data: {gameDataError.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="weirdo-editor">
@@ -320,333 +372,60 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
         )}
       </div>
 
-      <div className="cost-display">
-        <div className="cost-label">Point Cost:</div>
-        <div className={`cost-value ${approaching ? 'warning' : ''} ${exceeds ? 'error' : ''}`}>
-          {pointCost} pts
-        </div>
-        {approaching && !exceeds && (
-          <div className="cost-warning">⚠ Approaching limit</div>
-        )}
-        {exceeds && (
-          <div className="cost-error">✗ Exceeds {localWeirdo.type === 'trooper' ? '20' : '25'} point limit!</div>
-        )}
-      </div>
+      <WeirdoCostDisplay
+        pointCost={pointCost}
+        weirdoType={localWeirdo.type}
+        hasOther21To25={hasOther21To25}
+        isApproaching={approaching}
+        exceedsLimit={exceeds}
+      />
 
-      {/* Name */}
-      <div className="form-section">
-        <h3>Basic Info</h3>
-        <div className="form-group">
-          <label htmlFor="weirdo-name">
-            Name <span className="required">*</span>
-          </label>
-          <input
-            id="weirdo-name"
-            type="text"
-            value={localWeirdo.name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Enter weirdo name"
-            className={validationErrors.some(e => e.field === 'name') ? 'error' : ''}
-          />
-        </div>
-      </div>
+      <WeirdoBasicInfo
+        name={localWeirdo.name}
+        type={localWeirdo.type}
+        onNameChange={handleNameChange}
+        validationErrors={validationErrors}
+      />
 
-      {/* Attributes */}
-      <div className="form-section">
-        <h3>Attributes</h3>
-        
-        <div className="form-group">
-          <label htmlFor="attr-speed">Speed</label>
-          <select
-            id="attr-speed"
-            value={localWeirdo.attributes.speed}
-            onChange={(e) => handleAttributeChange('speed', Number(e.target.value) as SpeedLevel)}
-          >
-            {SPEED_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
+      <AttributeSelector
+        attributes={localWeirdo.attributes}
+        warbandAbility={warbandAbility}
+        onAttributeChange={handleAttributeChange}
+      />
 
-        <div className="form-group">
-          <label htmlFor="attr-defense">Defense</label>
-          <select
-            id="attr-defense"
-            value={localWeirdo.attributes.defense}
-            onChange={(e) => handleAttributeChange('defense', e.target.value as DiceLevel)}
-          >
-            {DICE_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
+      <WeaponSelector
+        closeCombatWeapons={localWeirdo.closeCombatWeapons}
+        rangedWeapons={localWeirdo.rangedWeapons}
+        availableCloseCombatWeapons={availableCloseCombatWeapons}
+        availableRangedWeapons={availableRangedWeapons}
+        firepower={localWeirdo.attributes.firepower}
+        warbandAbility={warbandAbility}
+        onAddWeapon={handleAddWeapon}
+        onRemoveWeapon={handleRemoveWeapon}
+      />
 
-        <div className="form-group">
-          <label htmlFor="attr-firepower">Firepower</label>
-          <select
-            id="attr-firepower"
-            value={localWeirdo.attributes.firepower}
-            onChange={(e) => handleAttributeChange('firepower', e.target.value as FirepowerLevel)}
-          >
-            {FIREPOWER_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
+      <EquipmentSelector
+        equipment={localWeirdo.equipment}
+        availableEquipment={availableEquipment}
+        maxEquipment={maxEquipment}
+        warbandAbility={warbandAbility}
+        onAddEquipment={handleAddEquipment}
+        onRemoveEquipment={handleRemoveEquipment}
+      />
 
-        <div className="form-group">
-          <label htmlFor="attr-prowess">Prowess</label>
-          <select
-            id="attr-prowess"
-            value={localWeirdo.attributes.prowess}
-            onChange={(e) => handleAttributeChange('prowess', e.target.value as DiceLevel)}
-          >
-            {DICE_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
+      <PsychicPowerSelector
+        psychicPowers={localWeirdo.psychicPowers}
+        availablePsychicPowers={availablePsychicPowers}
+        onAddPsychicPower={handleAddPsychicPower}
+        onRemovePsychicPower={handleRemovePsychicPower}
+      />
 
-        <div className="form-group">
-          <label htmlFor="attr-willpower">Willpower</label>
-          <select
-            id="attr-willpower"
-            value={localWeirdo.attributes.willpower}
-            onChange={(e) => handleAttributeChange('willpower', e.target.value as DiceLevel)}
-          >
-            {DICE_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Close Combat Weapons */}
-      <div className="form-section">
-        <h3>Close Combat Weapons</h3>
-        
-        {localWeirdo.closeCombatWeapons.length > 0 ? (
-          <ul className="item-list">
-            {localWeirdo.closeCombatWeapons.map((weapon, index) => (
-              <li key={`${weapon.id}-${index}`} className="item">
-                <span className="item-name">{weapon.name}</span>
-                <span className="item-cost">{weapon.baseCost} pts</span>
-                <button
-                  onClick={() => handleRemoveWeapon(weapon.id, 'close')}
-                  className="remove-item-button"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No close combat weapons selected</p>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="add-cc-weapon">Add Weapon</label>
-          <select
-            id="add-cc-weapon"
-            onChange={(e) => {
-              const weapon = availableCloseCombatWeapons.find(w => w.id === e.target.value);
-              if (weapon) {
-                handleAddWeapon(weapon, 'close');
-                e.target.value = '';
-              }
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>Select a weapon...</option>
-            {availableCloseCombatWeapons.map(weapon => (
-              <option key={weapon.id} value={weapon.id}>
-                {weapon.name} ({weapon.baseCost} pts)
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Ranged Weapons */}
-      <div className="form-section">
-        <h3>Ranged Weapons</h3>
-        
-        {localWeirdo.rangedWeapons.length > 0 ? (
-          <ul className="item-list">
-            {localWeirdo.rangedWeapons.map((weapon, index) => (
-              <li key={`${weapon.id}-${index}`} className="item">
-                <span className="item-name">{weapon.name}</span>
-                <span className="item-cost">{weapon.baseCost} pts</span>
-                <button
-                  onClick={() => handleRemoveWeapon(weapon.id, 'ranged')}
-                  className="remove-item-button"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No ranged weapons selected</p>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="add-ranged-weapon">Add Weapon</label>
-          <select
-            id="add-ranged-weapon"
-            onChange={(e) => {
-              const weapon = availableRangedWeapons.find(w => w.id === e.target.value);
-              if (weapon) {
-                handleAddWeapon(weapon, 'ranged');
-                e.target.value = '';
-              }
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>Select a weapon...</option>
-            {availableRangedWeapons.map(weapon => (
-              <option key={weapon.id} value={weapon.id}>
-                {weapon.name} ({weapon.baseCost} pts)
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Equipment */}
-      <div className="form-section">
-        <h3>Equipment (Max: {maxEquipment})</h3>
-        
-        {localWeirdo.equipment.length > 0 ? (
-          <ul className="item-list">
-            {localWeirdo.equipment.map((equip, index) => (
-              <li key={`${equip.id}-${index}`} className="item">
-                <span className="item-name">{equip.name}</span>
-                <span className="item-cost">{equip.baseCost} pts</span>
-                <button
-                  onClick={() => handleRemoveEquipment(equip.id)}
-                  className="remove-item-button"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No equipment selected</p>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="add-equipment">Add Equipment</label>
-          <select
-            id="add-equipment"
-            onChange={(e) => {
-              const equip = availableEquipment.find(eq => eq.id === e.target.value);
-              if (equip) {
-                handleAddEquipment(equip);
-                e.target.value = '';
-              }
-            }}
-            defaultValue=""
-            disabled={localWeirdo.equipment.length >= maxEquipment}
-          >
-            <option value="" disabled>
-              {localWeirdo.equipment.length >= maxEquipment 
-                ? 'Equipment limit reached' 
-                : 'Select equipment...'}
-            </option>
-            {availableEquipment.map(equip => (
-              <option key={equip.id} value={equip.id}>
-                {equip.name} ({equip.baseCost} pts)
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Psychic Powers */}
-      <div className="form-section">
-        <h3>Psychic Powers</h3>
-        
-        {localWeirdo.psychicPowers.length > 0 ? (
-          <ul className="item-list">
-            {localWeirdo.psychicPowers.map((power, index) => (
-              <li key={`${power.id}-${index}`} className="item">
-                <span className="item-name">{power.name}</span>
-                <span className="item-cost">{power.cost} pts</span>
-                <button
-                  onClick={() => handleRemovePsychicPower(power.id)}
-                  className="remove-item-button"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No psychic powers selected</p>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="add-psychic-power">Add Psychic Power</label>
-          <select
-            id="add-psychic-power"
-            onChange={(e) => {
-              const power = availablePsychicPowers.find(p => p.id === e.target.value);
-              if (power) {
-                handleAddPsychicPower(power);
-                e.target.value = '';
-              }
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>Select a power...</option>
-            {availablePsychicPowers.map(power => (
-              <option key={power.id} value={power.id}>
-                {power.name} ({power.cost} pts)
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Leader Trait (only for leaders) */}
       {localWeirdo.type === 'leader' && (
-        <div className="form-section">
-          <h3>Leader Trait (Optional)</h3>
-          
-          <div className="form-group">
-            <label htmlFor="leader-trait">Trait</label>
-            <select
-              id="leader-trait"
-              value={localWeirdo.leaderTrait || ''}
-              onChange={(e) => handleLeaderTraitChange(e.target.value ? e.target.value as LeaderTrait : null)}
-            >
-              <option value="">None</option>
-              {LEADER_TRAITS.map(trait => (
-                <option key={trait} value={trait}>
-                  {trait}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {localWeirdo.leaderTrait && leaderTraitDescriptions[localWeirdo.leaderTrait] && (
-            <p className="trait-description">
-              {leaderTraitDescriptions[localWeirdo.leaderTrait]}
-            </p>
-          )}
-        </div>
+        <LeaderTraitSelector
+          leaderTrait={localWeirdo.leaderTrait}
+          leaderTraitDescriptions={leaderTraitDescriptions}
+          onLeaderTraitChange={handleLeaderTraitChange}
+        />
       )}
 
       {/* Notes */}
@@ -664,18 +443,12 @@ export function WeirdoEditor({ weirdo, warbandAbility, onChange, onClose }: Weir
         </div>
       </div>
 
-      {/* Validation Errors */}
+      {/* Validation Errors - Requirements: 2.1, 2.2, 2.3, 2.4 */}
       {validationErrors.length > 0 && (
-        <div className="validation-errors">
-          <h3>Validation Errors:</h3>
-          <ul>
-            {validationErrors.map((err, idx) => (
-              <li key={idx}>
-                <strong>{err.field}:</strong> {err.message}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ValidationErrorDisplay 
+          errors={validationErrors}
+          className="weirdo-validation-errors"
+        />
       )}
     </div>
   );

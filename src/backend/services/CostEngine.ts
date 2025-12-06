@@ -11,6 +11,7 @@ import {
   DiceLevel,
   FirepowerLevel
 } from '../models/types';
+import { createCostModifierStrategy } from './CostModifierStrategy';
 
 /**
  * Cost Engine Service
@@ -49,12 +50,18 @@ export class CostEngine {
   };
 
   /**
-   * Calculate the cost of a single attribute with warband ability modifiers
+   * Calculates the point cost of a single attribute with warband ability modifiers applied.
+   * Uses a lookup table for base costs and applies ability-specific discounts via strategy pattern.
+   * 
+   * @param attribute - The attribute type (speed, defense, firepower, prowess, willpower)
+   * @param level - The attribute level (varies by attribute type)
+   * @param warbandAbility - The warband ability that may modify costs (null if none)
+   * @returns The calculated point cost for the attribute
    */
   getAttributeCost(
     attribute: AttributeType,
     level: AttributeLevel,
-    warbandAbility: WarbandAbility
+    warbandAbility: WarbandAbility | null
   ): number {
     let baseCost = 0;
 
@@ -71,67 +78,60 @@ export class CostEngine {
       baseCost = CostEngine.ATTRIBUTE_COSTS.willpower[level as DiceLevel];
     }
 
-    // Apply warband ability modifiers
-    if (warbandAbility === 'Mutants' && attribute === 'speed') {
-      baseCost -= 1;
-    }
-
-    // Clamp at minimum 0
-    return Math.max(0, baseCost);
+    // Apply warband ability modifiers using strategy pattern
+    const strategy = createCostModifierStrategy(warbandAbility);
+    return strategy.applyAttributeDiscount(attribute, level, baseCost);
   }
 
   /**
-   * Calculate the cost of a weapon with warband ability modifiers
+   * Calculates the point cost of a weapon with warband ability modifiers applied.
+   * Uses strategy pattern to apply ability-specific discounts (e.g., Mutants, Heavily Armed).
+   * 
+   * @param weapon - The weapon to calculate cost for
+   * @param warbandAbility - The warband ability that may modify costs (null if none)
+   * @returns The calculated point cost for the weapon (minimum 0)
    */
-  getWeaponCost(weapon: Weapon, warbandAbility: WarbandAbility): number {
-    let cost = weapon.baseCost;
-
-    // Apply Heavily Armed modifier (reduces ranged weapon costs by 1)
-    if (warbandAbility === 'Heavily Armed' && weapon.type === 'ranged') {
-      cost -= 1;
-    }
-
-    // Apply Mutants modifier (reduces specific close combat weapon costs by 1)
-    if (warbandAbility === 'Mutants' && weapon.type === 'close') {
-      const mutantWeapons = ['Claws & Teeth', 'Horrible Claws & Teeth', 'Whip/Tail'];
-      if (mutantWeapons.includes(weapon.name)) {
-        cost -= 1;
-      }
-    }
-
-    // Clamp at minimum 0
-    return Math.max(0, cost);
+  getWeaponCost(weapon: Weapon, warbandAbility: WarbandAbility | null): number {
+    // Apply warband ability modifiers using strategy pattern
+    const strategy = createCostModifierStrategy(warbandAbility);
+    return strategy.applyWeaponDiscount(weapon);
   }
 
   /**
-   * Calculate the cost of equipment with warband ability modifiers
+   * Calculates the point cost of equipment with warband ability modifiers applied.
+   * Uses strategy pattern to apply ability-specific discounts (e.g., Soldiers get free equipment).
+   * 
+   * @param equipment - The equipment to calculate cost for
+   * @param warbandAbility - The warband ability that may modify costs (null if none)
+   * @returns The calculated point cost for the equipment (minimum 0)
    */
-  getEquipmentCost(equipment: Equipment, warbandAbility: WarbandAbility): number {
-    let cost = equipment.baseCost;
-
-    // Apply Soldiers modifier (sets specific equipment costs to 0)
-    if (warbandAbility === 'Soldiers') {
-      const freeEquipment = ['Grenade', 'Heavy Armor', 'Medkit'];
-      if (freeEquipment.includes(equipment.name)) {
-        cost = 0;
-      }
-    }
-
-    // Clamp at minimum 0 (redundant but explicit)
-    return Math.max(0, cost);
+  getEquipmentCost(equipment: Equipment, warbandAbility: WarbandAbility | null): number {
+    // Apply warband ability modifiers using strategy pattern
+    const strategy = createCostModifierStrategy(warbandAbility);
+    return strategy.applyEquipmentDiscount(equipment);
   }
 
   /**
-   * Calculate the cost of a psychic power (no modifiers)
+   * Calculates the point cost of a psychic power.
+   * Psychic powers have fixed costs with no warband ability modifiers.
+   * 
+   * @param power - The psychic power to calculate cost for
+   * @returns The point cost of the psychic power
    */
   getPsychicPowerCost(power: PsychicPower): number {
     return power.cost;
   }
 
   /**
-   * Calculate the total cost of a weirdo
+   * Calculates the total point cost of a weirdo by summing all component costs.
+   * Includes attributes, weapons (close combat and ranged), equipment, and psychic powers.
+   * All costs are calculated with warband ability modifiers applied.
+   * 
+   * @param weirdo - The weirdo to calculate total cost for
+   * @param warbandAbility - The warband ability that may modify costs (null if none)
+   * @returns The total point cost of the weirdo
    */
-  calculateWeirdoCost(weirdo: Weirdo, warbandAbility: WarbandAbility): number {
+  calculateWeirdoCost(weirdo: Weirdo, warbandAbility: WarbandAbility | null): number {
     let totalCost = 0;
 
     // Calculate attribute costs
@@ -163,7 +163,11 @@ export class CostEngine {
   }
 
   /**
-   * Calculate the total cost of a warband
+   * Calculates the total point cost of a warband by summing all weirdo costs.
+   * Uses the warband's ability to calculate each weirdo's cost with appropriate modifiers.
+   * 
+   * @param warband - The warband to calculate total cost for
+   * @returns The total point cost of the warband
    */
   calculateWarbandCost(warband: Warband): number {
     let totalCost = 0;

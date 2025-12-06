@@ -27,6 +27,9 @@ const dataRepository = new DataRepository(
   true
 );
 
+// Serve static data files
+app.use('/data', express.static(path.join(process.cwd(), 'data')));
+
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

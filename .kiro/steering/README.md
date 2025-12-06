@@ -1,3 +1,7 @@
+---
+inclusion: manual
+---
+
 # Steering Files
 
 Steering files provide context and instructions that guide Kiro's behavior in this workspace.

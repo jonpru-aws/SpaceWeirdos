@@ -35,6 +35,8 @@ A complete web application for creating and managing warbands for the Space Weir
 
 TypeScript/React/Express application with property-based testing and spec-driven development.
 
+**For detailed testing documentation, see [TESTING.md](TESTING.md)**
+
 ## Technology Stack
 
 - **Frontend:** React + TypeScript + Vite
@@ -136,21 +138,129 @@ This project was built using spec-driven development methodology with formal cor
 
 See `.kiro/steering/project-standards.md` for detailed coding standards and conventions.
 
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Development process and workflow
+- Code standards and testing requirements
+- Spec-driven development methodology
+- Pull request process
+
+For testing guidelines, see [TESTING.md](TESTING.md).
+
 
 ## Architecture
 
 ### Backend Services
 
-- **WarbandService:** Orchestrates warband CRUD operations
-- **CostEngine:** Calculates point costs with warband ability modifiers
-- **ValidationService:** Enforces all game rules and constraints
+The backend follows a layered service architecture with clear separation of concerns:
+
+- **WarbandService:** Orchestrates warband CRUD operations and coordinates between services
+- **CostEngine:** Calculates point costs using Strategy pattern for warband ability modifiers
+- **ValidationService:** Enforces all game rules and constraints with centralized error messages
 - **DataRepository:** In-memory storage with JSON file persistence
 
-### Frontend Components
+**Design Patterns:**
+- **Strategy Pattern:** `CostModifierStrategy` interface with ability-specific implementations (Mutants, Heavily Armed, Soldiers)
+- **Factory Pattern:** `createCostModifierStrategy()` for creating appropriate cost strategies
+- **Centralized Constants:** All magic numbers extracted to `constants/` directory
 
+### Frontend Architecture
+
+The frontend uses React with Context API for state management and component composition:
+
+**Context Providers:**
+- **GameDataContext:** Centralized game data loading (loads once at startup, shared across all components)
+- **WarbandContext:** Warband state management with update functions (reduces prop drilling)
+
+**Component Structure:**
 - **WarbandList:** Displays all saved warbands with load/delete actions
-- **WarbandEditor:** Manages warband-level properties and weirdo list
-- **WeirdoEditor:** Handles individual weirdo customization
+- **WarbandEditor:** Orchestrates warband editing with sub-components:
+  - `WarbandProperties`: Name, ability, point limit selection
+  - `WarbandCostDisplay`: Cost tracking and warnings
+  - `WeirdosList`: List of weirdos with add/remove actions
+  - `WeirdoCard`: Individual weirdo display card
+- **WeirdoEditor:** Orchestrates weirdo editing with sub-components:
+  - `WeirdoBasicInfo`: Name and type
+  - `WeirdoCostDisplay`: Cost tracking with warnings
+  - `AttributeSelector`: All 5 attributes
+  - `WeaponSelector`: Close combat and ranged weapons
+  - `EquipmentSelector`: Equipment list
+  - `PsychicPowerSelector`: Psychic powers
+  - `LeaderTraitSelector`: Leader trait with description
+
+**Reusable Components:**
+- **SelectWithCost:** Dropdown with cost display and ability modifiers
+- **ItemList:** Generic list with add/remove functionality
+- **ValidationErrorDisplay:** Centralized error message display
+
+**Performance Optimizations:**
+- `useMemo` for expensive calculations (cost calculations, validation checks)
+- `useCallback` for callback functions passed to child components
+- `React.memo` for reusable components
+- Stable keys for list rendering
+
+## Refactoring and Code Quality
+
+This codebase has undergone comprehensive refactoring to improve maintainability, readability, and performance:
+
+### Backend Improvements
+
+**Centralized Constants:**
+- All magic numbers extracted to `src/backend/constants/costs.ts`
+- Validation messages centralized in `src/backend/constants/validationMessages.ts`
+- Type-safe error codes derived from constant keys
+
+**Strategy Pattern for Cost Calculation:**
+- `CostModifierStrategy` interface for warband ability modifiers
+- Separate strategy classes: `MutantsCostStrategy`, `HeavilyArmedCostStrategy`, `SoldiersCostStrategy`
+- Easy to extend with new warband abilities
+
+**Custom Error Classes:**
+- `AppError` base class with error codes and context
+- `ValidationError` for validation failures
+- `NotFoundError` for missing resources
+
+**Reduced Code Duplication:**
+- Generic validator factory functions
+- Attribute validation using iteration
+- Common validation patterns extracted
+
+### Frontend Improvements
+
+**Context API Integration:**
+- `GameDataContext` eliminates prop drilling for game data
+- `WarbandContext` manages warband state centrally
+- Improved component reusability
+
+**Component Composition:**
+- Large components split into focused sub-components
+- Clear prop interfaces and single responsibilities
+- Easier to test and maintain
+
+**Reusable UI Components:**
+- `SelectWithCost` for consistent dropdown styling
+- `ItemList` for generic list rendering
+- `ValidationErrorDisplay` for error messages
+
+**Performance Optimizations:**
+- Strategic use of `useMemo` and `useCallback`
+- Optimized list rendering with stable keys
+- `React.memo` for frequently re-rendered components
+
+### Type Safety
+
+- Strict TypeScript interfaces throughout
+- Discriminated union types for error codes
+- `as const` assertions for type safety
+- Eliminated use of `any` type
+
+### Documentation
+
+- JSDoc comments on all public functions
+- Inline comments for complex logic
+- Design pattern documentation
+- Migration guides for refactored code
 
 ## Changelog
 
