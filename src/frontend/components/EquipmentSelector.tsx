@@ -1,97 +1,131 @@
 import { memo } from 'react';
 import { Equipment, WarbandAbility } from '../../backend/models/types';
-
-interface EquipmentSelectorProps {
-  equipment: Equipment[];
-  availableEquipment: Equipment[];
-  maxEquipment: number;
-  warbandAbility: WarbandAbility | null;
-  onAddEquipment: (equipment: Equipment) => void;
-  onRemoveEquipment: (equipmentId: string) => void;
-}
+import { CostEngine } from '../../backend/services/CostEngine';
 
 /**
  * EquipmentSelector Component
  * 
- * Displays and manages equipment with limit tracking.
- * Memoized for performance optimization.
+ * Multi-select interface for equipment with limit enforcement.
+ * Displays name, cost, and effect for each item.
+ * Shows current count vs limit and disables checkboxes when limit reached.
+ * Shows modified costs when warband abilities apply.
  * 
- * Requirements: 4.1, 4.2, 4.4, 4.2, 4.3, 4.4, 7.5, 7.6, 9.4 - React.memo for reusable components
+ * Equipment limits:
+ * - Leader without Cyborgs: 2
+ * - Leader with Cyborgs: 3
+ * - Trooper without Cyborgs: 1
+ * - Trooper with Cyborgs: 2
+ * 
+ * Requirements: 5.4, 5.7, 5.8, 12.3, 12.6
  */
-const EquipmentSelectorComponent = ({
-  equipment,
-  availableEquipment,
-  maxEquipment,
-  warbandAbility,
-  onAddEquipment,
-  onRemoveEquipment
-}: EquipmentSelectorProps) => {
-  return (
-    <div className="form-section">
-      <h3>Equipment (Max: {maxEquipment})</h3>
-      
-      {equipment.length > 0 ? (
-        <ul className="item-list">
-          {equipment.map((equip, index) => (
-            <li key={`${equip.id}-${index}`} className="item">
-              <span className="item-name">
-                {equip.name}
-                {equip.effect && <span className="item-description"> - {equip.effect}</span>}
-              </span>
-              <span className="item-cost">{equip.baseCost} pts</span>
-              <button
-                onClick={() => onRemoveEquipment(equip.id)}
-                className="remove-item-button"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="empty-state">No equipment selected</p>
-      )}
 
-      <div className="form-group">
-        <label htmlFor="add-equipment">Add Equipment</label>
-        <select
-          id="add-equipment"
-          onChange={(e) => {
-            const equip = availableEquipment.find(eq => eq.id === e.target.value);
-            if (equip) {
-              onAddEquipment(equip);
-              e.target.value = '';
-            }
-          }}
-          defaultValue=""
-          disabled={equipment.length >= maxEquipment}
-        >
-          <option value="" disabled>
-            {equipment.length >= maxEquipment 
-              ? 'Equipment limit reached' 
-              : 'Select equipment...'}
-          </option>
-          {availableEquipment.map(equip => {
-            const isSoldierEquipment = ['grenade', 'heavy-armor', 'medkit'].includes(equip.id);
-            const modifiedCost = warbandAbility === 'Soldiers' && isSoldierEquipment
-              ? 0
-              : equip.baseCost;
-            const costDisplay = warbandAbility === 'Soldiers' && isSoldierEquipment && equip.baseCost !== modifiedCost
-              ? `${modifiedCost} pts, was ${equip.baseCost} pts`
-              : `${modifiedCost} pts`;
-            const displayText = `${equip.name} (${costDisplay}) - ${equip.effect}`;
-            return (
-              <option key={equip.id} value={equip.id}>
-                {displayText}
-              </option>
-            );
-          })}
-        </select>
+interface EquipmentSelectorProps {
+  selectedEquipment: Equipment[];
+  availableEquipment: Equipment[];
+  weirdoType: 'leader' | 'trooper';
+  warbandAbility: WarbandAbility | null;
+  onChange: (equipment: Equipment[]) => void;
+  costEngine: CostEngine;
+}
+
+const EquipmentSelectorComponent = ({
+  selectedEquipment,
+  availableEquipment,
+  weirdoType,
+  warbandAbility,
+  onChange,
+  costEngine
+}: EquipmentSelectorProps) => {
+  // Calculate equipment limit based on weirdo type and warband ability
+  const getEquipmentLimit = (): number => {
+    const isCyborg = warbandAbility === 'Cyborgs';
+    
+    if (weirdoType === 'leader') {
+      return isCyborg ? 3 : 2;
+    } else {
+      return isCyborg ? 2 : 1;
+    }
+  };
+
+  const limit = getEquipmentLimit();
+  const isLimitReached = selectedEquipment.length >= limit;
+
+  const handleToggle = (equipment: Equipment) => {
+    const isSelected = selectedEquipment.some(e => e.id === equipment.id);
+    
+    if (isSelected) {
+      // Remove equipment
+      onChange(selectedEquipment.filter(e => e.id !== equipment.id));
+    } else {
+      // Don't allow adding if limit reached
+      if (isLimitReached) {
+        return;
+      }
+      // Add equipment
+      onChange([...selectedEquipment, equipment]);
+    }
+  };
+
+  const getEquipmentCost = (equipment: Equipment): { baseCost: number; modifiedCost: number } => {
+    const baseCost = equipment.baseCost;
+    const modifiedCost = costEngine.getEquipmentCost(equipment, warbandAbility);
+    return { baseCost, modifiedCost };
+  };
+
+  const formatCostDisplay = (equipment: Equipment): string => {
+    const { baseCost, modifiedCost } = getEquipmentCost(equipment);
+    
+    if (baseCost !== modifiedCost) {
+      // Show modified cost with strikethrough on base cost
+      return `${modifiedCost} pts (was ${baseCost} pts)`;
+    }
+    return `${baseCost} pts`;
+  };
+
+  const hasModifiedCost = (equipment: Equipment): boolean => {
+    const { baseCost, modifiedCost } = getEquipmentCost(equipment);
+    return baseCost !== modifiedCost;
+  };
+
+  return (
+    <div className="equipment-selector">
+      <h4>Equipment</h4>
+      <div className="equipment-selector__limit-info">
+        Selected: {selectedEquipment.length}/{limit}
       </div>
+      <ul className="equipment-selector__list">
+        {availableEquipment.map((equipment) => {
+          const isSelected = selectedEquipment.some(e => e.id === equipment.id);
+          const isDisabled = !isSelected && isLimitReached;
+          const isModified = hasModifiedCost(equipment);
+
+          return (
+            <li key={equipment.id} className="equipment-selector__item">
+              <label className={`equipment-selector__label ${isDisabled ? 'disabled' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleToggle(equipment)}
+                  disabled={isDisabled}
+                  className="equipment-selector__checkbox"
+                />
+                <div className="equipment-selector__content">
+                  <div className="equipment-selector__header">
+                    <span className="equipment-selector__name">{equipment.name}</span>
+                    <span className={`equipment-selector__cost ${isModified ? 'modified' : ''}`}>
+                      {formatCostDisplay(equipment)}
+                    </span>
+                  </div>
+                  <div className="equipment-selector__effect">{equipment.effect}</div>
+                </div>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 };
 
 // Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
 export const EquipmentSelector = memo(EquipmentSelectorComponent);

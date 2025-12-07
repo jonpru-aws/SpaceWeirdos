@@ -1,105 +1,131 @@
-import { memo } from 'react';
-import { WarbandAbility, ValidationError } from '../../backend/models/types';
-import './WarbandEditor.css';
+import { useWarband } from '../contexts/WarbandContext';
+import { WarbandAbility } from '../../backend/models/types';
 
 /**
  * WarbandProperties Component
  * 
- * Displays and manages warband-level properties: name, ability, and point limit.
- * Memoized for performance optimization.
+ * Edits warband-level settings:
+ * - Warband name (text input with validation)
+ * - Point limit (radio buttons: 75 or 125)
+ * - Warband ability (dropdown with descriptions)
  * 
- * Requirements: 4.1, 4.3, 4.4, 9.4 - React.memo for reusable components
+ * Displays validation errors inline.
+ * 
+ * Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 5.1
  */
 
-interface WarbandPropertiesProps {
-  name: string;
-  ability: WarbandAbility | null;
-  pointLimit: 75 | 125;
-  validationErrors: ValidationError[];
-  abilityDescriptions: Record<string, string>;
-  onNameChange: (name: string) => void;
-  onAbilityChange: (ability: WarbandAbility | null) => void;
-  onPointLimitChange: (pointLimit: 75 | 125) => void;
-}
-
-const WARBAND_ABILITIES: WarbandAbility[] = [
-  'Cyborgs',
-  'Fanatics',
-  'Living Weapons',
-  'Heavily Armed',
-  'Mutants',
-  'Soldiers',
-  'Undead'
+// Warband ability options with descriptions
+const WARBAND_ABILITIES: Array<{ value: WarbandAbility | null; label: string; description: string }> = [
+  { value: null, label: 'None', description: 'No special ability' },
+  { value: 'Cyborgs', label: 'Cyborgs', description: 'All members can purchase 1 additional equipment option' },
+  { value: 'Fanatics', label: 'Fanatics', description: 'Roll Willpower with +1DT for all rolls except Psychic Powers' },
+  { value: 'Living Weapons', label: 'Living Weapons', description: 'Unarmed attacks do not have -1DT to Prowess rolls' },
+  { value: 'Heavily Armed', label: 'Heavily Armed', description: 'All Ranged weapons are 1 less Points Cost' },
+  { value: 'Mutants', label: 'Mutants', description: 'Speed, Claws & Teeth, Horrible Claws & Teeth, and Whip/Tail cost 1 less Points Cost' },
+  { value: 'Soldiers', label: 'Soldiers', description: 'Grenades, Heavy Armor, and Medkits may be selected at 0 Points Cost' },
+  { value: 'Undead', label: 'Undead', description: 'A second staggered condition does not take weirdos out of action' },
 ];
 
-const WarbandPropertiesComponent = ({
-  name,
-  ability,
-  pointLimit,
-  validationErrors,
-  abilityDescriptions,
-  onNameChange,
-  onAbilityChange,
-  onPointLimitChange
-}: WarbandPropertiesProps) => {
+export function WarbandProperties() {
+  const { currentWarband, updateWarband, validationErrors } = useWarband();
+
+  if (!currentWarband) {
+    return null;
+  }
+
+  // Get validation errors for warband name
+  const nameErrors = Array.from(validationErrors.values())
+    .flat()
+    .filter(error => error.field === 'warband.name');
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateWarband({ name: e.target.value });
+  };
+
+  const handlePointLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pointLimit = parseInt(e.target.value) as 75 | 125;
+    updateWarband({ pointLimit });
+  };
+
+  const handleAbilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const ability = e.target.value === 'null' ? null : (e.target.value as WarbandAbility);
+    updateWarband({ ability });
+  };
+
   return (
     <div className="warband-properties">
-      <h2>Warband Properties</h2>
-      
-      <div className="form-group">
+      {/* Warband Name Input (Requirements 1.1, 1.2, 1.6) */}
+      <div className="warband-properties__field">
         <label htmlFor="warband-name">
-          Name <span className="required">*</span>
+          Warband Name <span className="required">*</span>
         </label>
         <input
           id="warband-name"
           type="text"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
+          value={currentWarband.name}
+          onChange={handleNameChange}
           placeholder="Enter warband name"
-          className={validationErrors.some(e => e.field === 'name') ? 'error' : ''}
+          aria-invalid={nameErrors.length > 0}
+          aria-describedby={nameErrors.length > 0 ? 'warband-name-error' : undefined}
         />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="warband-ability">
-          Warband Ability
-        </label>
-        <select
-          id="warband-ability"
-          value={ability || ''}
-          onChange={(e) => onAbilityChange(e.target.value === '' ? null : e.target.value as WarbandAbility)}
-        >
-          <option value="">No Ability</option>
-          {WARBAND_ABILITIES.map(abilityOption => (
-            <option key={abilityOption} value={abilityOption} title={abilityDescriptions[abilityOption] || ''}>
-              {abilityOption}
-            </option>
-          ))}
-        </select>
-        {ability && (
-          <p className="ability-description" style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
-            {abilityDescriptions[ability] || 'Loading description...'}
-          </p>
+        {/* Display validation errors inline (Requirement 1.6) */}
+        {nameErrors.length > 0 && (
+          <div id="warband-name-error" className="warband-properties__error" role="alert">
+            {nameErrors[0].message}
+          </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor="point-limit">
-          Point Limit <span className="required">*</span>
-        </label>
+      {/* Point Limit Radio Buttons (Requirement 1.3) */}
+      <div className="warband-properties__field">
+        <fieldset>
+          <legend>Point Limit <span className="required">*</span></legend>
+          <div className="warband-properties__radio-group">
+            <label>
+              <input
+                type="radio"
+                name="point-limit"
+                value="75"
+                checked={currentWarband.pointLimit === 75}
+                onChange={handlePointLimitChange}
+              />
+              <span>75 Points</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="point-limit"
+                value="125"
+                checked={currentWarband.pointLimit === 125}
+                onChange={handlePointLimitChange}
+              />
+              <span>125 Points</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      {/* Warband Ability Dropdown (Requirements 1.5, 5.1) */}
+      <div className="warband-properties__field">
+        <label htmlFor="warband-ability">Warband Ability</label>
         <select
-          id="point-limit"
-          value={pointLimit}
-          onChange={(e) => onPointLimitChange(Number(e.target.value) as 75 | 125)}
+          id="warband-ability"
+          value={currentWarband.ability || 'null'}
+          onChange={handleAbilityChange}
         >
-          <option value={75}>75 Points</option>
-          <option value={125}>125 Points</option>
+          {WARBAND_ABILITIES.map(ability => (
+            <option key={ability.label} value={ability.value || 'null'}>
+              {ability.label}
+            </option>
+          ))}
         </select>
+        {/* Display description for selected ability (Requirement 5.1) */}
+        {currentWarband.ability && (
+          <div className="warband-properties__ability-description">
+            {WARBAND_ABILITIES.find(a => a.value === currentWarband.ability)?.description}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-// Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
-export const WarbandProperties = memo(WarbandPropertiesComponent);
+}

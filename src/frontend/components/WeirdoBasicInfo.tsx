@@ -1,48 +1,43 @@
-import { memo } from 'react';
-import { ValidationError } from '../../backend/models/types';
-
-interface WeirdoBasicInfoProps {
-  name: string;
-  type: 'leader' | 'trooper';
-  onNameChange: (name: string) => void;
-  validationErrors: ValidationError[];
-}
+import { Weirdo } from '../../backend/models/types';
 
 /**
  * WeirdoBasicInfo Component
  * 
- * Displays and edits basic weirdo information (name and type).
- * Memoized for performance optimization.
+ * Displays and edits basic weirdo information.
+ * Shows weirdo name input and type (Leader/Trooper).
  * 
- * Requirements: 4.2, 4.3, 4.4, 9.4 - React.memo for reusable components
+ * Requirements: 10.3
  */
-const WeirdoBasicInfoComponent = ({ name, type, onNameChange, validationErrors }: WeirdoBasicInfoProps) => {
+
+interface WeirdoBasicInfoProps {
+  weirdo: Weirdo;
+  onUpdate: (updates: Partial<Weirdo>) => void;
+}
+
+export function WeirdoBasicInfo({ weirdo, onUpdate }: WeirdoBasicInfoProps) {
+  // Format weirdo type for display
+  const typeLabel = weirdo.type === 'leader' ? 'Leader' : 'Trooper';
+
   return (
-    <div className="form-section">
-      <h3>Basic Info</h3>
-      <div className="form-group">
-        <label htmlFor="weirdo-name">
-          Name <span className="required">*</span>
+    <div className="weirdo-basic-info">
+      <div className="weirdo-basic-info__field">
+        <label htmlFor="weirdo-name" className="weirdo-basic-info__label">
+          Name:
         </label>
         <input
           id="weirdo-name"
           type="text"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
+          className="weirdo-basic-info__input"
+          value={weirdo.name}
+          onChange={(e) => onUpdate({ name: e.target.value })}
           placeholder="Enter weirdo name"
-          className={validationErrors.some(e => e.field === 'name') ? 'error' : ''}
         />
       </div>
-      <div className="form-group">
-        <label>Type</label>
-        <div className="type-display">
-          {type === 'leader' ? '👑 Leader' : '⚔ Trooper'}
-        </div>
+
+      <div className="weirdo-basic-info__field">
+        <span className="weirdo-basic-info__label">Type:</span>
+        <span className="weirdo-basic-info__type">{typeLabel}</span>
       </div>
     </div>
   );
-};
-
-// Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
-export const WeirdoBasicInfo = memo(WeirdoBasicInfoComponent);
+}

@@ -42,6 +42,18 @@ The system will provide a user interface for warband creation, validate all sele
 
 ### Requirement 2
 
+**User Story:** As a player, I want the system to require warband creation before showing character options, so that I establish the warband context before building my team.
+
+#### Acceptance Criteria
+
+1. WHEN the application starts with no warband selected THEN the Warband Builder SHALL display only the warband creation interface
+2. WHEN no warband has been created or selected THEN the Warband Builder SHALL hide all leader and trooper creation options
+3. WHEN a user creates a new warband THEN the Warband Builder SHALL display the leader and trooper creation options
+4. WHEN a user loads an existing warband THEN the Warband Builder SHALL display the leader and trooper creation options
+5. WHEN a user closes or deselects the current warband THEN the Warband Builder SHALL hide the leader and trooper creation options
+
+### Requirement 3
+
 **User Story:** As a player, I want to add a leader to my warband with customized attributes, so that I have a primary character leading my team.
 
 #### Acceptance Criteria
@@ -64,7 +76,7 @@ The system will provide a user interface for warband creation, validate all sele
 16. WHEN a user selects Willpower level 2d8 THEN the Warband Builder SHALL add 4 points to the leader's cost
 17. WHEN a user selects Willpower level 2d10 THEN the Warband Builder SHALL add 6 points to the leader's cost
 
-### Requirement 3
+### Requirement 4
 
 **User Story:** As a player, I want to equip my leader with weapons, so that they can engage in combat during the game.
 
@@ -77,7 +89,7 @@ The system will provide a user interface for warband creation, validate all sele
 5. WHEN a user selects a weapon THEN the Warband Builder SHALL add the weapon's point cost to the leader's total cost
 6. WHEN a user selects multiple weapons THEN the Warband Builder SHALL add all weapon point costs to the leader's total cost
 
-### Requirement 4
+### Requirement 5
 
 **User Story:** As a player, I want to equip my leader with equipment items, so that they have special abilities and advantages.
 
@@ -88,7 +100,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN a user selects equipment THEN the Warband Builder SHALL add the equipment's point cost to the leader's total cost
 4. WHEN a user attempts to select more equipment than allowed THEN the Warband Builder SHALL prevent the selection and maintain the current equipment list
 
-### Requirement 5
+### Requirement 6
 
 **User Story:** As a player, I want to give my leader psychic powers, so that they can use supernatural abilities during the game.
 
@@ -98,7 +110,7 @@ The system will provide a user interface for warband creation, validate all sele
 2. WHEN a user selects a psychic power THEN the Warband Builder SHALL add the power's point cost to the leader's total cost
 3. WHEN a user selects multiple psychic powers THEN the Warband Builder SHALL add all psychic power point costs to the leader's total cost
 
-### Requirement 6
+### Requirement 7
 
 **User Story:** As a player, I want to assign a leader trait to my leader, so that they have unique leadership abilities.
 
@@ -108,7 +120,7 @@ The system will provide a user interface for warband creation, validate all sele
 2. WHEN a user selects a leader trait THEN the Warband Builder SHALL associate that trait with the leader
 3. WHEN a user does not select a leader trait THEN the Warband Builder SHALL allow the leader to have no trait
 
-### Requirement 7
+### Requirement 8
 
 **User Story:** As a player, I want to add troopers to my warband with customized attributes and equipment, so that I can build a complete team.
 
@@ -124,7 +136,7 @@ The system will provide a user interface for warband creation, validate all sele
 8. WHEN a trooper is created THEN the Warband Builder SHALL allow the user to select zero or more psychic powers
 9. WHEN a trooper's total point cost is calculated THEN the Warband Builder SHALL sum all attribute, weapon, equipment, and psychic power costs
 
-### Requirement 8
+### Requirement 9
 
 **User Story:** As a player, I want the system to apply warband ability cost modifiers, so that my faction's special rules are automatically reflected in point costs.
 
@@ -140,7 +152,7 @@ The system will provide a user interface for warband creation, validate all sele
 8. WHEN the warband has the Soldiers ability AND a user selects Medkit equipment THEN the Warband Builder SHALL set the equipment's point cost to 0
 9. WHEN a cost reduction would result in a negative point cost THEN the Warband Builder SHALL set the point cost to 0
 
-### Requirement 9
+### Requirement 10
 
 **User Story:** As a player, I want the system to enforce point cost limits for individual weirdos, so that I cannot create overpowered characters.
 
@@ -151,7 +163,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN a warband already contains one weirdo with point cost between 21 and 25 points THEN the Warband Builder SHALL prevent any other weirdo from exceeding 20 points
 4. WHEN a user attempts to add selections that would cause a weirdo to exceed their point limit THEN the Warband Builder SHALL prevent the addition and display the current point total
 
-### Requirement 10
+### Requirement 11
 
 **User Story:** As a player, I want the system to enforce the warband's total point limit, so that my warband adheres to game balance rules.
 
@@ -162,7 +174,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN a user attempts to add a weirdo that would cause the warband to exceed its point limit THEN the Warband Builder SHALL prevent the addition and display the current total
 4. WHEN a warband's total point cost is at or below the selected point limit THEN the Warband Builder SHALL allow the warband to be finalized
 
-### Requirement 11
+### Requirement 12
 
 **User Story:** As a player, I want to save my completed warband, so that I can use it in games and modify it later.
 
@@ -173,7 +185,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN warband data is persisted THEN the Warband Builder SHALL assign a unique identifier to the warband
 4. WHEN a warband is saved THEN the Warband Builder SHALL confirm successful save to the user
 
-### Requirement 12
+### Requirement 13
 
 **User Story:** As a player, I want to load a previously saved warband, so that I can view, modify, or use it in games.
 
@@ -184,7 +196,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN a warband is loaded THEN the Warband Builder SHALL recalculate all point costs to ensure data integrity
 4. WHEN a loaded warband is modified THEN the Warband Builder SHALL apply all validation rules as if creating a new warband
 
-### Requirement 13
+### Requirement 14
 
 **User Story:** As a player, I want to view a list of all my saved warbands, so that I can choose which one to load or manage.
 
@@ -195,7 +207,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN displaying a warband in the list THEN the Warband Builder SHALL show the number of weirdos in the warband
 4. WHEN no warbands exist THEN the Warband Builder SHALL display a message indicating no warbands are available
 
-### Requirement 14
+### Requirement 15
 
 **User Story:** As a player, I want to delete a saved warband, so that I can remove warbands I no longer need.
 
@@ -206,7 +218,7 @@ The system will provide a user interface for warband creation, validate all sele
 3. WHEN a warband is deleted THEN the Warband Builder SHALL confirm successful deletion to the user
 4. WHEN a user cancels deletion THEN the Warband Builder SHALL retain the warband data unchanged
 
-### Requirement 15
+### Requirement 16
 
 **User Story:** As a player, I want to see real-time point cost calculations as I build my warband, so that I can make informed decisions about my selections.
 
@@ -222,7 +234,7 @@ The system will provide a user interface for warband creation, validate all sele
 8. WHEN a weirdo has the error CSS class applied THEN the Warband Builder SHALL display the specific validation error message in a tooltip
 9. WHEN a user hovers over a weirdo with validation errors THEN the Warband Builder SHALL show a tooltip containing the validation error details
 
-### Requirement 16
+### Requirement 17
 
 **User Story:** As a player, I want to see descriptions and point costs for all available selections, so that I can make informed decisions about what to add to my warband.
 
@@ -236,7 +248,7 @@ The system will provide a user interface for warband creation, validate all sele
 6. WHEN a user views available leader traits THEN the Warband Builder SHALL display the description for each leader trait option
 7. WHEN warband abilities modify costs THEN the Warband Builder SHALL display the modified cost alongside the base cost
 
-### Requirement 17
+### Requirement 18
 
 **User Story:** As a player, I want the total point costs for my leader and troopers to remain visible while scrolling through selection options, so that I can always see how my choices affect the total cost.
 

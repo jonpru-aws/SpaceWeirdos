@@ -136,7 +136,11 @@ This project was built using spec-driven development methodology with formal cor
 
 ## Code Standards
 
-See `.kiro/steering/project-standards.md` for detailed coding standards and conventions.
+See the steering files in `.kiro/steering/` for detailed standards:
+- [Core Project Info](..kiro/steering/core-project-info.md) - Technology stack, libraries, and code style
+- [Task Execution Standards](.kiro/steering/task-execution-standards.md) - Testing and execution guidelines
+- [Spec Creation Standards](.kiro/steering/spec-creation-standards.md) - Requirements and design methodology
+- [Efficient Testing Practices](.kiro/steering/efficient-testing.md) - Token-efficient testing strategies
 
 ## Contributing
 

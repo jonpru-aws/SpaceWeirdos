@@ -586,10 +586,13 @@ test('renders component', () => {
 
 ### Resources
 
-- [Project Standards](.kiro/steering/project-standards.md)
-- [Testing Guide](TESTING.md)
-- [Efficient Testing Practices](.kiro/steering/efficient-testing.md)
-- [Spec Documentation](.kiro/specs/)
+- [Core Project Info](.kiro/steering/core-project-info.md) - Technology stack and code style
+- [Task Execution Standards](.kiro/steering/task-execution-standards.md) - Testing and execution guidelines
+- [Spec Creation Standards](.kiro/steering/spec-creation-standards.md) - Requirements and design methodology
+- [Efficient Testing Practices](.kiro/steering/efficient-testing.md) - Token-efficient testing strategies
+- [Testing Guide](TESTING.md) - Comprehensive testing documentation
+- [Spec Documentation](.kiro/specs/) - Feature specifications
+- [Working with Specs](.kiro/specs/WORKING-WITH-SPECS.md) - Guide to creating and executing specs
 
 ### Questions
 

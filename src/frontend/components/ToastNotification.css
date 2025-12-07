@@ -1,0 +1,104 @@
+/**
+ * ToastNotification Styles
+ * 
+ * Styles for success and error toast notifications.
+ * Positioned at top-right of viewport with animations.
+ * 
+ * Requirements: 9.5, 9.6
+ */
+
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 300px;
+  max-width: 500px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Success variant - green */
+.toast-notification--success {
+  background-color: #4caf50;
+  color: white;
+  border-left: 4px solid #2e7d32;
+}
+
+/* Error variant - red */
+.toast-notification--error {
+  background-color: #f44336;
+  color: white;
+  border-left: 4px solid #c62828;
+}
+
+.toast-notification__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.toast-notification__icon {
+  font-size: 20px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.toast-notification__message {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.toast-notification__dismiss {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toast-notification__dismiss:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.toast-notification__dismiss:focus {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .toast-notification {
+    left: 20px;
+    right: 20px;
+    min-width: auto;
+  }
+}

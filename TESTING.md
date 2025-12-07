@@ -550,7 +550,8 @@ const weirdo = createMockWeirdo('leader', {
 - [Vitest Documentation](https://vitest.dev/)
 - [React Testing Library](https://testing-library.com/react)
 - [fast-check Documentation](https://fast-check.dev/)
-- [Project Standards](.kiro/steering/project-standards.md)
+- [Core Project Info](.kiro/steering/core-project-info.md)
+- [Task Execution Standards](.kiro/steering/task-execution-standards.md)
 - [Efficient Testing Practices](.kiro/steering/efficient-testing.md)
 
 ## Contributing
@@ -565,4 +566,7 @@ When adding new tests:
 6. Test one thing per test
 7. Keep tests maintainable and readable
 
-For more details, see the project standards in `.kiro/steering/project-standards.md`.
+For more details, see:
+- [Core Project Info](.kiro/steering/core-project-info.md) - Technology stack and code style
+- [Task Execution Standards](.kiro/steering/task-execution-standards.md) - Testing strategy and execution guidelines
+- [Efficient Testing Practices](.kiro/steering/efficient-testing.md) - Token-efficient testing approaches

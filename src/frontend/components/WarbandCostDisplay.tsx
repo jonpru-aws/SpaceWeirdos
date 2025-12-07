@@ -1,56 +1,60 @@
-import { memo } from 'react';
-import './WarbandEditor.css';
+import { useWarband } from '../contexts/WarbandContext';
+import './WarbandCostDisplay.css';
 
 /**
  * WarbandCostDisplay Component
  * 
- * Displays the total cost of the warband with warnings when approaching or exceeding the point limit.
- * Memoized for performance optimization.
+ * Displays total warband cost with sticky positioning at top of editor.
+ * Shows warning indicator when approaching limit (within 15 points).
+ * Shows error styling when exceeding limit.
  * 
- * Requirements: 4.1, 4.3, 4.4, 9.4 - React.memo for reusable components
+ * Requirements: 1.4, 3.2, 3.3, 3.5, 6.2, 6.4, 6.5, 6.6
  */
+export function WarbandCostDisplay() {
+  const { currentWarband, getWarbandCost } = useWarband();
 
-interface WarbandCostDisplayProps {
-  totalCost: number;
-  pointLimit: number;
-  approaching: boolean;
-  exceeds: boolean;
-}
+  if (!currentWarband) {
+    return null;
+  }
 
-const WarbandCostDisplayComponent = ({
-  totalCost,
-  pointLimit,
-  approaching,
-  exceeds
-}: WarbandCostDisplayProps) => {
+  const totalCost = getWarbandCost();
+  const pointLimit = currentWarband.pointLimit;
+  const remaining = pointLimit - totalCost;
+  
+  // Determine warning/error state (Requirement 3.5)
+  const isApproachingLimit = remaining <= 15 && remaining > 0;
+  const isOverLimit = remaining < 0;
+
+  // CSS class based on state
+  let statusClass = '';
+  if (isOverLimit) {
+    statusClass = 'warband-cost-display--error';
+  } else if (isApproachingLimit) {
+    statusClass = 'warband-cost-display--warning';
+  }
+
   return (
-    <div 
-      className={`cost-display ${approaching && !exceeds ? 'warning' : ''} ${exceeds ? 'error' : ''}`}
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      <div className="cost-label">Total Cost:</div>
-      <div 
-        className={`cost-value ${approaching ? 'warning' : ''} ${exceeds ? 'error' : ''}`}
-        aria-label={`${totalCost} points used out of ${pointLimit} points limit`}
-      >
-        {totalCost} / {pointLimit}
+    <div className={`warband-cost-display ${statusClass}`}>
+      <div className="warband-cost-display__content">
+        <div className="warband-cost-display__main">
+          <span className="warband-cost-display__label">Total Cost:</span>
+          <span className="warband-cost-display__value">
+            {totalCost} / {pointLimit} pts
+          </span>
+        </div>
+        
+        <div className="warband-cost-display__remaining">
+          {isOverLimit ? (
+            <span className="warband-cost-display__over">
+              Over limit by {Math.abs(remaining)} pts
+            </span>
+          ) : (
+            <span className={isApproachingLimit ? 'warband-cost-display__warning-text' : ''}>
+              {remaining} pts remaining
+            </span>
+          )}
+        </div>
       </div>
-      {approaching && !exceeds && (
-        <div className="cost-warning" role="alert">
-          Approaching point limit
-        </div>
-      )}
-      {exceeds && (
-        <div className="cost-error" role="alert">
-          Exceeds point limit!
-        </div>
-      )}
     </div>
   );
-};
-
-// Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
-export const WarbandCostDisplay = memo(WarbandCostDisplayComponent);
+}

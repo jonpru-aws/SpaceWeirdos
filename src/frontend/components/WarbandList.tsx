@@ -1,90 +1,105 @@
 import { useState, useEffect } from 'react';
-import { Warband } from '../../backend/models/types';
-import { apiClient, ApiError } from '../services/apiClient';
+import { WarbandSummary } from '../../backend/models/types';
+import { DataRepository } from '../../backend/services/DataRepository';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import './WarbandList.css';
 
 /**
- * WarbandListComponent
+ * WarbandList Component
  * 
- * Displays and manages the list of saved warbands.
- * Allows users to load warbands for editing or delete them.
+ * Displays all saved warbands with summary information.
+ * Provides controls for creating new warbands and loading existing ones.
  * 
- * Requirements: 13.1, 13.2, 13.3, 13.4, 14.1, 14.2, 14.3, 14.4
+ * Requirements: 7.1, 7.7, 7.8
  */
 
 interface WarbandListProps {
-  onCreateWarband?: () => void;
-  onLoadWarband?: (id: string) => void;
+  dataRepository: DataRepository;
+  onCreateWarband: () => void;
+  onLoadWarband: (id: string) => void;
+  onDeleteSuccess: () => void;
+  onDeleteError: (error: Error) => void;
 }
 
-export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps) {
-  const [warbands, setWarbands] = useState<Warband[]>([]);
+export function WarbandList({ 
+  dataRepository, 
+  onCreateWarband, 
+  onLoadWarband,
+  onDeleteSuccess,
+  onDeleteError
+}: WarbandListProps) {
+  const [warbands, setWarbands] = useState<WarbandSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   /**
-   * Load all warbands from the backend
-   * Requirements: 13.1
+   * Fetch all warbands from DataRepository
+   * Requirements: 7.1
    */
-  const loadWarbands = async () => {
+  const loadWarbands = () => {
     setLoading(true);
     setError(null);
     
     try {
-      const data = await apiClient.getAllWarbands();
+      const data = dataRepository.getAllWarbands();
       setWarbands(data);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(`Failed to load warbands: ${err.message}`);
-      } else {
-        setError('An unexpected error occurred while loading warbands');
-      }
+      setError(`Failed to load warbands: ${(err as Error).message}`);
     } finally {
       setLoading(false);
     }
   };
 
   /**
-   * Navigate to warband editor with loaded warband
-   * Requirements: 13.1
+   * Handle warband selection
+   * Requirements: 7.9
    */
-  const handleLoadWarband = (id: string) => {
-    if (onLoadWarband) {
-      onLoadWarband(id);
+  const handleSelectWarband = (id: string) => {
+    onLoadWarband(id);
+  };
+
+  /**
+   * Show delete confirmation dialog
+   * Requirements: 8.1
+   */
+  const handleDeleteRequest = (id: string, name: string) => {
+    setDeleteConfirmation({ id, name });
+  };
+
+  /**
+   * Confirm warband deletion
+   * Requirements: 8.3, 8.5, 9.3, 9.4
+   */
+  const handleConfirmDelete = () => {
+    if (deleteConfirmation) {
+      try {
+        const deleted = dataRepository.deleteWarband(deleteConfirmation.id);
+        if (!deleted) {
+          throw new Error('Warband not found');
+        }
+        setDeleteConfirmation(null);
+        // Reload the list after deletion
+        loadWarbands();
+        // Show success notification
+        onDeleteSuccess();
+      } catch (err) {
+        setDeleteConfirmation(null);
+        // Show error notification
+        onDeleteError(err as Error);
+      }
     }
   };
 
   /**
-   * Delete a warband after confirmation
-   * Requirements: 14.1, 14.2, 14.3, 14.4
+   * Cancel warband deletion
+   * Requirements: 8.4
    */
-  const handleDeleteWarband = async (id: string, name: string) => {
-    // Requirement 14.1: Prompt for confirmation
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the warband "${name}"? This action cannot be undone.`
-    );
-
-    // Requirement 14.4: Cancel deletion preserves warband
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      // Requirement 14.2: Remove warband from storage
-      await apiClient.deleteWarband(id);
-      
-      // Requirement 14.3: Confirm successful deletion
-      window.alert(`Warband "${name}" has been deleted successfully.`);
-      
-      // Reload the list to reflect the deletion
-      await loadWarbands();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(`Failed to delete warband: ${err.message}`);
-      } else {
-        setError('An unexpected error occurred while deleting the warband');
-      }
-    }
+  const handleCancelDelete = () => {
+    setDeleteConfirmation(null);
   };
 
   // Load warbands on component mount
@@ -92,7 +107,7 @@ export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps
     loadWarbands();
   }, []);
 
-  // Loading state
+  // Loading state - Requirement 7.8
   if (loading) {
     return (
       <div className="warband-list">
@@ -120,7 +135,7 @@ export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps
     );
   }
 
-  // Empty state - Requirement 13.4
+  // Empty state - Requirement 7.7
   if (warbands.length === 0) {
     return (
       <div className="warband-list">
@@ -139,8 +154,7 @@ export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps
     );
   }
 
-  // Display warband list
-  // Requirements: 13.2, 13.3
+  // Display warband list - Requirement 7.1
   return (
     <div className="warband-list">
       <h1>My Warbands</h1>
@@ -154,59 +168,92 @@ export function WarbandList({ onCreateWarband, onLoadWarband }: WarbandListProps
       
       <div className="warband-grid" role="list" aria-label="Saved warbands">
         {warbands.map((warband) => (
-          <article 
-            key={warband.id} 
-            className="warband-card fade-in"
-            role="listitem"
-            aria-label={`Warband: ${warband.name}`}
-          >
-            <div className="warband-header">
-              <h2>{warband.name}</h2>
-              <span className="warband-ability" aria-label={`Ability: ${warband.ability || 'No Ability'}`}>
-                {warband.ability || 'No Ability'}
-              </span>
-            </div>
-            
-            <div className="warband-stats">
-              <div className="stat">
-                <span className="stat-label">Point Limit:</span>
-                <span className="stat-value" aria-label={`${warband.pointLimit} points`}>
-                  {warband.pointLimit}
-                </span>
-              </div>
-              <div className="stat">
-                <span className="stat-label">Total Cost:</span>
-                <span className="stat-value" aria-label={`${warband.totalCost} points used`}>
-                  {warband.totalCost}
-                </span>
-              </div>
-              <div className="stat">
-                <span className="stat-label">Weirdos:</span>
-                <span className="stat-value" aria-label={`${warband.weirdos.length} weirdos`}>
-                  {warband.weirdos.length}
-                </span>
-              </div>
-            </div>
-
-            <div className="warband-actions">
-              <button 
-                onClick={() => handleLoadWarband(warband.id)}
-                className="load-button"
-                aria-label={`Load ${warband.name} for editing`}
-              >
-                Load
-              </button>
-              <button 
-                onClick={() => handleDeleteWarband(warband.id, warband.name)}
-                className="delete-button"
-                aria-label={`Delete ${warband.name}`}
-              >
-                Delete
-              </button>
-            </div>
-          </article>
+          <WarbandListItem
+            key={warband.id}
+            warband={warband}
+            onSelect={() => handleSelectWarband(warband.id)}
+            onDelete={() => handleDeleteRequest(warband.id, warband.name)}
+          />
         ))}
       </div>
+
+      {deleteConfirmation && (
+        <DeleteConfirmationDialog
+          warbandName={deleteConfirmation.name}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * WarbandListItem Component
+ * 
+ * Displays summary information for a single warband.
+ * Provides controls for loading and deleting the warband.
+ * 
+ * Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.9
+ */
+
+interface WarbandListItemProps {
+  warband: WarbandSummary;
+  onSelect: () => void;
+  onDelete: () => void;
+}
+
+export function WarbandListItem({ warband, onSelect, onDelete }: WarbandListItemProps) {
+  return (
+    <article 
+      className="warband-card fade-in"
+      role="listitem"
+      aria-label={`Warband: ${warband.name}`}
+    >
+      <div className="warband-header">
+        <h2>{warband.name}</h2>
+        <span className="warband-ability" aria-label={`Ability: ${warband.ability || 'No Ability'}`}>
+          {warband.ability || 'No Ability'}
+        </span>
+      </div>
+      
+      <div className="warband-stats">
+        <div className="stat">
+          <span className="stat-label">Point Limit:</span>
+          <span className="stat-value" aria-label={`${warband.pointLimit} points`}>
+            {warband.pointLimit}
+          </span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Total Cost:</span>
+          <span className="stat-value" aria-label={`${warband.totalCost} points used`}>
+            {warband.totalCost}
+          </span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Weirdos:</span>
+          <span className="stat-value" aria-label={`${warband.weirdoCount} weirdos`}>
+            {warband.weirdoCount}
+          </span>
+        </div>
+      </div>
+
+      <div className="warband-actions">
+        <button 
+          onClick={onSelect}
+          className="load-button"
+          aria-label={`Load ${warband.name} for editing`}
+        >
+          Load
+        </button>
+        <button 
+          onClick={onDelete}
+          className="delete-button"
+          aria-label={`Delete ${warband.name}`}
+        >
+          Delete
+        </button>
+      </div>
+    </article>
   );
 }

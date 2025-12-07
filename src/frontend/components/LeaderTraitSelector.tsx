@@ -1,68 +1,71 @@
 import { memo } from 'react';
 import { LeaderTrait } from '../../backend/models/types';
 
-interface LeaderTraitSelectorProps {
-  leaderTrait: LeaderTrait | null;
-  leaderTraitDescriptions: Record<string, string>;
-  onLeaderTraitChange: (trait: LeaderTrait | null) => void;
-}
-
-const LEADER_TRAITS: LeaderTrait[] = [
-  'Bounty Hunter',
-  'Healer',
-  'Majestic',
-  'Monstrous',
-  'Political Officer',
-  'Sorcerer',
-  'Tactician'
-];
-
 /**
  * LeaderTraitSelector Component
  * 
- * Displays and manages leader trait selection (only for leaders).
- * Memoized for performance optimization.
+ * Dropdown selector for leader traits.
+ * Includes "None" option for no trait selection.
+ * Displays description for each trait.
+ * Only rendered for leaders.
  * 
- * Requirements: 6.1, 6.2, 6.3, 4.2, 4.3, 4.4, 9.4 - React.memo for reusable components
+ * Requirements: 5.6, 12.5
  */
-const LeaderTraitSelectorComponent = ({
-  leaderTrait,
-  leaderTraitDescriptions,
-  onLeaderTraitChange
-}: LeaderTraitSelectorProps) => {
-  return (
-    <div className="form-section">
-      <h3>Leader Trait (Optional)</h3>
-      
-      <div className="form-group">
-        <label htmlFor="leader-trait">Trait</label>
-        <select
-          id="leader-trait"
-          value={leaderTrait || ''}
-          onChange={(e) => onLeaderTraitChange(e.target.value ? e.target.value as LeaderTrait : null)}
-        >
-          <option value="">None</option>
-          {LEADER_TRAITS.map(trait => {
-            const description = leaderTraitDescriptions[trait];
-            const displayText = description ? `${trait} - ${description}` : trait;
-            return (
-              <option key={trait} value={trait}>
-                {displayText}
-              </option>
-            );
-          })}
-        </select>
-      </div>
 
-      {leaderTrait && leaderTraitDescriptions[leaderTrait] && (
-        <p className="trait-description">
-          {leaderTraitDescriptions[leaderTrait]}
-        </p>
-      )}
+interface LeaderTraitData {
+  id: string;
+  name: LeaderTrait;
+  description: string;
+}
+
+interface LeaderTraitSelectorProps {
+  selectedTrait: LeaderTrait | null;
+  availableTraits: LeaderTraitData[];
+  onChange: (trait: LeaderTrait | null) => void;
+  weirdoType: 'leader' | 'trooper';
+}
+
+const LeaderTraitSelectorComponent = ({
+  selectedTrait,
+  availableTraits,
+  onChange,
+  weirdoType
+}: LeaderTraitSelectorProps) => {
+  // Only render for leaders
+  if (weirdoType !== 'leader') {
+    return null;
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      onChange(null);
+    } else {
+      onChange(value as LeaderTrait);
+    }
+  };
+
+  return (
+    <div className="leader-trait-selector">
+      <label htmlFor="leader-trait" className="leader-trait-selector__label">
+        Leader Trait
+      </label>
+      <select
+        id="leader-trait"
+        value={selectedTrait || ''}
+        onChange={handleChange}
+        className="leader-trait-selector__select"
+      >
+        <option value="">None</option>
+        {availableTraits.map((trait) => (
+          <option key={trait.id} value={trait.name}>
+            {trait.name} - {trait.description}
+          </option>
+        ))}
+      </select>
     </div>
   );
 };
 
 // Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
 export const LeaderTraitSelector = memo(LeaderTraitSelectorComponent);

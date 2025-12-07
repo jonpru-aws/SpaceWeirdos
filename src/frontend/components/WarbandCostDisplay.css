@@ -1,0 +1,79 @@
+/**
+ * WarbandCostDisplay Styles
+ * 
+ * Sticky positioning at top of editor with semi-transparent background.
+ * Warning and error state styling.
+ * 
+ * Requirements: 1.4, 3.2, 3.3, 3.5, 6.2, 6.4, 6.5, 6.6
+ */
+
+.warband-cost-display {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-bottom: 2px solid #e0e0e0;
+  padding: 1rem;
+  margin: -1.5rem -1.5rem 1rem -1.5rem;
+}
+
+.warband-cost-display__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.warband-cost-display__main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.warband-cost-display__label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.warband-cost-display__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+.warband-cost-display__remaining {
+  font-size: 0.875rem;
+  color: #666;
+  text-align: right;
+}
+
+/* Warning state - approaching limit (within 15 points) */
+.warband-cost-display--warning {
+  border-bottom-color: #ff9800;
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.warband-cost-display--warning .warband-cost-display__value {
+  color: #ff9800;
+}
+
+.warband-cost-display__warning-text {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+/* Error state - exceeding limit */
+.warband-cost-display--error {
+  border-bottom-color: #d32f2f;
+  background: rgba(211, 47, 47, 0.05);
+}
+
+.warband-cost-display--error .warband-cost-display__value {
+  color: #d32f2f;
+}
+
+.warband-cost-display__over {
+  color: #d32f2f;
+  font-weight: 700;
+}

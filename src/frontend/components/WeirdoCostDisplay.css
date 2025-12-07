@@ -1,0 +1,109 @@
+/* WeirdoCostDisplay Component Styles */
+
+.weirdo-cost-display {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-bottom: 2px solid #ccc;
+  padding: 1rem;
+  margin: -1rem -1rem 1rem -1rem;
+}
+
+.weirdo-cost-display--warning {
+  border-bottom-color: #ff9800;
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.weirdo-cost-display--error {
+  border-bottom-color: #f44336;
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.weirdo-cost-display__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.weirdo-cost-display__main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.weirdo-cost-display__label {
+  font-weight: 600;
+  color: #333;
+}
+
+.weirdo-cost-display__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.weirdo-cost-display__indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.weirdo-cost-display__indicator--warning {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.weirdo-cost-display__indicator--error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.weirdo-cost-display__toggle {
+  padding: 0.5rem 1rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.weirdo-cost-display__toggle:hover {
+  background: #e0e0e0;
+}
+
+.weirdo-cost-display__toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3);
+}
+
+.weirdo-cost-display__breakdown {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.weirdo-cost-display__breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.weirdo-cost-display__breakdown-item--total {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid #333;
+  font-weight: 700;
+  font-size: 1rem;
+}

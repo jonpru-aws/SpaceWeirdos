@@ -1,81 +1,70 @@
 import { memo } from 'react';
 import { PsychicPower } from '../../backend/models/types';
 
-interface PsychicPowerSelectorProps {
-  psychicPowers: PsychicPower[];
-  availablePsychicPowers: PsychicPower[];
-  onAddPsychicPower: (power: PsychicPower) => void;
-  onRemovePsychicPower: (powerId: string) => void;
-}
-
 /**
  * PsychicPowerSelector Component
  * 
- * Displays and manages psychic powers.
- * Memoized for performance optimization.
+ * Multi-select interface for psychic powers.
+ * Displays name, cost, and effect for each power.
+ * No limit on selections.
  * 
- * Requirements: 5.1, 5.2, 5.3, 4.2, 4.3, 4.4, 7.7, 9.4 - React.memo for reusable components
+ * Requirements: 5.5, 12.4
  */
-const PsychicPowerSelectorComponent = ({
-  psychicPowers,
-  availablePsychicPowers,
-  onAddPsychicPower,
-  onRemovePsychicPower
-}: PsychicPowerSelectorProps) => {
-  return (
-    <div className="form-section">
-      <h3>Psychic Powers</h3>
-      
-      {psychicPowers.length > 0 ? (
-        <ul className="item-list">
-          {psychicPowers.map((power, index) => (
-            <li key={`${power.id}-${index}`} className="item">
-              <span className="item-name">
-                {power.name}
-                {power.effect && <span className="item-description"> - {power.effect}</span>}
-              </span>
-              <span className="item-cost">{power.cost} pts</span>
-              <button
-                onClick={() => onRemovePsychicPower(power.id)}
-                className="remove-item-button"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="empty-state">No psychic powers selected</p>
-      )}
 
-      <div className="form-group">
-        <label htmlFor="add-psychic-power">Add Psychic Power</label>
-        <select
-          id="add-psychic-power"
-          onChange={(e) => {
-            const power = availablePsychicPowers.find(p => p.id === e.target.value);
-            if (power) {
-              onAddPsychicPower(power);
-              e.target.value = '';
-            }
-          }}
-          defaultValue=""
-        >
-          <option value="" disabled>Select a power...</option>
-          {availablePsychicPowers.map(power => {
-            const displayText = `${power.name} (${power.cost} pts) - ${power.effect}`;
-            return (
-              <option key={power.id} value={power.id}>
-                {displayText}
-              </option>
-            );
-          })}
-        </select>
-      </div>
+interface PsychicPowerSelectorProps {
+  selectedPowers: PsychicPower[];
+  availablePowers: PsychicPower[];
+  onChange: (powers: PsychicPower[]) => void;
+}
+
+const PsychicPowerSelectorComponent = ({
+  selectedPowers,
+  availablePowers,
+  onChange
+}: PsychicPowerSelectorProps) => {
+  const handleToggle = (power: PsychicPower) => {
+    const isSelected = selectedPowers.some(p => p.id === power.id);
+    
+    if (isSelected) {
+      // Remove power
+      onChange(selectedPowers.filter(p => p.id !== power.id));
+    } else {
+      // Add power
+      onChange([...selectedPowers, power]);
+    }
+  };
+
+  return (
+    <div className="psychic-power-selector">
+      <h4>Psychic Powers</h4>
+      <ul className="psychic-power-selector__list">
+        {availablePowers.map((power) => {
+          const isSelected = selectedPowers.some(p => p.id === power.id);
+
+          return (
+            <li key={power.id} className="psychic-power-selector__item">
+              <label className="psychic-power-selector__label">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleToggle(power)}
+                  className="psychic-power-selector__checkbox"
+                />
+                <div className="psychic-power-selector__content">
+                  <div className="psychic-power-selector__header">
+                    <span className="psychic-power-selector__name">{power.name}</span>
+                    <span className="psychic-power-selector__cost">{power.cost} pts</span>
+                  </div>
+                  <div className="psychic-power-selector__effect">{power.effect}</div>
+                </div>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 };
 
 // Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
 export const PsychicPowerSelector = memo(PsychicPowerSelectorComponent);

@@ -1,91 +1,118 @@
-import { memo } from 'react';
-import { Weirdo } from '../../backend/models/types';
-import './WarbandEditor.css';
+import { useState } from 'react';
+import { Weirdo, ValidationError } from '../../backend/models/types';
+import './WeirdoCard.css';
 
 /**
  * WeirdoCard Component
  * 
- * Displays a single weirdo in a card format with name, type, cost, and actions.
- * Shows validation errors if present.
- * Memoized for performance optimization in lists.
+ * Compact display of weirdo information in the list.
+ * Shows name, type, cost, and validation status.
+ * Handles selection and removal.
+ * Displays validation errors in tooltip on hover.
  * 
- * Requirements: 4.1, 4.3, 4.4, 9.3, 9.4 - React.memo for list items
+ * Requirements: 3.3, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 10.5, 11.4
  */
 
 interface WeirdoCardProps {
   weirdo: Weirdo;
+  cost: number;
   isSelected: boolean;
   hasErrors: boolean;
-  errorMessages: string[];
-  onSelect: () => void;
-  onEdit: () => void;
+  validationErrors?: ValidationError[];
+  onClick: () => void;
   onRemove: () => void;
 }
 
-const WeirdoCardComponent = ({
+export function WeirdoCard({
   weirdo,
+  cost,
   isSelected,
   hasErrors,
-  errorMessages,
-  onSelect,
-  onEdit,
-  onRemove
-}: WeirdoCardProps) => {
+  validationErrors = [],
+  onClick,
+  onRemove,
+}: WeirdoCardProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Build CSS classes based on state
+  const cardClasses = [
+    'weirdo-card',
+    isSelected && 'weirdo-card--selected',
+    hasErrors && 'weirdo-card--error',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  // Handle remove button click (prevent event bubbling to card click)
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemove();
+  };
+
+  // Format weirdo type for display
+  const typeLabel = weirdo.type === 'leader' ? 'Leader' : 'Trooper';
+
+  // Format validation error messages for tooltip (Requirements 4.3, 4.4, 4.6, 4.7)
+  const formatErrorMessage = (error: ValidationError): string => {
+    // If error message includes point total, show it (Requirement 4.7)
+    return error.message;
+  };
+
   return (
     <div
-      className={`weirdo-card ${isSelected ? 'selected' : ''} ${hasErrors ? 'error' : ''}`}
-      onClick={onSelect}
+      className={cardClasses}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`Select ${weirdo.name}`}
+      aria-pressed={isSelected}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      onMouseEnter={() => hasErrors && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
-      {hasErrors && errorMessages.length > 0 && (
-        <div className="weirdo-error-tooltip" role="tooltip" aria-live="polite">
-          <div className="tooltip-content">
-            {errorMessages.length === 1 ? (
-              <p>{errorMessages[0]}</p>
-            ) : (
-              <ul>
-                {errorMessages.map((msg, idx) => (
-                  <li key={idx}>{msg}</li>
+      {/* Error indicator with tooltip (Requirements 4.1, 4.2, 4.3, 4.4) */}
+      {hasErrors && (
+        <div className="weirdo-card__error-indicator" aria-label="Has validation errors">
+          ⚠
+          {/* Tooltip showing validation errors (Requirements 4.3, 4.4, 4.6) */}
+          {showTooltip && validationErrors.length > 0 && (
+            <div className="weirdo-card__tooltip" role="tooltip">
+              <div className="weirdo-card__tooltip-title">Validation Errors:</div>
+              <ul className="weirdo-card__tooltip-list">
+                {validationErrors.map((error, index) => (
+                  <li key={index} className="weirdo-card__tooltip-item">
+                    {formatErrorMessage(error)}
+                  </li>
                 ))}
               </ul>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
-      <div className="weirdo-header">
-        <div className="weirdo-info">
-          <h3>{weirdo.name}</h3>
-          <span className={`weirdo-type ${weirdo.type}`}>
-            {weirdo.type === 'leader' ? '👑 Leader' : '⚔ Trooper'}
-          </span>
-        </div>
-        <div className="weirdo-cost">
-          {weirdo.totalCost} pts
-        </div>
+
+      {/* Weirdo info */}
+      <div className="weirdo-card__info">
+        <div className="weirdo-card__name">{weirdo.name}</div>
+        <div className="weirdo-card__type">{typeLabel}</div>
       </div>
-      <div className="weirdo-actions">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-          className="edit-button"
-        >
-          Edit
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="remove-button"
-        >
-          Remove
-        </button>
-      </div>
+
+      {/* Cost display (Requirement 3.3) */}
+      <div className="weirdo-card__cost">{cost} pts</div>
+
+      {/* Remove button (Requirement 11.4) */}
+      <button
+        className="weirdo-card__remove"
+        onClick={handleRemoveClick}
+        aria-label={`Remove ${weirdo.name}`}
+        type="button"
+      >
+        ×
+      </button>
     </div>
   );
-};
-
-// Memoize component for performance in lists
-// Requirements: 9.3, 9.4 - React.memo for list items
-export const WeirdoCard = memo(WeirdoCardComponent);
+}

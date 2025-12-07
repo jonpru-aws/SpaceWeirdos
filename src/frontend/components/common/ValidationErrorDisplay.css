@@ -6,6 +6,15 @@
   margin: 1rem 0;
 }
 
+.validation-error-inline {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
 .error-list {
   list-style: none;
   padding: 0;
@@ -45,4 +54,117 @@
 
 .error-group .error-list {
   padding-left: 1rem;
+}
+
+/* Tooltip styles */
+.validation-error-tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.validation-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #f44336;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+}
+
+.error-icon {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.error-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #d32f2f;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid white;
+}
+
+.validation-error-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  min-width: 200px;
+  max-width: 300px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.validation-error-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #333;
+}
+
+.tooltip-error-group {
+  margin-bottom: 0.5rem;
+}
+
+.tooltip-error-group:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-field-name {
+  font-weight: bold;
+  color: #ffeb3b;
+  font-size: 0.8125rem;
+  margin-bottom: 0.25rem;
+  text-transform: capitalize;
+}
+
+.tooltip-error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tooltip-error-item {
+  padding: 0.125rem 0;
+  color: white;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.tooltip-error-item::before {
+  content: '• ';
+  margin-right: 0.25rem;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }

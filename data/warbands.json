@@ -1,1 +1,79 @@
-[]
+[
+  {
+    "id": "5c289ac5-b90e-4b85-b175-dfbe6adf0806",
+    "name": "New Warband",
+    "ability": "Cyborgs",
+    "pointLimit": 75,
+    "totalCost": 17,
+    "weirdos": [
+      {
+        "id": "temp-1765000819456",
+        "name": "New Leader",
+        "type": "leader",
+        "attributes": {
+          "speed": 1,
+          "defense": "2d6",
+          "firepower": "None",
+          "prowess": "2d6",
+          "willpower": "2d6"
+        },
+        "closeCombatWeapons": [
+          {
+            "id": "claws-teeth",
+            "name": "Claws & Teeth",
+            "type": "close",
+            "baseCost": 2,
+            "maxActions": 3,
+            "notes": ""
+          }
+        ],
+        "rangedWeapons": [],
+        "equipment": [],
+        "psychicPowers": [],
+        "leaderTrait": null,
+        "notes": "",
+        "totalCost": 8
+      },
+      {
+        "id": "temp-1765000855184",
+        "name": "New Trooper",
+        "type": "trooper",
+        "attributes": {
+          "speed": 1,
+          "defense": "2d6",
+          "firepower": "None",
+          "prowess": "2d6",
+          "willpower": "2d6"
+        },
+        "closeCombatWeapons": [
+          {
+            "id": "horrible-claws-teeth",
+            "name": "Horrible Claws & Teeth",
+            "type": "close",
+            "baseCost": 3,
+            "maxActions": 3,
+            "notes": "+1 to Under Attack rolls"
+          }
+        ],
+        "rangedWeapons": [],
+        "equipment": [],
+        "psychicPowers": [],
+        "leaderTrait": null,
+        "notes": "",
+        "totalCost": 9
+      }
+    ],
+    "createdAt": "2025-12-06T05:25:49.592Z",
+    "updatedAt": "2025-12-06T06:01:11.507Z"
+  },
+  {
+    "id": "2a9403c9-3e63-4cb9-bc23-351c08711fa7",
+    "name": "New Warband",
+    "ability": null,
+    "pointLimit": 75,
+    "totalCost": 0,
+    "weirdos": [],
+    "createdAt": "2025-12-06T06:01:48.848Z",
+    "updatedAt": "2025-12-06T06:01:48.848Z"
+  }
+]

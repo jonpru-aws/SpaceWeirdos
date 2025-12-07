@@ -6,6 +6,8 @@ The Space Weirdos Warband Builder is a web-based application that enables player
 
 The system follows a client-server architecture with a React frontend for user interaction and an Express backend for business logic and data persistence. All game data (attributes, weapons, equipment, psychic powers, abilities, and traits) is stored in-memory with JSON file persistence for saved warbands.
 
+**Key Design Decision**: The application enforces a workflow where users must create or select a warband before accessing leader and trooper creation options. This ensures proper context is established before building characters, preventing orphaned weirdos and maintaining data integrity (Requirements 2.1-2.5).
+
 ## Architecture
 
 ### High-Level Architecture
@@ -95,6 +97,7 @@ The system follows a client-server architecture with a React frontend for user i
 - `warband: Warband` - Current warband being edited
 - `selectedWeirdoId: string | null` - ID of weirdo being edited
 - `validationErrors: ValidationError[]` - Current validation errors
+- `showWeirdoOptions: boolean` - Controls visibility of leader/trooper creation options
 
 **Methods**:
 - `handleNameChange(name: string)` - Updates warband name (defaults to "New Warband" for new warbands)
@@ -108,8 +111,10 @@ The system follows a client-server architecture with a React frontend for user i
 
 **UI Behavior**:
 - New warbands initialize with name "New Warband" (Requirements 1.1, 1.2)
-- Weirdos with validation errors receive visual highlighting via error CSS class (Requirements 15.6, 15.7)
-- Hovering over weirdos with errors displays tooltip with specific validation error messages (Requirements 15.8, 15.9)
+- Leader and trooper creation options are hidden until a warband is created or loaded (Requirements 2.1, 2.2, 2.3, 2.4)
+- When a warband is closed or deselected, leader and trooper options are hidden again (Requirements 2.5)
+- Weirdos with validation errors receive visual highlighting via error CSS class (Requirements 16.6, 16.7)
+- Hovering over weirdos with errors displays tooltip with specific validation error messages (Requirements 16.8, 16.9)
 - Real-time validation runs whenever weirdos are added, removed, or modified
 
 #### WeirdoEditorComponent
@@ -300,16 +305,38 @@ interface DataRepository {
 
 ## UI/UX Design
 
+### Workflow and Context Management
+
+**Warband-First Workflow** (Requirements 2.1-2.5):
+
+The application enforces a clear workflow where warband context must be established before character creation:
+
+**Design Rationale**: This approach prevents orphaned weirdos, ensures proper cost calculation context (warband abilities affect costs), and provides a more intuitive user experience by establishing the "container" before adding "contents."
+
+**Implementation**:
+- On application start with no warband selected, only the warband creation/selection interface is visible
+- Leader and trooper creation options are hidden until a warband is created or loaded
+- When a user creates a new warband, the interface reveals leader and trooper creation options
+- When a user loads an existing warband, the interface reveals leader and trooper creation options
+- When a user closes or deselects the current warband, leader and trooper options are hidden again
+- Visual cues (disabled buttons, grayed-out sections, or hidden panels) indicate unavailable functionality
+
+**Benefits**:
+- Prevents data integrity issues (weirdos without warband context)
+- Ensures warband ability modifiers are always available for cost calculations
+- Provides clear visual progression through the creation workflow
+- Reduces user confusion about where to start
+
 ### Validation Feedback
 
 The application provides real-time visual feedback for validation errors to help users identify and resolve issues quickly.
 
-**Visual Highlighting** (Requirements 15.6, 15.7):
+**Visual Highlighting** (Requirements 16.6, 16.7):
 - Weirdos with validation errors receive an `error` CSS class
 - The error class applies visual styling (e.g., red border, background tint) to distinguish invalid weirdos
 - Visual feedback updates immediately when validation state changes
 
-**Error Tooltips** (Requirements 15.8, 15.9):
+**Error Tooltips** (Requirements 16.8, 16.9):
 - Hovering over a weirdo with the error CSS class displays a tooltip
 - Tooltip contains the specific validation error message(s) for that weirdo
 - Multiple errors are displayed as a list within the tooltip
@@ -479,169 +506,175 @@ The following static data will be stored in JSON files and loaded into memory on
 
 *For any* warband creation attempt, the system should reject the creation if any of the following are missing: name (non-empty string) or point limit (75 or 125). Warband ability is optional.
 
-**Validates: Requirements 1.1, 1.2, 1.4, 1.5**
+**Validates: Requirements 1.1, 1.2, 1.3, 1.6**
 
 ### Property 2: New warbands initialize with zero cost
 
 *For any* newly created warband, the total point cost should equal zero before any weirdos are added.
 
-**Validates: Requirements 1.3**
+**Validates: Requirements 1.4**
+
+### Property 2a: Weirdo options visibility depends on warband context
+
+*For any* application state, the leader and trooper creation options should be visible if and only if a warband has been created or loaded. When no warband is selected, these options should be hidden.
+
+**Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
 ### Property 3: Weirdo creation requires name and all attributes
 
 *For any* weirdo (leader or trooper) creation attempt, the system should reject the creation if the name is missing or if any of the five attributes (Speed, Defense, Firepower, Prowess, Willpower) are not selected with valid levels.
 
-**Validates: Requirements 2.1, 2.2, 7.1, 7.2**
+**Validates: Requirements 3.1, 3.2, 8.1, 8.2**
 
 ### Property 4: Attribute costs are calculated correctly
 
 *For any* weirdo with selected attributes, the sum of attribute costs should match the expected total based on the attribute cost table, with warband ability modifiers applied (Mutants reduces Speed cost by 1, minimum 0).
 
-**Validates: Requirements 2.3-2.17, 7.2, 8.2**
+**Validates: Requirements 3.3-3.17, 8.2, 9.2**
 
 ### Property 5: Close combat weapon requirement is enforced
 
 *For any* weirdo, the system should reject finalization if the weirdo has zero close combat weapons selected.
 
-**Validates: Requirements 3.1, 7.3**
+**Validates: Requirements 4.1, 8.3**
 
 ### Property 6: Ranged weapon requirement depends on Firepower level
 
 *For any* weirdo with Firepower level 2d8 or 2d10, the system should reject finalization if no ranged weapon is selected. For any weirdo with Firepower level None, the system should allow finalization without ranged weapons.
 
-**Validates: Requirements 3.2, 3.3, 7.4**
+**Validates: Requirements 4.2, 4.3, 8.4**
 
 ### Property 6a: Ranged weapon selection requires non-zero Firepower
 
 *For any* weirdo with one or more ranged weapons selected, the system should reject finalization if the weirdo has Firepower level None. The weirdo must have Firepower level 2d8 or 2d10 to use ranged weapons.
 
-**Validates: Requirements 3.4, 7.5**
+**Validates: Requirements 4.4, 8.5**
 
 ### Property 7: Weapon costs accumulate correctly
 
 *For any* weirdo with selected weapons, the total weapon cost should equal the sum of all weapon base costs with warband ability modifiers applied (Heavily Armed reduces ranged weapon costs by 1, Mutants reduces Claws & Teeth, Horrible Claws & Teeth, and Whip/Tail costs by 1, minimum 0 for all).
 
-**Validates: Requirements 3.5, 3.6, 8.1, 8.3, 8.4, 8.5**
+**Validates: Requirements 4.5, 4.6, 9.1, 9.3, 9.4, 9.5**
 
 ### Property 8: Equipment limits are enforced based on type and ability
 
 *For any* leader without Cyborgs ability, the system should reject selection of more than 2 equipment items. For any leader with Cyborgs ability, the system should reject selection of more than 3 equipment items. For any trooper without Cyborgs ability, the system should reject selection of more than 1 equipment item. For any trooper with Cyborgs ability, the system should reject selection of more than 2 equipment items.
 
-**Validates: Requirements 4.1, 4.2, 4.4, 7.6, 7.7**
+**Validates: Requirements 5.1, 5.2, 5.4, 8.6, 8.7**
 
 ### Property 9: Equipment costs accumulate correctly
 
 *For any* weirdo with selected equipment, the total equipment cost should equal the sum of all equipment base costs with warband ability modifiers applied (Soldiers sets Grenade, Heavy Armor, and Medkit costs to 0).
 
-**Validates: Requirements 4.3, 8.6, 8.7, 8.8**
+**Validates: Requirements 5.3, 9.6, 9.7, 9.8**
 
 ### Property 10: Psychic powers are unlimited and costs accumulate
 
 *For any* weirdo, the system should allow selection of zero or more psychic powers without limit, and the total psychic power cost should equal the sum of all selected power costs.
 
-**Validates: Requirements 5.1, 5.2, 5.3, 7.8**
+**Validates: Requirements 6.1, 6.2, 6.3, 8.8**
 
 ### Property 11: Leader traits are optional and singular
 
 *For any* leader, the system should allow zero or one leader trait to be selected. For any trooper, the system should reject leader trait selection.
 
-**Validates: Requirements 6.1, 6.2, 6.3**
+**Validates: Requirements 7.1, 7.2, 7.3**
 
 ### Property 12: Weirdo total cost equals sum of all components
 
 *For any* weirdo, the total point cost should equal the sum of attribute costs, weapon costs, equipment costs, and psychic power costs, with all warband ability modifiers applied.
 
-**Validates: Requirements 7.9**
+**Validates: Requirements 8.9**
 
 ### Property 13: Cost reductions never go below zero
 
 *For any* item (attribute, weapon, or equipment) with a cost reduction applied from warband abilities, the final cost should never be negative—it should be clamped to a minimum of 0.
 
-**Validates: Requirements 8.9**
+**Validates: Requirements 9.9**
 
 ### Property 14: Trooper point limit is enforced
 
 *For any* trooper in a warband that does not have a 21-25 point weirdo, the system should reject finalization if the trooper's total cost exceeds 20 points. For any trooper in a warband that already has a 21-25 point weirdo, the system should reject finalization if the trooper's total cost exceeds 20 points.
 
-**Validates: Requirements 9.1, 9.3, 9.4**
+**Validates: Requirements 10.1, 10.3, 10.4**
 
 ### Property 15: Exactly one weirdo may cost 21-25 points
 
 *For any* warband, the system should allow exactly one weirdo (leader or trooper) to have a total cost between 21 and 25 points (inclusive). All other weirdos must have a total cost of 20 points or less.
 
-**Validates: Requirements 9.2, 9.3**
+**Validates: Requirements 10.2, 10.3**
 
 ### Property 16: Warband total cost equals sum of weirdo costs
 
 *For any* warband, the total point cost should equal the sum of all weirdo total costs.
 
-**Validates: Requirements 10.1**
+**Validates: Requirements 11.1**
 
 ### Property 17: Warband point limit is enforced
 
 *For any* warband, the system should reject finalization if the total point cost exceeds the selected point limit (75 or 125). The system should allow finalization if the total point cost is at or below the limit.
 
-**Validates: Requirements 10.2, 10.3, 10.4**
+**Validates: Requirements 11.2, 11.3, 11.4**
 
 ### Property 18: Warband persistence preserves all data
 
 *For any* valid warband that is saved and then loaded, all fields (name, ability, point limit, weirdos with all their attributes, weapons, equipment, psychic powers, traits, and notes) should match the original values.
 
-**Validates: Requirements 11.1, 11.2, 12.1, 12.2**
+**Validates: Requirements 12.1, 12.2, 13.1, 13.2**
 
 ### Property 19: Warband IDs are unique
 
 *For any* set of saved warbands, all warband IDs should be unique—no two warbands should have the same ID.
 
-**Validates: Requirements 11.3**
+**Validates: Requirements 12.3**
 
 ### Property 20: Loaded warbands recalculate costs correctly
 
 *For any* warband loaded from storage, the recalculated total cost should match the sum of all weirdo costs based on current game rules and warband ability modifiers.
 
-**Validates: Requirements 12.3**
+**Validates: Requirements 13.3**
 
 ### Property 21: Loaded warbands are validated like new warbands
 
 *For any* loaded warband that is modified, the system should apply all validation rules (weapon requirements, equipment limits, point limits) as if the warband were being created new.
 
-**Validates: Requirements 12.4**
+**Validates: Requirements 13.4**
 
 ### Property 22: Warband list contains all saved warbands
 
 *For any* set of saved warbands, requesting the warband list should return all warbands with their name, ability, point limit, total cost, and weirdo count.
 
-**Validates: Requirements 13.1, 13.2, 13.3**
+**Validates: Requirements 14.1, 14.2, 14.3**
 
 ### Property 23: Warband deletion removes from storage
 
 *For any* saved warband that is deleted (with confirmation), subsequent attempts to load that warband should fail, and the warband should not appear in the warband list.
 
-**Validates: Requirements 14.2**
+**Validates: Requirements 15.2**
 
 ### Property 24: Deletion cancellation preserves warband
 
 *For any* saved warband where deletion is cancelled, the warband should remain in storage unchanged and continue to appear in the warband list.
 
-**Validates: Requirements 14.4**
+**Validates: Requirements 15.4**
 
 ### Property 25: Cost changes cascade through the system
 
 *For any* weirdo in a warband, when attributes, weapons, equipment, or psychic powers are added or removed, the weirdo's total cost should immediately update, and the warband's total cost should immediately update to reflect the change.
 
-**Validates: Requirements 15.1, 15.2**
+**Validates: Requirements 16.1, 16.2**
 
 ### Property 26: Selection options display descriptive information
 
 *For any* selection interface (abilities, attributes, weapons, equipment, psychic powers, leader traits), the system should display relevant descriptive information (descriptions, notes, effects) and point costs for each available option.
 
-**Validates: Requirements 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7**
+**Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7**
 
 ### Property 27: Cost displays remain visible during scrolling
 
 *For any* editor interface (weirdo editor or warband editor), when the user scrolls through selection options, the total point cost display should remain visible at the top of the interface without obscuring controls.
 
-**Validates: Requirements 17.1, 17.2, 17.3, 17.4**
+**Validates: Requirements 18.1, 18.2, 18.3, 18.4**
 
 ## Error Handling
 
@@ -652,10 +685,14 @@ The system will provide clear, actionable error messages for all validation fail
 **Warband-Level Errors:**
 - "Warband name is required"
 - "Point limit must be 75 or 125"
-- "Warband ability must be selected"
 - "Warband total cost ({current}) exceeds point limit ({limit})"
 - "Warband must have exactly one leader"
 - "Cannot add weirdo: would exceed warband point limit"
+
+**Context Errors:**
+- "Cannot create leader: no warband selected"
+- "Cannot create trooper: no warband selected"
+- "Please create or load a warband first"
 
 **Weirdo-Level Errors:**
 - "Weirdo name is required"
@@ -769,14 +806,13 @@ const attributesGen = fc.record({
   willpower: diceLevelGen
 });
 
-// Generate valid weirdos
+// Generate valid weirdos that respect Firepower/ranged weapon constraints
 const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) => 
   fc.record({
     name: fc.string({ minLength: 1 }),
     type: fc.constant(type),
     attributes: attributesGen,
     closeCombatWeapons: fc.array(closeCombatWeaponGen, { minLength: 1 }),
-    rangedWeapons: fc.array(rangedWeaponGen),
     equipment: fc.array(equipmentGen, { 
       maxLength: type === 'leader' ? 
         (warbandAbility === 'Cyborgs' ? 3 : 2) : 
@@ -785,6 +821,16 @@ const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =
     psychicPowers: fc.array(psychicPowerGen),
     leaderTrait: type === 'leader' ? fc.option(leaderTraitGen) : fc.constant(null),
     notes: fc.string()
+  }).chain(weirdo => {
+    // If Firepower is None, no ranged weapons allowed
+    if (weirdo.attributes.firepower === 'None') {
+      return fc.constant({ ...weirdo, rangedWeapons: [] });
+    }
+    // If Firepower is 2d8 or 2d10, at least one ranged weapon required
+    return fc.array(rangedWeaponGen, { minLength: 1 }).map(rangedWeapons => ({
+      ...weirdo,
+      rangedWeapons
+    }));
   });
 
 // Generate valid warbands

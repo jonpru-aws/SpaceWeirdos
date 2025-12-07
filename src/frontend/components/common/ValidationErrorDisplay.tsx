@@ -1,28 +1,35 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { ValidationError } from '../../../backend/models/types';
 import './ValidationErrorDisplay.css';
 
 /**
  * ValidationErrorDisplay Component
  * 
- * Displays validation errors with optional filtering and grouping.
+ * Displays validation errors with optional filtering, grouping, and tooltip support.
  * Provides a consistent way to show validation feedback across the application.
+ * Supports both inline display and tooltip-on-hover modes.
  * Memoized for performance optimization.
  * 
- * Requirements: 5.3, 5.4, 9.4 - React.memo for reusable components
+ * Requirements: 4.3, 4.4, 4.6
  */
 
 interface ValidationErrorDisplayProps {
   errors: ValidationError[];
   filterByField?: string;
   className?: string;
+  inline?: boolean;
+  showTooltip?: boolean;
 }
 
 const ValidationErrorDisplayComponent = ({ 
   errors, 
   filterByField,
-  className = ''
+  className = '',
+  inline = false,
+  showTooltip = false
 }: ValidationErrorDisplayProps) => {
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
   // Filter errors if filterByField is provided
   const filteredErrors = filterByField
     ? errors.filter(err => err.field === filterByField || err.field.includes(filterByField))
@@ -45,8 +52,45 @@ const ValidationErrorDisplayComponent = ({
 
   const fieldNames = Object.keys(groupedErrors);
 
+  // Tooltip mode - show error icon with count badge
+  if (showTooltip) {
+    return (
+      <div 
+        className={`validation-error-tooltip-container ${className}`}
+        onMouseEnter={() => setIsTooltipVisible(true)}
+        onMouseLeave={() => setIsTooltipVisible(false)}
+      >
+        <div className="validation-error-icon">
+          <span className="error-icon">⚠</span>
+          <span className="error-count">{filteredErrors.length}</span>
+        </div>
+        {isTooltipVisible && (
+          <div className="validation-error-tooltip" role="tooltip">
+            {fieldNames.map(field => (
+              <div key={field} className="tooltip-error-group">
+                {field !== 'general' && (
+                  <div className="tooltip-field-name">{field}:</div>
+                )}
+                <ul className="tooltip-error-list">
+                  {groupedErrors[field].map((error, idx) => (
+                    <li key={idx} className="tooltip-error-item">
+                      {error.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Inline mode - show errors directly
+  const displayClass = inline ? 'validation-error-inline' : 'validation-error-display';
+
   return (
-    <div className={`validation-error-display ${className}`} role="alert" aria-live="polite">
+    <div className={`${displayClass} ${className}`} role="alert" aria-live="polite">
       {fieldNames.length === 1 && fieldNames[0] === 'general' ? (
         // Single group of general errors - show as simple list
         <ul className="error-list">
@@ -78,5 +122,4 @@ const ValidationErrorDisplayComponent = ({
 };
 
 // Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
 export const ValidationErrorDisplay = memo(ValidationErrorDisplayComponent);

@@ -1,132 +1,94 @@
-import { memo } from 'react';
-import { Weirdo, ValidationError } from '../../backend/models/types';
+import { useWarband } from '../contexts/WarbandContext';
 import { WeirdoCard } from './WeirdoCard';
-import './WarbandEditor.css';
+import './WeirdosList.css';
 
 /**
  * WeirdosList Component
  * 
- * Displays the list of weirdos in the warband with add buttons and empty state.
- * Manages weirdo selection and provides actions for editing and removing weirdos.
- * Memoized for performance optimization.
+ * Displays all weirdos in the warband with management controls.
+ * Provides buttons to add leader and trooper weirdos.
+ * Handles weirdo selection and removal.
  * 
- * Requirements: 4.1, 4.3, 4.4, 9.4 - React.memo for reusable components
+ * Requirements: 2.3, 2.4, 2.7, 11.1, 11.2, 11.3
  */
+export function WeirdosList() {
+  const {
+    currentWarband,
+    selectedWeirdoId,
+    addWeirdo,
+    selectWeirdo,
+    removeWeirdo,
+    getWeirdoCost,
+    validationErrors,
+  } = useWarband();
 
-interface WeirdosListProps {
-  weirdos: Weirdo[];
-  selectedWeirdoId: string | null;
-  validationErrors: ValidationError[];
-  hasLeader: boolean;
-  onAddLeader: () => void;
-  onAddTrooper: () => void;
-  onSelectWeirdo: (weirdoId: string) => void;
-  onRemoveWeirdo: (weirdoId: string) => void;
-}
+  if (!currentWarband) {
+    return null;
+  }
 
-const WeirdosListComponent = ({
-  weirdos,
-  selectedWeirdoId,
-  validationErrors,
-  hasLeader,
-  onAddLeader,
-  onAddTrooper,
-  onSelectWeirdo,
-  onRemoveWeirdo
-}: WeirdosListProps) => {
-  /**
-   * Check if a specific weirdo has validation errors
-   */
-  const weirdoHasErrors = (weirdoId: string): boolean => {
-    return validationErrors.some(err => {
-      // Check if error is specific to this weirdo
-      if (err.field?.includes(weirdoId)) return true;
-      
-      // Check for 21-25 point rule violation
-      if (err.code === 'MULTIPLE_25_POINT_WEIRDOS') {
-        const weirdo = weirdos.find(w => w.id === weirdoId);
-        if (weirdo && weirdo.totalCost >= 21 && weirdo.totalCost <= 25) {
-          return true;
-        }
-      }
-      
-      return false;
-    });
+  // Check if warband has a leader (Requirement 11.3)
+  const hasLeader = currentWarband.weirdos.some(w => w.type === 'leader');
+
+  // Handle add leader button click
+  const handleAddLeader = () => {
+    try {
+      addWeirdo('leader');
+    } catch (error) {
+      console.error('Error adding leader:', error);
+    }
   };
 
-  /**
-   * Get validation error messages for a specific weirdo
-   */
-  const getWeirdoErrors = (weirdoId: string): string[] => {
-    const errors: string[] = [];
-    
-    validationErrors.forEach(err => {
-      // Check if error is specific to this weirdo
-      if (err.field?.includes(weirdoId)) {
-        errors.push(err.message);
-      }
-      
-      // Check for 21-25 point rule violation
-      if (err.code === 'MULTIPLE_25_POINT_WEIRDOS') {
-        const weirdo = weirdos.find(w => w.id === weirdoId);
-        if (weirdo && weirdo.totalCost >= 21 && weirdo.totalCost <= 25) {
-          errors.push(err.message);
-        }
-      }
-    });
-    
-    return errors;
+  // Handle add trooper button click
+  const handleAddTrooper = () => {
+    try {
+      addWeirdo('trooper');
+    } catch (error) {
+      console.error('Error adding trooper:', error);
+    }
   };
 
   return (
-    <div className="weirdos-section">
-      <div className="section-header">
-        <h2>Weirdos ({weirdos.length})</h2>
-        <div className="add-buttons">
-          <button
-            onClick={onAddLeader}
-            disabled={hasLeader}
-            className="add-leader-button"
-            aria-label={hasLeader ? 'Leader already added' : 'Add a leader to your warband'}
-          >
-            + Add Leader
-          </button>
-          <button
-            onClick={onAddTrooper}
-            className="add-trooper-button"
-            aria-label="Add a trooper to your warband"
-          >
-            + Add Trooper
-          </button>
-        </div>
+    <div className="weirdos-list">
+      {/* Add buttons (Requirements 11.1, 11.2, 11.3) */}
+      <div className="weirdos-list__actions">
+        <button
+          className="weirdos-list__add-button"
+          onClick={handleAddLeader}
+          disabled={hasLeader}
+          aria-label="Add Leader"
+        >
+          Add Leader
+        </button>
+        <button
+          className="weirdos-list__add-button"
+          onClick={handleAddTrooper}
+          aria-label="Add Trooper"
+        >
+          Add Trooper
+        </button>
       </div>
 
-      {weirdos.length === 0 ? (
-        <p className="empty-state">No weirdos yet. Add a leader to get started!</p>
-      ) : (
-        <div className="weirdos-list">
-          {weirdos.map(weirdo => {
-            const hasErrors = weirdoHasErrors(weirdo.id);
-            const errorMessages = hasErrors ? getWeirdoErrors(weirdo.id) : [];
-            return (
-              <WeirdoCard
-                key={weirdo.id}
-                weirdo={weirdo}
-                isSelected={selectedWeirdoId === weirdo.id}
-                hasErrors={hasErrors}
-                errorMessages={errorMessages}
-                onSelect={() => onSelectWeirdo(weirdo.id)}
-                onEdit={() => onSelectWeirdo(weirdo.id)}
-                onRemove={() => onRemoveWeirdo(weirdo.id)}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* List of weirdos */}
+      <div className="weirdos-list__items">
+        {currentWarband.weirdos.length === 0 ? (
+          <div className="weirdos-list__empty">
+            No weirdos yet. Add a leader or trooper to get started.
+          </div>
+        ) : (
+          currentWarband.weirdos.map((weirdo) => (
+            <WeirdoCard
+              key={weirdo.id}
+              weirdo={weirdo}
+              cost={getWeirdoCost(weirdo.id)}
+              isSelected={selectedWeirdoId === weirdo.id}
+              hasErrors={validationErrors.has(weirdo.id)}
+              validationErrors={validationErrors.get(weirdo.id) || []}
+              onClick={() => selectWeirdo(weirdo.id)}
+              onRemove={() => removeWeirdo(weirdo.id)}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
-};
-
-// Memoize component for performance
-// Requirements: 9.4 - React.memo for reusable components
-export const WeirdosList = memo(WeirdosListComponent);
+}

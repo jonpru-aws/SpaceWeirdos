@@ -280,13 +280,32 @@ export function createWarbandRouter(repository: DataRepository): Router {
     try {
       const { weirdo, warband } = req.body;
 
-      if (weirdo && warband) {
-        // Validate weirdo within warband context
-        const errors = validationService.validateWeirdo(weirdo, warband);
-        return res.json({
-          valid: errors.length === 0,
-          errors
-        });
+      if (weirdo) {
+        // Validate weirdo (with or without warband context)
+        if (warband) {
+          // Full validation with warband context
+          const errors = validationService.validateWeirdo(weirdo, warband);
+          return res.json({
+            valid: errors.length === 0,
+            errors
+          });
+        } else {
+          // Partial validation without warband context
+          // Create a minimal warband context for validation
+          const minimalWarband = {
+            id: 'temp',
+            name: 'temp',
+            pointLimit: 75,
+            ability: null,
+            weirdos: [weirdo],
+            totalCost: 0
+          };
+          const errors = validationService.validateWeirdo(weirdo, minimalWarband);
+          return res.json({
+            valid: errors.length === 0,
+            errors
+          });
+        }
       }
 
       if (warband) {
@@ -298,7 +317,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       throw new ValidationError(
         'Invalid request',
         'INVALID_REQUEST',
-        { details: 'Must provide either (weirdo + warband) or warband' }
+        { details: 'Must provide either weirdo or warband' }
       );
     } catch (error: any) {
       handleError(error, res);

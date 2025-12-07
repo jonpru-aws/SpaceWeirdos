@@ -1,0 +1,48 @@
+.cost-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: #f5f5f5;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #666;
+  white-space: nowrap;
+}
+
+.cost-badge.modified {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.cost-badge-single {
+  color: #333;
+}
+
+.cost-badge-original {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 0.8125rem;
+}
+
+.cost-badge-arrow {
+  color: #2196f3;
+  font-weight: bold;
+}
+
+.cost-badge-current {
+  color: #2196f3;
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .cost-badge {
+    font-size: 0.8125rem;
+    padding: 0.2rem 0.625rem;
+  }
+
+  .cost-badge-original {
+    font-size: 0.75rem;
+  }
+}

@@ -95,3 +95,41 @@ export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
 }
+
+export interface WarbandSummary {
+  id: string;
+  name: string;
+  ability: WarbandAbility | null;
+  pointLimit: number;
+  totalCost: number;
+  weirdoCount: number;
+  updatedAt: Date;
+}
+
+// Error codes for persistence operations
+export enum PersistenceErrorCode {
+  FILE_READ_ERROR = 'FILE_READ_ERROR',
+  FILE_WRITE_ERROR = 'FILE_WRITE_ERROR',
+  JSON_PARSE_ERROR = 'JSON_PARSE_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+  PERMISSION_ERROR = 'PERMISSION_ERROR'
+}
+
+// Custom error class for persistence operations
+export class PersistenceError extends Error {
+  public readonly code: PersistenceErrorCode;
+  public readonly details?: any;
+
+  constructor(message: string, code: PersistenceErrorCode, details?: any) {
+    super(message);
+    this.name = 'PersistenceError';
+    this.code = code;
+    this.details = details;
+    
+    // Maintains proper stack trace for where our error was thrown (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, PersistenceError);
+    }
+  }
+}
