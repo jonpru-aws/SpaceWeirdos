@@ -92,7 +92,7 @@ describe('Property 6: Validation errors are visually highlighted', () => {
         fc.array(validationErrorArbitrary, { minLength: 1, maxLength: 5 }),
         fc.integer({ min: 0, max: 50 }),
         (weirdo, validationErrors, cost) => {
-          render(
+          const { container } = render(
             <WeirdoCard
               weirdo={weirdo}
               cost={cost}
@@ -104,8 +104,14 @@ describe('Property 6: Validation errors are visually highlighted', () => {
             />
           );
 
-          const errorIndicator = screen.getByLabelText('Has validation errors');
+          // Check for error indicator element
+          const errorIndicator = container.querySelector('.weirdo-card__error-indicator');
           expect(errorIndicator).toBeInTheDocument();
+          
+          // Check for accessible error description
+          const errorDescription = container.querySelector(`#weirdo-errors-${weirdo.id}`);
+          expect(errorDescription).toBeInTheDocument();
+          expect(errorDescription?.textContent).toContain('validation error');
           
           cleanup();
         }
@@ -216,7 +222,10 @@ describe('Property 6: Validation errors are visually highlighted', () => {
 
           const card = container.querySelector('.weirdo-card');
           expect(card).not.toHaveClass('weirdo-card--error');
-          expect(screen.queryByLabelText('Has validation errors')).not.toBeInTheDocument();
+          
+          // Check that error indicator is not present
+          const errorIndicator = container.querySelector('.weirdo-card__error-indicator');
+          expect(errorIndicator).not.toBeInTheDocument();
           
           cleanup();
         }
@@ -297,7 +306,10 @@ describe('Property 6: Validation errors are visually highlighted', () => {
           );
 
           expect(card).not.toHaveClass('weirdo-card--error');
-          expect(screen.queryByLabelText('Has validation errors')).not.toBeInTheDocument();
+          
+          // Check that error indicator is not present
+          const errorIndicator = container.querySelector('.weirdo-card__error-indicator');
+          expect(errorIndicator).not.toBeInTheDocument();
           
           cleanup();
         }

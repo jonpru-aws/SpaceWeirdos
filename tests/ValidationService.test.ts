@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import fc from 'fast-check';
 import { ValidationService } from '../src/backend/services/ValidationService';
 import { CostEngine } from '../src/backend/services/CostEngine';
@@ -72,36 +72,6 @@ const psychicPowerGen = fc.record<PsychicPower>({
   cost: fc.integer({ min: 0, max: 5 }),
   effect: fc.string()
 });
-
-const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =>
-  fc.record<Weirdo>({
-    id: fc.uuid(),
-    name: fc.string({ minLength: 1 }),
-    type: fc.constant(type),
-    attributes: attributesGen,
-    closeCombatWeapons: fc.array(closeCombatWeaponGen, { minLength: 1, maxLength: 3 }),
-    rangedWeapons: fc.array(rangedWeaponGen, { minLength: 0, maxLength: 2 }),
-    equipment: fc.array(equipmentGen, {
-      minLength: 0,
-      maxLength: type === 'leader' ? (warbandAbility === 'Cyborgs' ? 3 : 2) : warbandAbility === 'Cyborgs' ? 2 : 1
-    }),
-    psychicPowers: fc.array(psychicPowerGen, { minLength: 0, maxLength: 3 }),
-    leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic', 'Monstrous', 'Political Officer', 'Sorcerer', 'Tactician'), { nil: null }) : fc.constant(null),
-    notes: fc.string(),
-    totalCost: fc.constant(0)
-  }).map((weirdo) => {
-    // Ensure ranged weapons require Firepower 2d8 or 2d10
-    if (weirdo.rangedWeapons.length > 0 && weirdo.attributes.firepower === 'None') {
-      return {
-        ...weirdo,
-        attributes: {
-          ...weirdo.attributes,
-          firepower: '2d8' as FirepowerLevel
-        }
-      };
-    }
-    return weirdo;
-  });
 
 describe('ValidationService', () => {
   const validationService = new ValidationService();

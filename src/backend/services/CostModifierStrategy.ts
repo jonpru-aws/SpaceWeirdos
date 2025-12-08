@@ -43,7 +43,7 @@ export class DefaultCostStrategy implements CostModifierStrategy {
     return equipment.baseCost;
   }
 
-  applyAttributeDiscount(attribute: AttributeType, level: AttributeLevel, baseCost: number): number {
+  applyAttributeDiscount(_attribute: AttributeType, _level: AttributeLevel, baseCost: number): number {
     return baseCost;
   }
 }
@@ -57,6 +57,8 @@ export class MutantsCostStrategy implements CostModifierStrategy {
   applyWeaponDiscount(weapon: Weapon): number {
     let cost = weapon.baseCost;
 
+    // Type assertion needed: weapon.name is string but includes() expects readonly tuple type
+    // Safe because we're just checking if the string is in the list
     if (weapon.type === 'close' && ABILITY_WEAPON_LISTS.MUTANT_WEAPONS.includes(weapon.name as any)) {
       cost -= DISCOUNT_VALUES.MUTANT_DISCOUNT;
     }
@@ -68,7 +70,7 @@ export class MutantsCostStrategy implements CostModifierStrategy {
     return equipment.baseCost;
   }
 
-  applyAttributeDiscount(attribute: AttributeType, level: AttributeLevel, baseCost: number): number {
+  applyAttributeDiscount(attribute: AttributeType, _level: AttributeLevel, baseCost: number): number {
     if (attribute === 'speed') {
       return Math.max(0, baseCost - DISCOUNT_VALUES.MUTANT_DISCOUNT);
     }
@@ -95,7 +97,7 @@ export class HeavilyArmedCostStrategy implements CostModifierStrategy {
     return equipment.baseCost;
   }
 
-  applyAttributeDiscount(attribute: AttributeType, level: AttributeLevel, baseCost: number): number {
+  applyAttributeDiscount(_attribute: AttributeType, _level: AttributeLevel, baseCost: number): number {
     return baseCost;
   }
 }
@@ -110,13 +112,15 @@ export class SoldiersCostStrategy implements CostModifierStrategy {
   }
 
   applyEquipmentDiscount(equipment: Equipment): number {
+    // Type assertion needed: equipment.name is string but includes() expects readonly tuple type
+    // Safe because we're just checking if the string is in the list
     if (ABILITY_EQUIPMENT_LISTS.SOLDIER_FREE_EQUIPMENT.includes(equipment.name as any)) {
       return 0;
     }
     return equipment.baseCost;
   }
 
-  applyAttributeDiscount(attribute: AttributeType, level: AttributeLevel, baseCost: number): number {
+  applyAttributeDiscount(_attribute: AttributeType, _level: AttributeLevel, baseCost: number): number {
     return baseCost;
   }
 }

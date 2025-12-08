@@ -602,4 +602,264 @@ describe('Warband API Routes', () => {
       expect(response.body).toHaveProperty('error');
     });
   });
+
+  describe('POST /api/cost/calculate', () => {
+    it('should calculate cost with breakdown within 100ms', async () => {
+      const startTime = Date.now();
+      
+      const response = await request(app)
+        .post('/api/cost/calculate')
+        .send({
+          weirdoType: 'trooper',
+          attributes: {
+            speed: 1,
+            defense: '2d6',
+            firepower: 'None',
+            prowess: '2d6',
+            willpower: '2d6'
+          },
+          weapons: {
+            close: [{
+              id: 'weapon-1',
+              name: 'Unarmed',
+              type: 'close',
+              baseCost: 0,
+              maxActions: 2,
+              notes: ''
+            }],
+            ranged: []
+          },
+          equipment: [],
+          psychicPowers: [],
+          warbandAbility: null
+        });
+
+      const elapsedTime = Date.now() - startTime;
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('totalCost');
+      expect(response.body.data).toHaveProperty('breakdown');
+      expect(response.body.data.breakdown).toHaveProperty('attributes');
+      expect(response.body.data.breakdown).toHaveProperty('weapons');
+      expect(response.body.data.breakdown).toHaveProperty('equipment');
+      expect(response.body.data.breakdown).toHaveProperty('psychicPowers');
+      expect(response.body.data).toHaveProperty('warnings');
+      expect(response.body.data).toHaveProperty('isApproachingLimit');
+      expect(response.body.data).toHaveProperty('isOverLimit');
+      expect(elapsedTime).toBeLessThan(100);
+    });
+
+    it('should return warnings when approaching limit', async () => {
+      const response = await request(app)
+        .post('/api/cost/calculate')
+        .send({
+          weirdoType: 'trooper',
+          attributes: {
+            speed: 3,
+            defense: '2d10',
+            firepower: '2d10',
+            prowess: '2d10',
+            willpower: '2d10'
+          },
+          weapons: {
+            close: [{
+              id: 'weapon-1',
+              name: 'Unarmed',
+              type: 'close',
+              baseCost: 0,
+              maxActions: 2,
+              notes: ''
+            }],
+            ranged: []
+          },
+          equipment: [],
+          psychicPowers: [],
+          warbandAbility: null
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.isApproachingLimit).toBe(true);
+      expect(response.body.data.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('should return error indicator when over limit', async () => {
+      const response = await request(app)
+        .post('/api/cost/calculate')
+        .send({
+          weirdoType: 'trooper',
+          attributes: {
+            speed: 3,
+            defense: '2d10',
+            firepower: '2d10',
+            prowess: '2d10',
+            willpower: '2d10'
+          },
+          weapons: {
+            close: [{
+              id: 'weapon-1',
+              name: 'Power Sword',
+              type: 'close',
+              baseCost: 5,
+              maxActions: 2,
+              notes: ''
+            }],
+            ranged: []
+          },
+          equipment: [],
+          psychicPowers: [],
+          warbandAbility: null
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.isOverLimit).toBe(true);
+    });
+
+    it('should return 400 for missing required fields', async () => {
+      const response = await request(app)
+        .post('/api/cost/calculate')
+        .send({
+          weirdoType: 'trooper'
+          // Missing attributes
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+  });
+
+  describe('POST /api/validation/weirdo', () => {
+    it('should validate weirdo and return structured errors', async () => {
+      const weirdo = {
+        id: 'weirdo-1',
+        name: 'Test Weirdo',
+        type: 'trooper',
+        attributes: {
+          speed: 1,
+          defense: '2d6',
+          firepower: 'None',
+          prowess: '2d6',
+          willpower: '2d6'
+        },
+        closeCombatWeapons: [{
+          id: 'weapon-1',
+          name: 'Unarmed',
+          type: 'close',
+          baseCost: 0,
+          maxActions: 2,
+          notes: ''
+        }],
+        rangedWeapons: [],
+        equipment: [],
+        psychicPowers: [],
+        leaderTrait: null,
+        notes: '',
+        totalCost: 0
+      };
+
+      const response = await request(app)
+        .post('/api/validation/weirdo')
+        .send({ weirdo });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('valid');
+      expect(response.body.data).toHaveProperty('errors');
+      expect(Array.isArray(response.body.data.errors)).toBe(true);
+    });
+
+    it('should return validation errors for invalid weirdo', async () => {
+      const weirdo = {
+        id: 'weirdo-1',
+        name: '', // Invalid: empty name
+        type: 'trooper',
+        attributes: {
+          speed: 1,
+          defense: '2d6',
+          firepower: 'None',
+          prowess: '2d6',
+          willpower: '2d6'
+        },
+        closeCombatWeapons: [], // Invalid: no close combat weapon
+        rangedWeapons: [],
+        equipment: [],
+        psychicPowers: [],
+        leaderTrait: null,
+        notes: '',
+        totalCost: 0
+      };
+
+      const response = await request(app)
+        .post('/api/validation/weirdo')
+        .send({ weirdo });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.valid).toBe(false);
+      expect(response.body.data.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should return 400 for missing weirdo', async () => {
+      const response = await request(app)
+        .post('/api/validation/weirdo')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+  });
+
+  describe('POST /api/validation/warband', () => {
+    it('should validate warband and return structured errors', async () => {
+      const warband = {
+        id: 'warband-1',
+        name: 'Test Warband',
+        ability: null,
+        pointLimit: 75,
+        totalCost: 0,
+        weirdos: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const response = await request(app)
+        .post('/api/validation/warband')
+        .send(warband);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('valid');
+      expect(response.body.data).toHaveProperty('errors');
+      expect(Array.isArray(response.body.data.errors)).toBe(true);
+    });
+
+    it('should return validation errors for invalid warband', async () => {
+      const warband = {
+        id: 'warband-1',
+        name: '', // Invalid: empty name
+        ability: null,
+        pointLimit: 100, // Invalid: not 75 or 125
+        totalCost: 0,
+        weirdos: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const response = await request(app)
+        .post('/api/validation/warband')
+        .send(warband);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.valid).toBe(false);
+      expect(response.body.data.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should return 400 for missing warband', async () => {
+      const response = await request(app)
+        .post('/api/validation/warband')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+  });
 });

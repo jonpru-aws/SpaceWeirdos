@@ -14,7 +14,7 @@ describe('ValidationErrorDisplay', () => {
   describe('Error Rendering', () => {
     it('should render a single error message', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -24,8 +24,8 @@ describe('ValidationErrorDisplay', () => {
 
     it('should render multiple error messages', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' },
-        { field: 'pointLimit', message: 'Point limit must be 75 or 125', code: 'INVALID_VALUE' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' },
+        { field: 'pointLimit', message: 'Point limit must be 75 or 125', code: 'INVALID_POINT_LIMIT' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -36,9 +36,9 @@ describe('ValidationErrorDisplay', () => {
 
     it('should group errors by field', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' },
-        { field: 'name', message: 'Name must be at least 3 characters', code: 'MIN_LENGTH' },
-        { field: 'pointLimit', message: 'Point limit is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' },
+        { field: 'name', message: 'Name must be at least 3 characters', code: 'WARBAND_NAME_REQUIRED' },
+        { field: 'pointLimit', message: 'Point limit is required', code: 'INVALID_POINT_LIMIT' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -55,7 +55,7 @@ describe('ValidationErrorDisplay', () => {
 
     it('should render general errors without field grouping', () => {
       const errors: ValidationError[] = [
-        { field: 'general', message: 'Warband validation failed', code: 'VALIDATION_ERROR' }
+        { field: 'general', message: 'Warband validation failed', code: 'WARBAND_POINT_LIMIT_EXCEEDED' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -69,9 +69,9 @@ describe('ValidationErrorDisplay', () => {
   describe('Filtering', () => {
     it('should filter errors by field name', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' },
-        { field: 'pointLimit', message: 'Point limit is required', code: 'REQUIRED' },
-        { field: 'ability', message: 'Invalid ability', code: 'INVALID_VALUE' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' },
+        { field: 'pointLimit', message: 'Point limit is required', code: 'INVALID_POINT_LIMIT' },
+        { field: 'ability', message: 'Invalid ability', code: 'LEADER_TRAIT_INVALID' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} filterByField="name" />);
@@ -84,9 +84,9 @@ describe('ValidationErrorDisplay', () => {
 
     it('should filter errors by partial field match', () => {
       const errors: ValidationError[] = [
-        { field: 'weirdo-123.name', message: 'Weirdo name is required', code: 'REQUIRED' },
-        { field: 'weirdo-123.attributes', message: 'Invalid attributes', code: 'INVALID_VALUE' },
-        { field: 'weirdo-456.name', message: 'Another weirdo name error', code: 'REQUIRED' }
+        { field: 'weirdo-123.name', message: 'Weirdo name is required', code: 'WEIRDO_NAME_REQUIRED' },
+        { field: 'weirdo-123.attributes', message: 'Invalid attributes', code: 'ATTRIBUTES_INCOMPLETE' },
+        { field: 'weirdo-456.name', message: 'Another weirdo name error', code: 'WEIRDO_NAME_REQUIRED' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} filterByField="weirdo-123" />);
@@ -101,8 +101,8 @@ describe('ValidationErrorDisplay', () => {
 
     it('should show all errors when no filter is provided', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' },
-        { field: 'pointLimit', message: 'Point limit is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' },
+        { field: 'pointLimit', message: 'Point limit is required', code: 'INVALID_POINT_LIMIT' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -121,7 +121,7 @@ describe('ValidationErrorDisplay', () => {
 
     it('should render nothing when all errors are filtered out', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' }
       ];
 
       const { container } = render(
@@ -135,7 +135,7 @@ describe('ValidationErrorDisplay', () => {
   describe('Accessibility', () => {
     it('should have proper ARIA attributes', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' }
       ];
 
       render(<ValidationErrorDisplay errors={errors} />);
@@ -148,7 +148,7 @@ describe('ValidationErrorDisplay', () => {
   describe('Custom className', () => {
     it('should apply custom className', () => {
       const errors: ValidationError[] = [
-        { field: 'name', message: 'Name is required', code: 'REQUIRED' }
+        { field: 'name', message: 'Name is required', code: 'WARBAND_NAME_REQUIRED' }
       ];
 
       const { container } = render(

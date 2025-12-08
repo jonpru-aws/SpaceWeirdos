@@ -3,6 +3,7 @@
  * 
  * Compact card display for weirdos in the list.
  * Includes selected state and error indicator styling.
+ * Uses design system tokens for consistency.
  * 
  * Requirements: 3.3, 4.1, 4.2, 10.5, 11.4
  */
@@ -11,63 +12,116 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: white;
-  border: 2px solid #ccc;
-  border-radius: 4px;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background: var(--color-bg-base);
+  border: var(--border-width-medium) solid var(--color-border-default);
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast) var(--easing-in-out);
 }
 
 .weirdo-card:hover {
-  border-color: #999;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-sm);
 }
 
 .weirdo-card:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.weirdo-card:focus:not(:focus-visible) {
+  border-color: var(--color-border-default);
+  box-shadow: none;
+}
+
+.weirdo-card:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Selected state (Requirement 10.5) */
 .weirdo-card--selected {
-  border-color: #1976d2;
-  background: #e3f2fd;
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-50);
 }
 
 .weirdo-card--selected:hover {
-  border-color: #1565c0;
+  border-color: var(--color-primary-600);
 }
 
 /* Error state (Requirements 4.1, 4.2) */
 .weirdo-card--error {
-  border-color: #d32f2f;
-  background: #ffebee;
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+  animation: errorPulse var(--transition-slow) var(--easing-in-out);
 }
 
 .weirdo-card--error:hover {
-  border-color: #c62828;
+  border-color: #b91c1c;
+}
+
+@keyframes errorPulse {
+  0% {
+    border-color: var(--color-border-default);
+    background: var(--color-bg-base);
+  }
+  50% {
+    border-color: var(--color-error);
+    background: var(--color-error-light);
+  }
+  100% {
+    border-color: var(--color-error);
+    background: var(--color-error-light);
+  }
 }
 
 /* Error indicator (Requirements 4.1, 4.2) */
 .weirdo-card__error-indicator {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  background: #d32f2f;
-  color: white;
-  border-radius: 50%;
+  top: calc(-1 * var(--spacing-2));
+  right: calc(-1 * var(--spacing-2));
+  width: var(--spacing-6);
+  height: var(--spacing-6);
+  background: var(--color-error);
+  color: var(--color-text-inverse);
+  border-radius: var(--border-radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  box-shadow: var(--shadow-sm);
   cursor: help;
+  transition: transform var(--transition-fast) var(--easing-out),
+              box-shadow var(--transition-fast) var(--easing-out);
+  animation: bounceIn var(--transition-slow) var(--easing-out);
+}
+
+.weirdo-card__error-indicator:hover {
+  transform: scale(1.15);
+  box-shadow: var(--shadow-md);
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Tooltip for validation errors (Requirements 4.3, 4.4, 4.6) */
@@ -75,18 +129,30 @@
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 8px;
+  margin-top: var(--spacing-2);
   min-width: 250px;
   max-width: 350px;
-  padding: 0.75rem;
-  background: #333;
-  color: white;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  font-size: 0.875rem;
-  line-height: 1.4;
+  padding: var(--spacing-3);
+  background: var(--color-neutral-800);
+  color: var(--color-text-inverse);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-index-tooltip);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   text-align: left;
+  animation: tooltipSlideIn var(--transition-normal) var(--easing-out);
+}
+
+@keyframes tooltipSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Tooltip arrow */
@@ -94,25 +160,25 @@
   content: '';
   position: absolute;
   bottom: 100%;
-  right: 8px;
+  right: var(--spacing-2);
   border: 6px solid transparent;
-  border-bottom-color: #333;
+  border-bottom-color: var(--color-neutral-800);
 }
 
 .weirdo-card__tooltip-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #ffcdd2;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-2);
+  color: var(--color-error-light);
 }
 
 .weirdo-card__tooltip-list {
   margin: 0;
-  padding-left: 1.25rem;
+  padding-left: var(--spacing-5);
   list-style: disc;
 }
 
 .weirdo-card__tooltip-item {
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing-1);
 }
 
 .weirdo-card__tooltip-item:last-child {
@@ -124,61 +190,87 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-1);
   min-width: 0; /* Allow text truncation */
 }
 
 .weirdo-card__name {
-  font-weight: 600;
-  color: #333;
-  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .weirdo-card__type {
-  font-size: 0.75rem;
-  color: #666;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 /* Cost display (Requirement 3.3) */
 .weirdo-card__cost {
-  font-weight: 600;
-  color: #1976d2;
-  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-500);
+  font-size: var(--font-size-sm);
   white-space: nowrap;
 }
 
 /* Remove button (Requirement 11.4) */
 .weirdo-card__remove {
-  width: 28px;
-  height: 28px;
+  width: var(--spacing-7);
+  height: var(--spacing-7);
   padding: 0;
-  background: #f44336;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 4px;
-  font-size: 1.25rem;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-xl);
   line-height: 1;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-fast) var(--easing-in-out);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .weirdo-card__remove:hover {
-  background: #d32f2f;
+  background: #b91c1c;
 }
 
 .weirdo-card__remove:active {
-  background: #c62828;
+  background: #991b1b;
 }
 
 .weirdo-card__remove:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+.weirdo-card__remove:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+.weirdo-card__remove:focus-visible {
+  outline: 2px solid var(--color-error);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .weirdo-card,
+  .weirdo-card--error,
+  .weirdo-card__error-indicator,
+  .weirdo-card__tooltip,
+  .weirdo-card__remove {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .weirdo-card__error-indicator:hover {
+    transform: none;
+  }
 }

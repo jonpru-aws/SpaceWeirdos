@@ -99,6 +99,20 @@ This spec focuses on the list view, CRUD operations, and user feedback. It depen
 4. WHEN navigating from list to editor THEN the Warband Builder SHALL load the selected warband data
 5. WHEN navigation occurs THEN the Warband Builder SHALL update the browser URL to reflect the current view
 
+### Requirement 7
+
+**User Story:** As a developer, I want all frontend-backend communication to use API calls, so that the frontend and backend remain properly decoupled and maintainable.
+
+#### Acceptance Criteria
+
+1. WHEN the frontend needs to fetch warband data THEN the Frontend SHALL make HTTP requests to backend API endpoints
+2. WHEN the frontend needs to create a warband THEN the Frontend SHALL send HTTP POST requests to the backend API
+3. WHEN the frontend needs to update a warband THEN the Frontend SHALL send HTTP PUT requests to the backend API
+4. WHEN the frontend needs to delete a warband THEN the Frontend SHALL send HTTP DELETE requests to the backend API
+5. WHEN the frontend receives API responses THEN the Frontend SHALL handle both success and error responses appropriately
+6. WHEN making API calls THEN the Frontend SHALL NOT directly import or use backend service classes
+7. WHEN the backend provides data THEN the Backend SHALL expose RESTful API endpoints for all warband operations
+
 ## Items Requiring Clarification
 
 ### 1. Warband Sorting

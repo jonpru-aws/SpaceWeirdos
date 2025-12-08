@@ -78,6 +78,19 @@ This spec focuses on the warband properties section of the editor. It depends on
 5. WHEN a warband is successfully saved THEN the Warband Builder SHALL display a success notification
 6. WHEN a warband save fails THEN the Warband Builder SHALL display an error notification
 
+### Requirement 6
+
+**User Story:** As a developer, I want all frontend-backend communication to use API calls, so that the frontend and backend remain properly decoupled and maintainable.
+
+#### Acceptance Criteria
+
+1. WHEN the frontend needs to validate warband properties THEN the Frontend SHALL make HTTP requests to backend validation API endpoints
+2. WHEN the frontend needs to save warband changes THEN the Frontend SHALL send HTTP PUT requests to the backend API
+3. WHEN the frontend needs warband ability data THEN the Frontend SHALL fetch it via HTTP GET requests to the backend API
+4. WHEN the frontend receives API responses THEN the Frontend SHALL handle both success and error responses appropriately
+5. WHEN making API calls THEN the Frontend SHALL NOT directly import or use backend service classes
+6. WHEN the backend provides validation THEN the Backend SHALL expose RESTful API endpoints for validation operations
+
 ## Items Requiring Clarification
 
 ### 1. Auto-save

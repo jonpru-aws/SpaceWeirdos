@@ -1,48 +1,65 @@
 .cost-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  background: #f5f5f5;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #666;
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--border-radius-xl);
+  background: var(--color-neutral-100);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
   white-space: nowrap;
+  transition: background var(--transition-normal) var(--easing-in-out),
+              transform var(--transition-fast) var(--easing-out);
 }
 
 .cost-badge.modified {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
 }
 
 .cost-badge-single {
-  color: #333;
+  color: var(--color-text-primary);
+  transition: color var(--transition-normal) var(--easing-in-out);
 }
 
 .cost-badge-original {
   text-decoration: line-through;
-  color: #999;
-  font-size: 0.8125rem;
+  color: var(--color-neutral-400);
+  font-size: var(--font-size-xs);
+  transition: opacity var(--transition-normal) var(--easing-in-out);
 }
 
 .cost-badge-arrow {
-  color: #2196f3;
-  font-weight: bold;
+  color: var(--color-primary-500);
+  font-weight: var(--font-weight-bold);
+  transition: transform var(--transition-fast) var(--easing-in-out);
 }
 
 .cost-badge-current {
-  color: #2196f3;
-  font-weight: 600;
+  color: var(--color-primary-500);
+  font-weight: var(--font-weight-semibold);
+  transition: color var(--transition-normal) var(--easing-in-out);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .cost-badge {
-    font-size: 0.8125rem;
-    padding: 0.2rem 0.625rem;
+    font-size: var(--font-size-xs);
+    padding: calc(var(--spacing-1) * 0.8) calc(var(--spacing-3) * 0.8);
   }
 
   .cost-badge-original {
     font-size: 0.75rem;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .cost-badge,
+  .cost-badge-single,
+  .cost-badge-original,
+  .cost-badge-arrow,
+  .cost-badge-current {
+    transition: none;
   }
 }

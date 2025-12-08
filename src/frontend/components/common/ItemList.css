@@ -21,13 +21,16 @@
 .item-list-checkbox-item {
   border: 2px solid #ddd;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: border-color var(--transition-fast) var(--easing-in-out),
+              box-shadow var(--transition-fast) var(--easing-out),
+              transform var(--transition-fast) var(--easing-out);
   background: white;
 }
 
 .item-list-checkbox-item:hover {
   border-color: #2196f3;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .item-checkbox-label {
@@ -87,11 +90,13 @@
 .item-cost.modified .item-cost-original {
   text-decoration: line-through;
   color: #999;
+  transition: opacity var(--transition-normal) var(--easing-in-out);
 }
 
 .item-cost.modified .item-cost-current {
   color: #2196f3;
   font-weight: 600;
+  transition: color var(--transition-normal) var(--easing-in-out);
 }
 
 .item-description {
@@ -119,5 +124,18 @@
 
   .item-description {
     font-size: 0.75rem;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .item-list-checkbox-item,
+  .item-cost.modified .item-cost-original,
+  .item-cost.modified .item-cost-current {
+    transition: none !important;
+  }
+  
+  .item-list-checkbox-item:hover {
+    transform: none;
   }
 }

@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { LeaderTrait } from '../../backend/models/types';
+import './LeaderTraitSelector.css';
 
 /**
  * LeaderTraitSelector Component
@@ -41,20 +42,26 @@ const LeaderTraitSelectorComponent = ({
     if (value === '') {
       onChange(null);
     } else {
+      // Type assertion is safe: select options are constrained to valid LeaderTrait values in JSX
       onChange(value as LeaderTrait);
     }
   };
 
   return (
-    <div className="leader-trait-selector">
-      <label htmlFor="leader-trait" className="leader-trait-selector__label">
+    <div className="leader-trait-selector" role="group" aria-labelledby="leader-trait-label">
+      <label 
+        htmlFor="leader-trait" 
+        id="leader-trait-label"
+        className="leader-trait-selector__label"
+      >
         Leader Trait
       </label>
       <select
         id="leader-trait"
         value={selectedTrait || ''}
         onChange={handleChange}
-        className="leader-trait-selector__select"
+        className="leader-trait-selector__select select"
+        aria-label="Select leader trait"
       >
         <option value="">None</option>
         {availableTraits.map((trait) => (

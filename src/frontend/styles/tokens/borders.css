@@ -1,0 +1,21 @@
+/**
+ * Border Tokens
+ * 
+ * Defines border radius and border width tokens for consistent corner rounding
+ * and border styling across components.
+ */
+
+:root {
+  /* Border Radius - Corner rounding tokens */
+  --border-radius-none: 0;
+  --border-radius-sm: 0.125rem;   /* 2px */
+  --border-radius-md: 0.25rem;    /* 4px */
+  --border-radius-lg: 0.5rem;     /* 8px */
+  --border-radius-xl: 0.75rem;    /* 12px */
+  --border-radius-full: 9999px;
+
+  /* Border Width - Border thickness tokens */
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
+}

@@ -1,0 +1,64 @@
+/* Text Utilities */
+
+/* Text alignment */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Text weight */
+.text-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.text-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.text-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.text-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+/* Text color utilities */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-disabled {
+  color: var(--color-text-disabled);
+}
+
+.text-inverse {
+  color: var(--color-text-inverse);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-info {
+  color: var(--color-info);
+}

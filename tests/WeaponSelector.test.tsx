@@ -312,7 +312,7 @@ describe('Property-Based Tests: Ranged Weapon Disabling', () => {
         (rangedWeapons, isDisabled, warbandAbility) => {
           const mockOnChange = vi.fn();
 
-          const { container, unmount } = render(
+          const { unmount } = render(
             <WeaponSelector
               type="ranged"
               selectedWeapons={[]}

@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { WarbandProvider, useWarband } from '../src/frontend/contexts/WarbandContext';
-import { Warband, Weirdo } from '../src/backend/models/types';
-import { DataRepository } from '../src/backend/services/DataRepository';
 import { CostEngine } from '../src/backend/services/CostEngine';
-import { ValidationService } from '../src/backend/services/ValidationService';
 import { ReactNode } from 'react';
+import * as apiClient from '../src/frontend/services/apiClient';
 
 /**
  * Unit tests for WarbandContext
@@ -15,15 +13,39 @@ import { ReactNode } from 'react';
  */
 
 describe('WarbandContext', () => {
-  let dataRepository: DataRepository;
   let costEngine: CostEngine;
-  let validationService: ValidationService;
 
   beforeEach(() => {
     // Create fresh instances for each test
-    dataRepository = new DataRepository(':memory:', false); // Disable file persistence for tests
     costEngine = new CostEngine();
-    validationService = new ValidationService(costEngine);
+    
+    // Mock API calls
+    vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      valid: true,
+      errors: []
+    });
+    
+    vi.spyOn(apiClient.apiClient, 'createWarband').mockResolvedValue({
+      id: 'test-id',
+      name: 'Test Warband',
+      ability: null,
+      pointLimit: 75,
+      totalCost: 0,
+      weirdos: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    vi.spyOn(apiClient.apiClient, 'updateWarband').mockResolvedValue({
+      id: 'test-id',
+      name: 'Test Warband',
+      ability: null,
+      pointLimit: 75,
+      totalCost: 0,
+      weirdos: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
   });
 
   describe('Unit tests for WarbandContext', () => {
@@ -34,9 +56,7 @@ describe('WarbandContext', () => {
     it('should create warband with default values', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -65,9 +85,7 @@ describe('WarbandContext', () => {
     it('should create warband with 125 point limit', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -97,12 +115,10 @@ describe('WarbandContext', () => {
      * Test weirdo add operations
      * Requirements: 2.3, 2.4, 11.1, 11.2, 11.3
      */
-    it('should add leader weirdo to warband', () => {
+    it('should add leader weirdo to warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -115,9 +131,9 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      // Add leader
-      act(() => {
-        result.current.addWeirdo('leader');
+      // Add leader (now async)
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       expect(result.current.currentWarband?.weirdos).toHaveLength(1);
@@ -125,12 +141,10 @@ describe('WarbandContext', () => {
       expect(result.current.currentWarband?.weirdos[0].name).toBe('New Leader');
     });
 
-    it('should add trooper weirdo to warband', () => {
+    it('should add trooper weirdo to warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -142,8 +156,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('trooper');
+      await act(async () => {
+        await result.current.addWeirdo('trooper');
       });
 
       expect(result.current.currentWarband?.weirdos).toHaveLength(1);
@@ -151,12 +165,10 @@ describe('WarbandContext', () => {
       expect(result.current.currentWarband?.weirdos[0].name).toBe('New Trooper');
     });
 
-    it('should auto-select newly added weirdo', () => {
+    it('should auto-select newly added weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -168,20 +180,18 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id;
       expect(result.current.selectedWeirdoId).toBe(weirdoId);
     });
 
-    it('should throw error when adding second leader', () => {
+    it('should throw error when adding second leader', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -193,28 +203,26 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       // Try to add second leader
-      expect(() => {
-        act(() => {
-          result.current.addWeirdo('leader');
+      await expect(async () => {
+        await act(async () => {
+          await result.current.addWeirdo('leader');
         });
-      }).toThrow('Warband already has a leader');
+      }).rejects.toThrow('Warband already has a leader');
     });
 
     /**
      * Test weirdo remove operations
      * Requirements: 11.4, 11.5, 11.6
      */
-    it('should remove weirdo from warband', () => {
+    it('should remove weirdo from warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -226,8 +234,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
@@ -239,12 +247,10 @@ describe('WarbandContext', () => {
       expect(result.current.currentWarband?.weirdos).toHaveLength(0);
     });
 
-    it('should clear selection when removing selected weirdo', () => {
+    it('should clear selection when removing selected weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -256,8 +262,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
@@ -274,12 +280,10 @@ describe('WarbandContext', () => {
      * Test cost calculation integration
      * Requirements: 3.1, 3.2, 3.3
      */
-    it('should calculate weirdo cost when adding weirdo', () => {
+    it('should calculate weirdo cost when adding weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -291,20 +295,18 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdo = result.current.currentWarband?.weirdos[0];
       expect(weirdo?.totalCost).toBeGreaterThanOrEqual(0);
     });
 
-    it('should recalculate warband cost when adding weirdo', () => {
+    it('should recalculate warband cost when adding weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -318,20 +320,18 @@ describe('WarbandContext', () => {
 
       const initialCost = result.current.currentWarband?.totalCost;
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const newCost = result.current.currentWarband?.totalCost;
       expect(newCost).toBeGreaterThanOrEqual(initialCost!);
     });
 
-    it('should recalculate warband cost when removing weirdo', () => {
+    it('should recalculate warband cost when removing weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -343,8 +343,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const costWithWeirdo = result.current.currentWarband?.totalCost;
@@ -358,12 +358,10 @@ describe('WarbandContext', () => {
       expect(costWithoutWeirdo).toBeLessThanOrEqual(costWithWeirdo!);
     });
 
-    it('should recalculate costs when updating weirdo attributes', () => {
+    it('should recalculate costs when updating weirdo attributes', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -375,8 +373,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
@@ -395,16 +393,17 @@ describe('WarbandContext', () => {
         });
       });
 
-      const newCost = result.current.currentWarband?.weirdos[0].totalCost;
-      expect(newCost).toBeGreaterThan(initialCost!);
+      // Wait for debounced cost update (100ms)
+      await waitFor(() => {
+        const newCost = result.current.currentWarband?.weirdos[0].totalCost;
+        expect(newCost).toBeGreaterThan(initialCost!);
+      }, { timeout: 200 });
     });
 
-    it('should provide getWeirdoCost method', () => {
+    it('should provide getWeirdoCost method', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -416,8 +415,8 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
@@ -430,9 +429,7 @@ describe('WarbandContext', () => {
     it('should provide getWarbandCost method', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -458,12 +455,10 @@ describe('WarbandContext', () => {
      * Test validation integration
      * Requirements: 4.1, 4.2, 4.3, 9.1
      */
-    it('should validate warband and store errors', () => {
+    it('should validate warband and store errors', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -479,23 +474,21 @@ describe('WarbandContext', () => {
         result.current.addWeirdo('leader');
       });
 
-      // Validate warband
+      // Validate warband (now async)
       let validationResult;
-      act(() => {
-        validationResult = result.current.validateWarband();
+      await act(async () => {
+        validationResult = await result.current.validateWarband();
       });
 
       expect(validationResult).toBeDefined();
-      expect(validationResult.valid).toBeDefined();
-      expect(validationResult.errors).toBeDefined();
+      expect(validationResult!.valid).toBeDefined();
+      expect(validationResult!.errors).toBeDefined();
     });
 
-    it('should validate individual weirdo', () => {
+    it('should validate individual weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -507,28 +500,26 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
 
       let validationResult;
-      act(() => {
-        validationResult = result.current.validateWeirdo(weirdoId);
+      await act(async () => {
+        validationResult = await result.current.validateWeirdo(weirdoId);
       });
 
       expect(validationResult).toBeDefined();
-      expect(validationResult.valid).toBeDefined();
-      expect(validationResult.errors).toBeDefined();
+      expect(validationResult!.valid).toBeDefined();
+      expect(validationResult!.errors).toBeDefined();
     });
 
-    it('should update validation errors map', () => {
+    it('should update validation errors map', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -540,23 +531,21 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
-      act(() => {
-        result.current.validateWarband();
+      await act(async () => {
+        await result.current.validateWarband();
       });
 
       expect(result.current.validationErrors).toBeInstanceOf(Map);
     });
 
-    it('should clear validation errors when weirdo is removed', () => {
+    it('should clear validation errors when weirdo is removed', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
         <WarbandProvider
-          dataRepository={dataRepository}
           costEngine={costEngine}
-          validationService={validationService}
         >
           {children}
         </WarbandProvider>
@@ -568,14 +557,14 @@ describe('WarbandContext', () => {
         result.current.createWarband('Test Warband', 75);
       });
 
-      act(() => {
-        result.current.addWeirdo('leader');
+      await act(async () => {
+        await result.current.addWeirdo('leader');
       });
 
       const weirdoId = result.current.currentWarband?.weirdos[0].id!;
 
-      act(() => {
-        result.current.validateWeirdo(weirdoId);
+      await act(async () => {
+        await result.current.validateWeirdo(weirdoId);
       });
 
       act(() => {
@@ -586,3 +575,4 @@ describe('WarbandContext', () => {
     });
   });
 });
+

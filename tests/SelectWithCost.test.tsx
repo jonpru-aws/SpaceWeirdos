@@ -34,8 +34,8 @@ describe('SelectWithCost Component', () => {
         />
       );
 
-      expect(screen.getByLabelText('Test Label')).toBeInTheDocument();
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /Test Label/i })).toBeInTheDocument();
+      expect(screen.getByText('Test Label')).toBeInTheDocument();
     });
 
     it('should render all options with costs', () => {
@@ -147,7 +147,7 @@ describe('SelectWithCost Component', () => {
         />
       );
 
-      const container = screen.getByLabelText('Test Label').closest('.select-with-cost');
+      const container = screen.getByRole('combobox', { name: /Test Label/i }).closest('.select-with-cost');
       expect(container).toHaveClass('custom-class');
     });
   });

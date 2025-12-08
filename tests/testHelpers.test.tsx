@@ -92,11 +92,11 @@ describe('Test Helper Utilities', () => {
     it('should apply overrides to default warband', () => {
       const warband = createMockWarband({
         name: 'Custom Warband',
-        pointLimit: 100
+        pointLimit: 125
       });
 
       expect(warband.name).toBe('Custom Warband');
-      expect(warband.pointLimit).toBe(100);
+      expect(warband.pointLimit).toBe(125);
       // Default values should still be present
       expect(warband).toHaveProperty('id');
       expect(warband).toHaveProperty('ability');

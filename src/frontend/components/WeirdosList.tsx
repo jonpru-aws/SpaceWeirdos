@@ -30,37 +30,46 @@ export function WeirdosList() {
   const hasLeader = currentWarband.weirdos.some(w => w.type === 'leader');
 
   // Handle add leader button click
-  const handleAddLeader = () => {
+  const handleAddLeader = async () => {
     try {
-      addWeirdo('leader');
-    } catch (error) {
-      console.error('Error adding leader:', error);
+      await addWeirdo('leader');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error adding leader:', error.message);
+      } else {
+        console.error('Error adding leader:', error);
+      }
     }
   };
 
   // Handle add trooper button click
-  const handleAddTrooper = () => {
+  const handleAddTrooper = async () => {
     try {
-      addWeirdo('trooper');
-    } catch (error) {
-      console.error('Error adding trooper:', error);
+      await addWeirdo('trooper');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error adding trooper:', error.message);
+      } else {
+        console.error('Error adding trooper:', error);
+      }
     }
   };
 
   return (
-    <div className="weirdos-list">
+    <div className="weirdos-list" role="region" aria-label="Weirdos list">
       {/* Add buttons (Requirements 11.1, 11.2, 11.3) */}
-      <div className="weirdos-list__actions">
+      <div className="weirdos-list__actions" role="group" aria-label="Add weirdo actions">
         <button
-          className="weirdos-list__add-button"
+          className="weirdos-list__add-button button"
           onClick={handleAddLeader}
           disabled={hasLeader}
-          aria-label="Add Leader"
+          aria-label={hasLeader ? "Add Leader (disabled - leader already exists)" : "Add Leader"}
+          aria-disabled={hasLeader}
         >
           Add Leader
         </button>
         <button
-          className="weirdos-list__add-button"
+          className="weirdos-list__add-button button"
           onClick={handleAddTrooper}
           aria-label="Add Trooper"
         >
@@ -69,9 +78,9 @@ export function WeirdosList() {
       </div>
 
       {/* List of weirdos */}
-      <div className="weirdos-list__items">
+      <div className="weirdos-list__items" role="list" aria-label="Warband members">
         {currentWarband.weirdos.length === 0 ? (
-          <div className="weirdos-list__empty">
+          <div className="weirdos-list__empty" role="status">
             No weirdos yet. Add a leader or trooper to get started.
           </div>
         ) : (

@@ -65,6 +65,8 @@ export function WarbandEditor({
       await saveWarband();
       onSaveSuccess();
     } catch (err) {
+      // Type assertion needed: catch blocks receive unknown type, but callback expects Error
+      // This is safe because saveWarband only throws Error instances
       onSaveError(err as Error);
     }
   };
@@ -90,6 +92,8 @@ export function WarbandEditor({
       onDeleteSuccess();
     } catch (err) {
       setDeleteConfirmation(false);
+      // Type assertion needed: catch blocks receive unknown type, but callback expects Error
+      // This is safe because deleteWarband only throws Error instances
       onDeleteError(err as Error);
     }
   };

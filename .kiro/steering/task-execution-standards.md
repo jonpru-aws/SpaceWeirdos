@@ -17,14 +17,15 @@ This file contains standards for executing implementation tasks efficiently.
 ## Testing Strategy
 
 Use dual testing approach:
-- **Unit tests**: Verify specific examples and edge cases
-- **Property-based tests**: Verify universal properties across all inputs
+- **Unit tests**: Verify specific examples and edge cases (REQUIRED)
+- **Property-based tests**: Verify universal properties across all inputs (OPTIONAL)
 
-Both test types complement each other and are required for comprehensive coverage.
+Unit tests are required for all new functionality. Property-based tests are optional but recommended for comprehensive coverage.
 
 ### When to Write Tests
 
-- Write BOTH unit tests AND property-based tests when implementing new functionality
+- Write unit tests for all new functionality (REQUIRED)
+- Write property-based tests when implementing new functionality (OPTIONAL)
 - Only implement new tests if functionality is not already covered
 - Modify existing test files to fix broken tests or add new ones where appropriate
 - Create MINIMAL test solutions - avoid over-testing edge cases

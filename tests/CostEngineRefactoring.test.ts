@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import fc from 'fast-check';
 import { CostEngine } from '../src/backend/services/CostEngine';
 import {
@@ -71,7 +71,7 @@ const psychicPowerGen = fc.record<PsychicPower>({
   effect: fc.string()
 });
 
-const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =>
+const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility | null) =>
   fc.record<Weirdo>({
     id: fc.uuid(),
     name: fc.string({ minLength: 1 }),

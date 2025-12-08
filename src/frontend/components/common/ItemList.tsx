@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import './ItemList.css';
 
 /**
@@ -55,19 +55,15 @@ const ItemListComponent = ({
 
   const isLimitReached = limit !== undefined && selectedIds.length >= limit;
 
-  const formatCost = (item: ItemListItem): string => {
-    const hasModifier = item.modifiedCost !== undefined && item.modifiedCost !== item.baseCost;
-    
-    if (hasModifier) {
-      return `${item.modifiedCost} pts (was ${item.baseCost} pts)`;
-    }
-    return `${item.baseCost} pts`;
-  };
-
   return (
     <div className={`item-list-container ${className}`}>
       {limit !== undefined && (
-        <div className="item-list-limit-info">
+        <div 
+          className="item-list-limit-info"
+          role="status"
+          aria-live="polite"
+          aria-label={`Selected ${selectedIds.length} of ${limit} items`}
+        >
           Selected: {selectedIds.length}/{limit}
         </div>
       )}
@@ -82,27 +78,38 @@ const ItemListComponent = ({
           const hasModifier = item.modifiedCost !== undefined && item.modifiedCost !== item.baseCost;
 
           return (
-            <li key={item.id} className="item-list-checkbox-item">
-              <label className={`item-checkbox-label ${isDisabled ? 'disabled' : ''}`}>
+            <li key={item.id} className="item-list-checkbox-item" role="listitem">
+              <label 
+                className={`item-checkbox-label ${isDisabled ? 'disabled' : ''}`}
+                htmlFor={`item-${item.id}`}
+              >
                 <input
                   type="checkbox"
+                  id={`item-${item.id}`}
                   checked={isSelected}
                   onChange={() => handleToggle(item.id)}
                   disabled={isDisabled}
-                  className="item-checkbox-input"
+                  className="item-checkbox-input checkbox"
+                  aria-describedby={item.description ? `item-desc-${item.id}` : undefined}
+                  aria-label={`${item.name}, ${item.modifiedCost ?? item.baseCost} points`}
                 />
                 <div className="item-checkbox-content">
                   <div className="item-checkbox-header">
                     <span className="item-name">{item.name}</span>
-                    <span className={`item-cost ${hasModifier ? 'modified' : ''}`}>
+                    <span 
+                      className={`item-cost ${hasModifier ? 'modified' : ''}`}
+                      aria-label={hasModifier ? `Cost: ${item.modifiedCost} points, was ${item.baseCost} points` : `Cost: ${item.baseCost} points`}
+                    >
                       {hasModifier && (
-                        <span className="item-cost-original">{item.baseCost} pts</span>
+                        <span className="item-cost-original" aria-hidden="true">{item.baseCost} pts</span>
                       )}
-                      <span className="item-cost-current">{item.modifiedCost ?? item.baseCost} pts</span>
+                      <span className="item-cost-current" aria-hidden="true">{item.modifiedCost ?? item.baseCost} pts</span>
                     </span>
                   </div>
                   {item.description && (
-                    <div className="item-description">{item.description}</div>
+                    <div className="item-description" id={`item-desc-${item.id}`}>
+                      {item.description}
+                    </div>
                   )}
                 </div>
               </label>

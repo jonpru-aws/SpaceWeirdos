@@ -1,0 +1,40 @@
+/**
+ * Spacing Tokens
+ * 
+ * Defines the spacing scale for consistent layout and spacing throughout the application.
+ * Uses a consistent multiplier-based scale with 0.25rem (4px) as the base unit.
+ * All values are in rem units for accessibility and scalability.
+ */
+
+:root {
+  /* Spacing Scale - Base unit: 0.25rem (4px) */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-7: 1.75rem;   /* 28px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-9: 2.25rem;   /* 36px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-11: 2.75rem;  /* 44px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-14: 3.5rem;   /* 56px */
+  --spacing-16: 4rem;     /* 64px */
+
+  /* Semantic Spacing - Named tokens for common use cases */
+  --spacing-xs: var(--spacing-1);
+  --spacing-sm: var(--spacing-2);
+  --spacing-md: var(--spacing-4);
+  --spacing-lg: var(--spacing-6);
+  --spacing-xl: var(--spacing-8);
+
+  /* Gap Tokens - For flexbox and grid layouts */
+  --gap-xs: var(--spacing-1);
+  --gap-sm: var(--spacing-2);
+  --gap-md: var(--spacing-4);
+  --gap-lg: var(--spacing-6);
+  --gap-xl: var(--spacing-8);
+}

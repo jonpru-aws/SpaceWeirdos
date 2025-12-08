@@ -119,8 +119,11 @@ export enum PersistenceErrorCode {
 // Custom error class for persistence operations
 export class PersistenceError extends Error {
   public readonly code: PersistenceErrorCode;
+  // Using 'any' for details to allow flexible error context (file paths, error codes, etc.)
+  // This is acceptable for error details as the structure varies by error type
   public readonly details?: any;
 
+  // Using 'any' for details parameter to match property type
   constructor(message: string, code: PersistenceErrorCode, details?: any) {
     super(message);
     this.name = 'PersistenceError';

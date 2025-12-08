@@ -8,6 +8,8 @@
 
 /**
  * Discount values for warband ability modifiers
+ * Type assertion 'as const' makes this object readonly and narrows types to literal values
+ * This is safe and ensures the values cannot be modified at runtime
  */
 export const DISCOUNT_VALUES = {
   /** Discount applied by Mutants ability to speed attribute and specific weapons */
@@ -18,22 +20,27 @@ export const DISCOUNT_VALUES = {
 
 /**
  * Weapon lists affected by warband abilities
+ * Type assertion 'as const' makes arrays and object readonly with literal types
  */
 export const ABILITY_WEAPON_LISTS = {
-  /** Close combat weapons that receive discount with Mutants ability */
+  /** Close combat weapons that receive discount with Mutants ability
+   * Type assertion 'as const' ensures array is readonly tuple type */
   MUTANT_WEAPONS: ['Claws & Teeth', 'Horrible Claws & Teeth', 'Whip/Tail'] as const,
 } as const;
 
 /**
  * Equipment lists affected by warband abilities
+ * Type assertion 'as const' makes arrays and object readonly with literal types
  */
 export const ABILITY_EQUIPMENT_LISTS = {
-  /** Equipment items that are free with Soldiers ability */
+  /** Equipment items that are free with Soldiers ability
+   * Type assertion 'as const' ensures array is readonly tuple type */
   SOLDIER_FREE_EQUIPMENT: ['Grenade', 'Heavy Armor', 'Medkit'] as const,
 } as const;
 
 /**
  * Point limit thresholds and values
+ * Type assertion 'as const' makes this object readonly with literal types
  */
 export const POINT_LIMITS = {
   /** Standard point limit for smaller warbands */
@@ -46,6 +53,7 @@ export const POINT_LIMITS = {
 
 /**
  * Trooper point limit constraints
+ * Type assertion 'as const' makes this object readonly with literal types
  */
 export const TROOPER_LIMITS = {
   /** Standard maximum cost for troopers when another weirdo is in 21-25 range */
@@ -60,6 +68,7 @@ export const TROOPER_LIMITS = {
 
 /**
  * Equipment limits based on weirdo type and warband ability
+ * Type assertion 'as const' makes this object readonly with literal types
  */
 export const EQUIPMENT_LIMITS = {
   /** Equipment limit for leaders without Cyborgs ability */

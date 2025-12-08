@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import './CostBadge.css';
 
 /**
@@ -15,27 +15,34 @@ export interface CostBadgeProps {
   baseCost: number;
   modifiedCost?: number;
   className?: string;
-  showLabel?: boolean;
 }
 
 const CostBadgeComponent = ({
   baseCost,
   modifiedCost,
-  className = '',
-  showLabel = true
+  className = ''
 }: CostBadgeProps) => {
   const hasModifier = modifiedCost !== undefined && modifiedCost !== baseCost;
 
+  // Build ARIA label for accessibility
+  const ariaLabel = hasModifier
+    ? `Cost: ${modifiedCost} points, reduced from ${baseCost} points`
+    : `Cost: ${baseCost} points`;
+
   return (
-    <div className={`cost-badge ${hasModifier ? 'modified' : ''} ${className}`}>
+    <div 
+      className={`cost-badge ${hasModifier ? 'modified' : ''} ${className}`}
+      role="status"
+      aria-label={ariaLabel}
+    >
       {hasModifier ? (
         <>
-          <span className="cost-badge-original">{baseCost} pts</span>
-          <span className="cost-badge-arrow">→</span>
-          <span className="cost-badge-current">{modifiedCost} pts</span>
+          <span className="cost-badge-original" aria-hidden="true">{baseCost} pts</span>
+          <span className="cost-badge-arrow" aria-hidden="true">→</span>
+          <span className="cost-badge-current" aria-hidden="true">{modifiedCost} pts</span>
         </>
       ) : (
-        <span className="cost-badge-single">{baseCost} pts</span>
+        <span className="cost-badge-single" aria-hidden="true">{baseCost} pts</span>
       )}
     </div>
   );

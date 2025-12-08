@@ -40,7 +40,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      expect(screen.getByLabelText('Leader Trait')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /Leader Trait/i })).toBeInTheDocument();
     });
 
     it('should not render for troopers', () => {
@@ -72,7 +72,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       const options = Array.from(select.options).map(opt => opt.text);
 
       expect(options[0]).toBe('None');
@@ -90,7 +90,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       const options = Array.from(select.options).map(opt => opt.text);
 
       expect(options).toContain('Bounty Hunter - Once per round, when a weirdo from your warband is touching a down or staggered enemy, it can take a Use Item action to make the enemy weirdo out of action.');
@@ -112,7 +112,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       fireEvent.change(select, { target: { value: 'Tactician' } });
 
       expect(mockOnChange).toHaveBeenCalledWith('Tactician');
@@ -130,7 +130,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       fireEvent.change(select, { target: { value: '' } });
 
       expect(mockOnChange).toHaveBeenCalledWith(null);
@@ -148,7 +148,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       expect(select.value).toBe('Healer');
     });
 
@@ -164,7 +164,7 @@ describe('LeaderTraitSelector Component', () => {
         />
       );
 
-      const select = screen.getByLabelText('Leader Trait') as HTMLSelectElement;
+      const select = screen.getByRole('combobox', { name: /Leader Trait/i }) as HTMLSelectElement;
       expect(select.value).toBe('');
     });
   });

@@ -1,0 +1,34 @@
+/**
+ * Breakpoint Tokens
+ * 
+ * Defines responsive breakpoint tokens for different screen sizes.
+ * These tokens are used to create layouts that adapt to mobile, tablet, and desktop devices.
+ * 
+ * Usage Pattern (Desktop-First):
+ * @media (min-width: 768px) {
+ *   // Styles for tablet and larger
+ * }
+ * 
+ * @media (min-width: 1024px) {
+ *   // Styles for desktop and larger
+ * }
+ * 
+ * Mobile-First Alternative:
+ * @media (max-width: 767px) {
+ *   // Styles for mobile only
+ * }
+ * 
+ * Breakpoint Reference:
+ * - sm: 640px  - Small devices (large phones)
+ * - md: 768px  - Medium devices (tablets)
+ * - lg: 1024px - Large devices (desktops)
+ * - xl: 1280px - Extra large devices (large desktops)
+ */
+
+:root {
+  /* Breakpoint Tokens - Screen size thresholds */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}

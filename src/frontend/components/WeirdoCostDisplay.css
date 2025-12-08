@@ -1,109 +1,207 @@
-/* WeirdoCostDisplay Component Styles */
+/**
+ * WeirdoCostDisplay Component Styles
+ * 
+ * Sticky positioning at top of weirdo editor with semi-transparent background.
+ * Warning and error state styling using design system tokens.
+ * Smooth animations for breakdown expand/collapse.
+ * 
+ * Requirements: 1.1, 1.3, 2.1, 2.2, 2.5, 2.6, 3.1, 3.3, 3.5, 3.6, 5.1-5.5
+ */
 
 .weirdo-cost-display {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-index-sticky);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
-  border-bottom: 2px solid #ccc;
-  padding: 1rem;
-  margin: -1rem -1rem 1rem -1rem;
+  border-bottom: 2px solid var(--color-border-default);
+  padding: var(--spacing-4);
+  margin: calc(var(--spacing-4) * -1) calc(var(--spacing-4) * -1) var(--spacing-4) calc(var(--spacing-4) * -1);
+  transition: border-color var(--transition-normal) var(--easing-in-out),
+              background-color var(--transition-normal) var(--easing-in-out),
+              box-shadow var(--transition-fast) var(--easing-out);
 }
 
+/* Warning state - approaching limit (within 10 points) */
 .weirdo-cost-display--warning {
-  border-bottom-color: #ff9800;
-  background: rgba(255, 152, 0, 0.05);
+  border-bottom-color: var(--color-warning);
+  background: var(--color-warning-light);
 }
 
+/* Error state - exceeding limit */
 .weirdo-cost-display--error {
-  border-bottom-color: #f44336;
-  background: rgba(244, 67, 54, 0.05);
+  border-bottom-color: var(--color-error);
+  background: var(--color-error-light);
 }
 
 .weirdo-cost-display__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 .weirdo-cost-display__main {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   flex: 1;
 }
 
 .weirdo-cost-display__label {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
+  font-size: 1rem;
 }
 
 .weirdo-cost-display__value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #333;
+  color: var(--color-primary-600);
+  transition: color var(--transition-normal) var(--easing-in-out),
+              transform var(--transition-fast) var(--easing-out);
+}
+
+.weirdo-cost-display--warning .weirdo-cost-display__value {
+  color: var(--color-warning);
+}
+
+.weirdo-cost-display--error .weirdo-cost-display__value {
+  color: var(--color-error);
 }
 
 .weirdo-cost-display__indicator {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
+  transition: opacity var(--transition-normal) var(--easing-in-out),
+              transform var(--transition-fast) var(--easing-out);
+  animation: fadeIn var(--transition-normal) var(--easing-out);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .weirdo-cost-display__indicator--warning {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
 }
 
 .weirdo-cost-display__indicator--error {
-  background: #ffebee;
-  color: #c62828;
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
 }
 
 .weirdo-cost-display__toggle {
-  padding: 0.5rem 1rem;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #333;
-  transition: background-color 0.2s;
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-normal) var(--easing-in-out),
+              border-color var(--transition-normal) var(--easing-in-out),
+              transform var(--transition-fast) var(--easing-out);
 }
 
 .weirdo-cost-display__toggle:hover {
-  background: #e0e0e0;
+  background: var(--color-background-hover);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+.weirdo-cost-display__toggle:active {
+  transform: translateY(0);
 }
 
 .weirdo-cost-display__toggle:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3);
+  box-shadow: var(--shadow-focus);
 }
 
 .weirdo-cost-display__breakdown {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border-default);
+  animation: slideDown var(--transition-slow) var(--easing-out);
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
 }
 
 .weirdo-cost-display__breakdown-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: var(--spacing-2) 0;
   font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-fast) var(--easing-in-out);
+}
+
+.weirdo-cost-display__breakdown-item:hover {
+  background-color: var(--color-background-hover);
+  padding-left: var(--spacing-2);
+  padding-right: var(--spacing-2);
+  margin-left: calc(var(--spacing-2) * -1);
+  margin-right: calc(var(--spacing-2) * -1);
+  border-radius: var(--border-radius-sm);
 }
 
 .weirdo-cost-display__breakdown-item--total {
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 2px solid #333;
+  margin-top: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 2px solid var(--color-border-strong);
   font-weight: 700;
   font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.weirdo-cost-display__breakdown-item--total:hover {
+  background-color: transparent;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .weirdo-cost-display,
+  .weirdo-cost-display__value,
+  .weirdo-cost-display__indicator,
+  .weirdo-cost-display__toggle,
+  .weirdo-cost-display__breakdown,
+  .weirdo-cost-display__breakdown-item {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .weirdo-cost-display__toggle:hover {
+    transform: none;
+  }
+  
+  .weirdo-cost-display__toggle:active {
+    transform: none;
+  }
 }

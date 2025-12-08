@@ -12,9 +12,7 @@ import {
   Weapon,
   Equipment,
   PsychicPower,
-  Warband,
-  PersistenceError,
-  PersistenceErrorCode
+  Warband
 } from '../src/backend/models/types';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -77,7 +75,7 @@ const psychicPowerGen = fc.record<PsychicPower>({
   effect: fc.string()
 });
 
-const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =>
+const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility | null) =>
   fc.record<Weirdo>({
     id: fc.uuid(),
     name: fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
@@ -635,7 +633,7 @@ describe('DataRepository', () => {
               repository.saveWarband(invalidWarband);
               // If no error was thrown, the test fails
               return false;
-            } catch (error) {
+            } catch (error: unknown) {
               // Verify that an error was thrown
               return error instanceof Error && error.message.includes('validation failed');
             }
@@ -653,7 +651,7 @@ describe('DataRepository', () => {
             try {
               repository.saveWarband(invalidWarband);
               return false;
-            } catch (error) {
+            } catch (error: unknown) {
               return error instanceof Error && error.message.includes('validation failed');
             }
           }
@@ -671,7 +669,7 @@ describe('DataRepository', () => {
               const saved = repository.saveWarband(warbandWithNullAbility);
               // Should succeed and return the saved warband
               return saved.ability === null && saved.id !== '';
-            } catch (error) {
+            } catch (error: unknown) {
               // Should not throw an error
               return false;
             }
@@ -694,7 +692,7 @@ describe('DataRepository', () => {
             try {
               repository.saveWarband(invalidWarband);
               return false;
-            } catch (error) {
+            } catch (error: unknown) {
               return error instanceof Error && error.message.includes('validation failed');
             }
           }
@@ -1086,22 +1084,22 @@ describe('DataRepository', () => {
         }
 
         // Create and save multiple warbands
-        const warband1 = {
+        const warband1: Warband = {
           id: '',
           name: 'Test Warband 1',
-          ability: 'Cyborgs' as const,
-          pointLimit: 75 as const,
+          ability: 'Cyborgs',
+          pointLimit: 75,
           totalCost: 50,
           weirdos: [{
             id: '1',
             name: 'Leader 1',
-            type: 'leader' as const,
+            type: 'leader',
             attributes: {
-              speed: 2 as const,
-              defense: '2d8' as const,
-              firepower: '2d8' as const,
-              prowess: '2d8' as const,
-              willpower: '2d8' as const
+              speed: 2,
+              defense: '2d8',
+              firepower: '2d8',
+              prowess: '2d8',
+              willpower: '2d8'
             },
             closeCombatWeapons: [],
             rangedWeapons: [],
@@ -1115,22 +1113,22 @@ describe('DataRepository', () => {
           updatedAt: new Date()
         };
 
-        const warband2 = {
+        const warband2: Warband = {
           id: '',
           name: 'Test Warband 2',
-          ability: 'Fanatics' as const,
-          pointLimit: 125 as const,
+          ability: 'Fanatics',
+          pointLimit: 125,
           totalCost: 75,
           weirdos: [{
             id: '2',
             name: 'Leader 2',
-            type: 'leader' as const,
+            type: 'leader',
             attributes: {
-              speed: 3 as const,
-              defense: '2d10' as const,
-              firepower: 'None' as const,
-              prowess: '2d10' as const,
-              willpower: '2d6' as const
+              speed: 3,
+              defense: '2d10',
+              firepower: 'None',
+              prowess: '2d10',
+              willpower: '2d6'
             },
             closeCombatWeapons: [],
             rangedWeapons: [],
@@ -1188,11 +1186,11 @@ describe('DataRepository', () => {
         }
 
         // Create and save multiple warbands
-        const warbands = [
+        const warbands: Warband[] = [
           {
             id: '',
             name: 'Warband Alpha',
-            ability: 'Cyborgs' as const,
+            ability: 'Cyborgs' as WarbandAbility,
             pointLimit: 75 as const,
             totalCost: 60,
             weirdos: [{
@@ -1200,16 +1198,16 @@ describe('DataRepository', () => {
               name: 'Alpha Leader',
               type: 'leader' as const,
               attributes: {
-                speed: 2 as const,
-                defense: '2d8' as const,
-                firepower: '2d8' as const,
-                prowess: '2d8' as const,
-                willpower: '2d8' as const
+                speed: 2 as SpeedLevel,
+                defense: '2d8' as DiceLevel,
+                firepower: '2d8' as FirepowerLevel,
+                prowess: '2d8' as DiceLevel,
+                willpower: '2d8' as DiceLevel
               },
-              closeCombatWeapons: [],
-              rangedWeapons: [],
-              equipment: [],
-              psychicPowers: [],
+              closeCombatWeapons: [] as Weapon[],
+              rangedWeapons: [] as Weapon[],
+              equipment: [] as Equipment[],
+              psychicPowers: [] as PsychicPower[],
               leaderTrait: null,
               notes: '',
               totalCost: 60
@@ -1220,7 +1218,7 @@ describe('DataRepository', () => {
           {
             id: '',
             name: 'Warband Beta',
-            ability: 'Fanatics' as const,
+            ability: 'Fanatics' as WarbandAbility,
             pointLimit: 125 as const,
             totalCost: 100,
             weirdos: [
@@ -1229,16 +1227,16 @@ describe('DataRepository', () => {
                 name: 'Beta Leader',
                 type: 'leader' as const,
                 attributes: {
-                  speed: 3 as const,
-                  defense: '2d10' as const,
-                  firepower: 'None' as const,
-                  prowess: '2d10' as const,
-                  willpower: '2d6' as const
+                  speed: 3 as SpeedLevel,
+                  defense: '2d10' as DiceLevel,
+                  firepower: 'None' as FirepowerLevel,
+                  prowess: '2d10' as DiceLevel,
+                  willpower: '2d6' as DiceLevel
                 },
-                closeCombatWeapons: [],
-                rangedWeapons: [],
-                equipment: [],
-                psychicPowers: [],
+                closeCombatWeapons: [] as Weapon[],
+                rangedWeapons: [] as Weapon[],
+                equipment: [] as Equipment[],
+                psychicPowers: [] as PsychicPower[],
                 leaderTrait: null,
                 notes: '',
                 totalCost: 50
@@ -1248,16 +1246,16 @@ describe('DataRepository', () => {
                 name: 'Beta Trooper',
                 type: 'trooper' as const,
                 attributes: {
-                  speed: 2 as const,
-                  defense: '2d6' as const,
-                  firepower: 'None' as const,
-                  prowess: '2d8' as const,
-                  willpower: '2d6' as const
+                  speed: 2 as SpeedLevel,
+                  defense: '2d6' as DiceLevel,
+                  firepower: 'None' as FirepowerLevel,
+                  prowess: '2d8' as DiceLevel,
+                  willpower: '2d6' as DiceLevel
                 },
-                closeCombatWeapons: [],
-                rangedWeapons: [],
-                equipment: [],
-                psychicPowers: [],
+                closeCombatWeapons: [] as Weapon[],
+                rangedWeapons: [] as Weapon[],
+                equipment: [] as Equipment[],
+                psychicPowers: [] as PsychicPower[],
                 leaderTrait: null,
                 notes: '',
                 totalCost: 50
@@ -1269,7 +1267,7 @@ describe('DataRepository', () => {
           {
             id: '',
             name: 'Warband Gamma',
-            ability: 'Soldiers' as const,
+            ability: 'Soldiers' as WarbandAbility,
             pointLimit: 75 as const,
             totalCost: 70,
             weirdos: [{
@@ -1277,16 +1275,16 @@ describe('DataRepository', () => {
               name: 'Gamma Leader',
               type: 'leader' as const,
               attributes: {
-                speed: 1 as const,
-                defense: '2d6' as const,
-                firepower: '2d10' as const,
-                prowess: '2d6' as const,
-                willpower: '2d8' as const
+                speed: 1 as SpeedLevel,
+                defense: '2d6' as DiceLevel,
+                firepower: '2d10' as FirepowerLevel,
+                prowess: '2d6' as DiceLevel,
+                willpower: '2d8' as DiceLevel
               },
-              closeCombatWeapons: [],
-              rangedWeapons: [],
-              equipment: [],
-              psychicPowers: [],
+              closeCombatWeapons: [] as Weapon[],
+              rangedWeapons: [] as Weapon[],
+              equipment: [] as Equipment[],
+              psychicPowers: [] as PsychicPower[],
               leaderTrait: 'Bounty Hunter',
               notes: 'Heavy weapons specialist',
               totalCost: 70

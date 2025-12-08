@@ -112,6 +112,20 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 3. WHEN weirdo options are hidden THEN the Warband Builder SHALL display a message indicating warband creation is required
 4. WHEN weirdo options are revealed THEN the Warband Builder SHALL provide clear visual indication
 
+### Requirement 9
+
+**User Story:** As a developer, I want all frontend-backend communication to use API calls, so that the frontend and backend remain properly decoupled and maintainable.
+
+#### Acceptance Criteria
+
+1. WHEN the frontend needs to fetch game data (attributes, weapons, equipment, psychic powers, leader traits) THEN the Frontend SHALL make HTTP GET requests to backend API endpoints
+2. WHEN the frontend needs to calculate weirdo costs THEN the Frontend SHALL send HTTP POST requests to the backend cost calculation API
+3. WHEN the frontend needs to add or update weirdos THEN the Frontend SHALL send HTTP requests to the backend API
+4. WHEN the frontend needs to validate weirdo configurations THEN the Frontend SHALL make HTTP requests to backend validation API endpoints
+5. WHEN the frontend receives API responses THEN the Frontend SHALL handle both success and error responses appropriately
+6. WHEN making API calls THEN the Frontend SHALL NOT directly import or use backend service classes (CostEngine, ValidationService, DataRepository)
+7. WHEN the backend provides game data and calculations THEN the Backend SHALL expose RESTful API endpoints for all weirdo operations
+
 ## Items Requiring Clarification
 
 ### 1. Weirdo Names

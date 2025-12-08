@@ -321,11 +321,13 @@ describe('API Client', () => {
       try {
         await apiClient.getWarband('999');
         expect.fail('Should have thrown an error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).message).toBe('Not found');
-        expect((error as ApiError).statusCode).toBe(404);
-        expect((error as ApiError).details).toBe('Warband does not exist');
+        if (error instanceof ApiError) {
+          expect(error.message).toBe('Not found');
+          expect(error.statusCode).toBe(404);
+          expect(error.details).toBe('Warband does not exist');
+        }
       }
     });
   });

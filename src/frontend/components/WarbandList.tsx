@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { WarbandSummary } from '../../backend/models/types';
-import { DataRepository } from '../../backend/services/DataRepository';
+import { useState, useEffect, memo } from 'react';
+import { Warband, WarbandSummary } from '../../backend/models/types';
+import { apiClient } from '../services/apiClient';
+import { CostEngine } from '../../backend/services/CostEngine';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import './WarbandList.css';
 
@@ -14,21 +15,22 @@ import './WarbandList.css';
  */
 
 interface WarbandListProps {
-  dataRepository: DataRepository;
   onCreateWarband: () => void;
   onLoadWarband: (id: string) => void;
   onDeleteSuccess: () => void;
   onDeleteError: (error: Error) => void;
 }
 
+// Create cost engine instance for calculating warband costs
+const costEngine = new CostEngine();
+
 export function WarbandList({ 
-  dataRepository, 
   onCreateWarband, 
   onLoadWarband,
   onDeleteSuccess,
   onDeleteError
 }: WarbandListProps) {
-  const [warbands, setWarbands] = useState<WarbandSummary[]>([]);
+  const [warbands, setWarbands] = useState<Warband[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -37,15 +39,15 @@ export function WarbandList({
   } | null>(null);
 
   /**
-   * Fetch all warbands from DataRepository
+   * Fetch all warbands from API
    * Requirements: 7.1
    */
-  const loadWarbands = () => {
+  const loadWarbands = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const data = dataRepository.getAllWarbands();
+      const data = await apiClient.getAllWarbands();
       setWarbands(data);
     } catch (err) {
       setError(`Failed to load warbands: ${(err as Error).message}`);
@@ -74,16 +76,13 @@ export function WarbandList({
    * Confirm warband deletion
    * Requirements: 8.3, 8.5, 9.3, 9.4
    */
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteConfirmation) {
       try {
-        const deleted = dataRepository.deleteWarband(deleteConfirmation.id);
-        if (!deleted) {
-          throw new Error('Warband not found');
-        }
+        await apiClient.deleteWarband(deleteConfirmation.id);
         setDeleteConfirmation(null);
         // Reload the list after deletion
-        loadWarbands();
+        await loadWarbands();
         // Show success notification
         onDeleteSuccess();
       } catch (err) {
@@ -167,14 +166,27 @@ export function WarbandList({
       </button>
       
       <div className="warband-grid" role="list" aria-label="Saved warbands">
-        {warbands.map((warband) => (
-          <WarbandListItem
-            key={warband.id}
-            warband={warband}
-            onSelect={() => handleSelectWarband(warband.id)}
-            onDelete={() => handleDeleteRequest(warband.id, warband.name)}
-          />
-        ))}
+        {warbands.map((warband) => {
+          const totalCost = costEngine.calculateWarbandCost(warband);
+          const weirdoCount = warband.weirdos.length;
+          const summary = {
+            id: warband.id,
+            name: warband.name,
+            ability: warband.ability,
+            pointLimit: warband.pointLimit,
+            totalCost,
+            weirdoCount,
+            updatedAt: warband.updatedAt
+          };
+          return (
+            <WarbandListItem
+              key={warband.id}
+              warband={summary}
+              onSelect={() => handleSelectWarband(warband.id)}
+              onDelete={() => handleDeleteRequest(warband.id, warband.name)}
+            />
+          );
+        })}
       </div>
 
       {deleteConfirmation && (
@@ -193,6 +205,7 @@ export function WarbandList({
  * 
  * Displays summary information for a single warband.
  * Provides controls for loading and deleting the warband.
+ * Memoized for performance optimization.
  * 
  * Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.9
  */
@@ -203,7 +216,7 @@ interface WarbandListItemProps {
   onDelete: () => void;
 }
 
-export function WarbandListItem({ warband, onSelect, onDelete }: WarbandListItemProps) {
+const WarbandListItemComponent = ({ warband, onSelect, onDelete }: WarbandListItemProps) => {
   return (
     <article 
       className="warband-card fade-in"
@@ -256,4 +269,7 @@ export function WarbandListItem({ warband, onSelect, onDelete }: WarbandListItem
       </div>
     </article>
   );
-}
+};
+
+// Memoize component for performance
+export const WarbandListItem = memo(WarbandListItemComponent);

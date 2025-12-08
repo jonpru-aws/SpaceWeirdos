@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import fc from 'fast-check';
 import {
   VALIDATION_MESSAGES,
@@ -8,7 +8,6 @@ import {
 import { ValidationService } from '../src/backend/services/ValidationService';
 import {
   Warband,
-  Weirdo,
   WarbandAbility
 } from '../src/backend/models/types';
 

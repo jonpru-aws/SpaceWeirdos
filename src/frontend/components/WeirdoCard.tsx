@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Weirdo, ValidationError } from '../../backend/models/types';
 import './WeirdoCard.css';
 
@@ -9,6 +9,7 @@ import './WeirdoCard.css';
  * Shows name, type, cost, and validation status.
  * Handles selection and removal.
  * Displays validation errors in tooltip on hover.
+ * Memoized for performance optimization.
  * 
  * Requirements: 3.3, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 10.5, 11.4
  */
@@ -23,7 +24,7 @@ interface WeirdoCardProps {
   onRemove: () => void;
 }
 
-export function WeirdoCard({
+const WeirdoCardComponent = ({
   weirdo,
   cost,
   isSelected,
@@ -31,7 +32,7 @@ export function WeirdoCard({
   validationErrors = [],
   onClick,
   onRemove,
-}: WeirdoCardProps) {
+}: WeirdoCardProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Build CSS classes based on state
@@ -58,14 +59,21 @@ export function WeirdoCard({
     return error.message;
   };
 
+  // Build ARIA description for validation errors
+  const errorDescription = hasErrors && validationErrors.length > 0
+    ? `Has ${validationErrors.length} validation error${validationErrors.length !== 1 ? 's' : ''}: ${validationErrors.map(e => e.message).join(', ')}`
+    : undefined;
+
   return (
     <div
       className={cardClasses}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label={`Select ${weirdo.name}`}
+      aria-label={`Select ${weirdo.name}, ${typeLabel}, ${cost} points`}
       aria-pressed={isSelected}
+      aria-describedby={hasErrors ? `weirdo-errors-${weirdo.id}` : undefined}
+      aria-invalid={hasErrors}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -74,14 +82,32 @@ export function WeirdoCard({
       }}
       onMouseEnter={() => hasErrors && setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onFocus={() => hasErrors && setShowTooltip(true)}
+      onBlur={() => setShowTooltip(false)}
     >
       {/* Error indicator with tooltip (Requirements 4.1, 4.2, 4.3, 4.4) */}
       {hasErrors && (
-        <div className="weirdo-card__error-indicator" aria-label="Has validation errors">
-          ⚠
+        <>
+          <div 
+            className="weirdo-card__error-indicator" 
+            aria-hidden="true"
+          >
+            ⚠
+          </div>
+          {/* Hidden description for screen readers */}
+          <div 
+            id={`weirdo-errors-${weirdo.id}`}
+            className="visually-hidden"
+          >
+            {errorDescription}
+          </div>
           {/* Tooltip showing validation errors (Requirements 4.3, 4.4, 4.6) */}
           {showTooltip && validationErrors.length > 0 && (
-            <div className="weirdo-card__tooltip" role="tooltip">
+            <div 
+              className="weirdo-card__tooltip" 
+              role="tooltip"
+              aria-live="polite"
+            >
               <div className="weirdo-card__tooltip-title">Validation Errors:</div>
               <ul className="weirdo-card__tooltip-list">
                 {validationErrors.map((error, index) => (
@@ -92,7 +118,7 @@ export function WeirdoCard({
               </ul>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Weirdo info */}
@@ -115,4 +141,7 @@ export function WeirdoCard({
       </button>
     </div>
   );
-}
+};
+
+// Memoize component for performance
+export const WeirdoCard = memo(WeirdoCardComponent);

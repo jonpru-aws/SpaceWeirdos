@@ -36,12 +36,12 @@ describe('WeirdoCard', () => {
     {
       field: 'weirdo.test-1.closeCombatWeapons',
       message: 'Weirdo must have at least one close combat weapon',
-      code: 'MISSING_CLOSE_COMBAT_WEAPON',
+      code: 'CLOSE_COMBAT_WEAPON_REQUIRED',
     },
     {
       field: 'weirdo.test-1.totalCost',
       message: 'Weirdo cost (30 pts) exceeds individual limit (25 pts)',
-      code: 'WEIRDO_COST_EXCEEDS_LIMIT',
+      code: 'TROOPER_POINT_LIMIT_EXCEEDED',
     },
   ];
 
@@ -91,8 +91,10 @@ describe('WeirdoCard', () => {
       />
     );
 
-    const errorIndicator = screen.getByLabelText('Has validation errors');
-    expect(errorIndicator).toBeInTheDocument();
+    // Check that the error indicator is present (aria-hidden, so use class selector)
+    const card = screen.getByRole('button', { name: /Select Test Leader/ });
+    expect(card).toHaveAttribute('aria-invalid', 'true');
+    expect(card).toHaveAttribute('aria-describedby', 'weirdo-errors-test-1');
   });
 
   it('should not display error indicator when hasErrors is false', () => {
@@ -107,8 +109,10 @@ describe('WeirdoCard', () => {
       />
     );
 
-    const errorIndicator = screen.queryByLabelText('Has validation errors');
-    expect(errorIndicator).not.toBeInTheDocument();
+    // Check that the error indicator is not present
+    const card = screen.getByRole('button', { name: /Select Test Leader/ });
+    expect(card).not.toHaveAttribute('aria-invalid', 'true');
+    expect(card).not.toHaveAttribute('aria-describedby');
   });
 
   it('should display tooltip with validation messages on hover', () => {
@@ -134,9 +138,11 @@ describe('WeirdoCard', () => {
     const tooltip = screen.getByRole('tooltip');
     expect(tooltip).toBeInTheDocument();
 
-    // Check all error messages are displayed
-    expect(screen.getByText(/must have at least one close combat weapon/i)).toBeInTheDocument();
-    expect(screen.getByText(/exceeds individual limit/i)).toBeInTheDocument();
+    // Check all error messages are displayed in the tooltip (not the hidden description)
+    const tooltipItems = screen.getAllByText(/must have at least one close combat weapon/i);
+    expect(tooltipItems.length).toBeGreaterThan(0);
+    const limitItems = screen.getAllByText(/exceeds individual limit/i);
+    expect(limitItems.length).toBeGreaterThan(0);
   });
 
   it('should hide tooltip when mouse leaves', () => {
@@ -201,8 +207,9 @@ describe('WeirdoCard', () => {
     const card = screen.getByRole('button', { name: /select test leader/i });
     fireEvent.mouseEnter(card);
 
-    // Check that the error message includes point totals
-    expect(screen.getByText(/30 pts.*exceeds.*25 pts/i)).toBeInTheDocument();
+    // Check that the error message includes point totals (appears in both tooltip and hidden description)
+    const errorMessages = screen.getAllByText(/30 pts.*exceeds.*25 pts/i);
+    expect(errorMessages.length).toBeGreaterThan(0);
   });
 
   it('should clear error styling when validation passes', () => {

@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AttributeSelector } from '../src/frontend/components/AttributeSelector';
 import { CostEngine } from '../src/backend/services/CostEngine';
-import { WarbandAbility } from '../src/backend/models/types';
 
 /**
  * Unit tests for AttributeSelector component

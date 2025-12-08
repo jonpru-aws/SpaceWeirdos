@@ -45,10 +45,15 @@ App
 ### Data Flow
 
 ```
-User Action → Component → Context/Service → DataRepository → Storage
-                ↓
-         UI Update ← Notification ← Result
+User Action → Component → Context → API Client → Backend API → DataRepository → Storage
+                ↓                                      ↓
+         UI Update ← Notification ← HTTP Response ← Result
 ```
+
+**API Communication:**
+- All data operations go through HTTP API calls
+- Frontend uses `apiClient` service (not direct backend imports)
+- Backend exposes RESTful endpoints for warband CRUD operations
 
 ### State Management
 
@@ -61,7 +66,7 @@ interface WarbandListContextValue {
   isLoading: boolean;
   error: Error | null;
   
-  // Operations
+  // Operations (all use API calls internally)
   loadWarbands: () => Promise<void>;
   createWarband: () => void;
   deleteWarband: (id: string) => Promise<void>;
@@ -81,6 +86,25 @@ interface WarbandSummary {
   createdAt: Date;
   updatedAt: Date;
 }
+```
+
+**API Client Integration:**
+
+```typescript
+// Frontend uses apiClient, NOT direct backend imports
+import { apiClient } from '@/services/apiClient';
+
+// Example: Load warbands via API
+const loadWarbands = async () => {
+  const response = await apiClient.get('/api/warbands');
+  setWarbands(response.data);
+};
+
+// Example: Delete warband via API
+const deleteWarband = async (id: string) => {
+  await apiClient.delete(`/api/warbands/${id}`);
+  await loadWarbands();
+};
 ```
 
 
@@ -268,13 +292,42 @@ After reviewing all properties:
 - Navigation between list and editor
 - Error handling for failed operations
 
+## API Endpoints
+
+**Backend must expose these RESTful endpoints:**
+
+```
+GET    /api/warbands           - Fetch all warbands
+GET    /api/warbands/:id       - Fetch single warband
+POST   /api/warbands           - Create new warband
+PUT    /api/warbands/:id       - Update warband
+DELETE /api/warbands/:id       - Delete warband
+```
+
+**Response Format:**
+```typescript
+// Success response
+{ success: true, data: WarbandSummary[] }
+
+// Error response
+{ success: false, error: { message: string, code: string } }
+```
+
 ## Implementation Notes
+
+### API Communication
+
+- **Frontend**: Use `apiClient` service for all HTTP requests
+- **Frontend**: NEVER directly import backend services (DataRepository, WarbandService)
+- **Backend**: Expose RESTful API endpoints
+- **Backend**: Handle validation and business logic server-side
 
 ### Performance Considerations
 
 - Virtualize list if > 50 warbands
 - Debounce search/filter (future enhancement)
 - Memoize warband summary calculations
+- Cache API responses when appropriate
 
 ### Accessibility
 
@@ -285,9 +338,10 @@ After reviewing all properties:
 
 ### Error Handling
 
-- Display error notifications for failed operations
-- Retry logic for transient failures
-- Graceful degradation if DataRepository unavailable
+- Display error notifications for failed API calls
+- Retry logic for transient network failures
+- Graceful degradation if backend unavailable
+- Show user-friendly error messages
 
 ## Conclusion
 

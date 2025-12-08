@@ -34,20 +34,24 @@ export function WarbandProperties() {
   }
 
   // Get validation errors for warband name
-  const nameErrors = Array.from(validationErrors.values())
-    .flat()
-    .filter(error => error.field === 'warband.name');
+  // Errors are stored under 'warband' key for warband-level validation
+  const warbandErrors = validationErrors.get('warband') || [];
+  const nameErrors = warbandErrors.filter(error => 
+    error.field === 'warband.name' || error.field === 'name'
+  );
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateWarband({ name: e.target.value });
   };
 
   const handlePointLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Type assertion is safe: radio input values are constrained to "75" or "125" in JSX
     const pointLimit = parseInt(e.target.value) as 75 | 125;
     updateWarband({ pointLimit });
   };
 
   const handleAbilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // Type assertion is safe: select options are constrained to valid WarbandAbility values in JSX
     const ability = e.target.value === 'null' ? null : (e.target.value as WarbandAbility);
     updateWarband({ ability });
   };

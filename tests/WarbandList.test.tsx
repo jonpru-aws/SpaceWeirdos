@@ -2,18 +2,62 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { WarbandList, WarbandListItem } from '../src/frontend/components/WarbandList';
 import { DeleteConfirmationDialog } from '../src/frontend/components/DeleteConfirmationDialog';
-import { DataRepository } from '../src/backend/services/DataRepository';
-import type { WarbandSummary } from '../src/backend/models/types';
+import type { WarbandSummary, Warband, Attributes } from '../src/backend/models/types';
+import * as apiClient from '../src/frontend/services/apiClient';
+
+// Mock the apiClient module
+vi.mock('../src/frontend/services/apiClient', () => ({
+  apiClient: {
+    getAllWarbands: vi.fn(),
+    deleteWarband: vi.fn(),
+  }
+}));
 
 describe('WarbandList Component', () => {
-  const mockWarbandSummaries: WarbandSummary[] = [
+  const mockAttributes: Attributes = {
+    speed: 1,
+    defense: '2d6',
+    firepower: 'None',
+    prowess: '2d6',
+    willpower: '2d6'
+  };
+
+  const mockWarbands: Warband[] = [
     {
       id: '1',
       name: 'The Cyborg Squad',
       ability: 'Cyborgs',
       pointLimit: 75,
       totalCost: 50,
-      weirdoCount: 2,
+      weirdos: [
+        { 
+          id: '1', 
+          name: 'Leader', 
+          type: 'leader',
+          attributes: mockAttributes, 
+          closeCombatWeapons: [], 
+          rangedWeapons: [], 
+          equipment: [], 
+          psychicPowers: [],
+          leaderTrait: null,
+          notes: '',
+          totalCost: 25
+        },
+        { 
+          id: '2', 
+          name: 'Grunt', 
+          type: 'trooper',
+          attributes: mockAttributes, 
+          closeCombatWeapons: [], 
+          rangedWeapons: [], 
+          equipment: [], 
+          psychicPowers: [],
+          leaderTrait: null,
+          notes: '',
+          totalCost: 25
+        }
+      ],
+      createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
     },
     {
@@ -22,24 +66,42 @@ describe('WarbandList Component', () => {
       ability: 'Mutants',
       pointLimit: 125,
       totalCost: 100,
-      weirdoCount: 1,
+      weirdos: [
+        { 
+          id: '3', 
+          name: 'Mutant', 
+          type: 'trooper',
+          attributes: mockAttributes, 
+          closeCombatWeapons: [], 
+          rangedWeapons: [], 
+          equipment: [], 
+          psychicPowers: [],
+          leaderTrait: null,
+          notes: '',
+          totalCost: 100
+        }
+      ],
+      createdAt: new Date('2024-01-02'),
       updatedAt: new Date('2024-01-02'),
     },
   ];
 
-  let mockDataRepository: DataRepository;
-  let mockOnSelectWarband: ReturnType<typeof vi.fn>;
-  let mockOnDeleteWarband: ReturnType<typeof vi.fn>;
-  let mockOnCreateNew: ReturnType<typeof vi.fn>;
+  let mockOnLoadWarband: ReturnType<typeof vi.fn>;
+  let mockOnDeleteSuccess: ReturnType<typeof vi.fn>;
+  let mockOnDeleteError: ReturnType<typeof vi.fn>;
+  let mockOnCreateWarband: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockDataRepository = {
-      getAllWarbands: vi.fn().mockReturnValue(mockWarbandSummaries),
-    } as any;
+    vi.clearAllMocks();
     
-    mockOnSelectWarband = vi.fn();
-    mockOnDeleteWarband = vi.fn();
-    mockOnCreateNew = vi.fn();
+    // Setup default mock implementations
+    vi.mocked(apiClient.apiClient.getAllWarbands).mockResolvedValue(mockWarbands);
+    vi.mocked(apiClient.apiClient.deleteWarband).mockResolvedValue(undefined);
+    
+    mockOnLoadWarband = vi.fn();
+    mockOnDeleteSuccess = vi.fn();
+    mockOnDeleteError = vi.fn();
+    mockOnCreateWarband = vi.fn();
   });
 
   describe('Loading warbands', () => {
@@ -47,10 +109,10 @@ describe('WarbandList Component', () => {
       // Requirement 7.1: Display all saved warbands
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -59,21 +121,19 @@ describe('WarbandList Component', () => {
         expect(screen.getByText('Mutant Horde')).toBeInTheDocument();
       });
 
-      expect(mockDataRepository.getAllWarbands).toHaveBeenCalledTimes(1);
+      expect(apiClient.apiClient.getAllWarbands).toHaveBeenCalledTimes(1);
     });
 
     it('should display error state when loading fails', async () => {
       const errorMessage = 'Failed to load';
-      mockDataRepository.getAllWarbands = vi.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
-      });
+      vi.mocked(apiClient.apiClient.getAllWarbands).mockRejectedValue(new Error(errorMessage));
 
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -84,20 +144,20 @@ describe('WarbandList Component', () => {
 
     it('should allow retry after error', async () => {
       let callCount = 0;
-      mockDataRepository.getAllWarbands = vi.fn().mockImplementation(() => {
+      vi.mocked(apiClient.apiClient.getAllWarbands).mockImplementation(async () => {
         callCount++;
         if (callCount === 1) {
           throw new Error('Network error');
         }
-        return mockWarbandSummaries;
+        return mockWarbands;
       });
 
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -112,7 +172,7 @@ describe('WarbandList Component', () => {
         expect(screen.getByText('The Cyborg Squad')).toBeInTheDocument();
       });
 
-      expect(mockDataRepository.getAllWarbands).toHaveBeenCalledTimes(2);
+      expect(apiClient.apiClient.getAllWarbands).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -121,10 +181,10 @@ describe('WarbandList Component', () => {
       // Requirement 7.2: Show warband name
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -138,10 +198,10 @@ describe('WarbandList Component', () => {
       // Requirement 7.3: Show warband ability
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -155,16 +215,16 @@ describe('WarbandList Component', () => {
       // Requirement 7.4: Show point limit
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
       await waitFor(() => {
-        expect(screen.getByText('75')).toBeInTheDocument();
-        expect(screen.getByText('125')).toBeInTheDocument();
+        expect(screen.getByLabelText('75 points')).toBeInTheDocument();
+        expect(screen.getByLabelText('125 points')).toBeInTheDocument();
       });
     });
 
@@ -172,16 +232,17 @@ describe('WarbandList Component', () => {
       // Requirement 7.5: Show total point cost
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
       await waitFor(() => {
-        expect(screen.getByText('50')).toBeInTheDocument();
-        expect(screen.getByText('100')).toBeInTheDocument();
+        // Costs are calculated from weirdo attributes
+        expect(screen.getByLabelText('12 points used')).toBeInTheDocument();
+        expect(screen.getByLabelText('6 points used')).toBeInTheDocument();
       });
     });
 
@@ -189,26 +250,26 @@ describe('WarbandList Component', () => {
       // Requirement 7.6: Show number of weirdos
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
       await waitFor(() => {
-        expect(screen.getByText('2')).toBeInTheDocument();
-        expect(screen.getByText('1')).toBeInTheDocument();
+        expect(screen.getByLabelText('2 weirdos')).toBeInTheDocument();
+        expect(screen.getByLabelText('1 weirdos')).toBeInTheDocument();
       });
     });
 
     it('should display Load and Delete buttons for each warband', async () => {
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -225,14 +286,14 @@ describe('WarbandList Component', () => {
   describe('Empty state', () => {
     it('should display message when no warbands exist', async () => {
       // Requirement 7.7: Display message when no warbands exist
-      mockDataRepository.getAllWarbands = vi.fn().mockReturnValue([]);
+      vi.mocked(apiClient.apiClient.getAllWarbands).mockResolvedValue([]);
 
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -244,14 +305,14 @@ describe('WarbandList Component', () => {
     });
 
     it('should display create button in empty state', async () => {
-      mockDataRepository.getAllWarbands = vi.fn().mockReturnValue([]);
+      vi.mocked(apiClient.apiClient.getAllWarbands).mockResolvedValue([]);
 
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -262,14 +323,14 @@ describe('WarbandList Component', () => {
   });
 
   describe('Loading a warband', () => {
-    it('should call onSelectWarband when Load button is clicked', async () => {
+    it('should call onLoadWarband when Load button is clicked', async () => {
       // Requirement 7.9: Load warband functionality
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -280,7 +341,7 @@ describe('WarbandList Component', () => {
       const loadButtons = screen.getAllByText('Load');
       fireEvent.click(loadButtons[0]);
 
-      expect(mockOnSelectWarband).toHaveBeenCalledWith('1');
+      expect(mockOnLoadWarband).toHaveBeenCalledWith('1');
     });
   });
 
@@ -289,10 +350,10 @@ describe('WarbandList Component', () => {
       // Requirement 8.1: Show confirmation dialog
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -314,10 +375,10 @@ describe('WarbandList Component', () => {
       // Requirement 8.3: Delete on confirmation
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -335,11 +396,14 @@ describe('WarbandList Component', () => {
       const confirmButton = screen.getByRole('button', { name: /Confirm deletion/ });
       fireEvent.click(confirmButton);
 
-      expect(mockOnDeleteWarband).toHaveBeenCalledWith('1');
+      await waitFor(() => {
+        expect(apiClient.apiClient.deleteWarband).toHaveBeenCalledWith('1');
+        expect(mockOnDeleteSuccess).toHaveBeenCalled();
+      });
       
       // List should be reloaded
       await waitFor(() => {
-        expect(mockDataRepository.getAllWarbands).toHaveBeenCalledTimes(2);
+        expect(apiClient.apiClient.getAllWarbands).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -347,10 +411,10 @@ describe('WarbandList Component', () => {
       // Requirement 8.4: Cancel preserves warband
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -368,7 +432,8 @@ describe('WarbandList Component', () => {
       const cancelButton = screen.getByRole('button', { name: /Cancel deletion/ });
       fireEvent.click(cancelButton);
 
-      expect(mockOnDeleteWarband).not.toHaveBeenCalled();
+      expect(apiClient.apiClient.deleteWarband).not.toHaveBeenCalled();
+      expect(mockOnDeleteSuccess).not.toHaveBeenCalled();
       
       // Dialog should be closed
       await waitFor(() => {
@@ -381,10 +446,10 @@ describe('WarbandList Component', () => {
     it('should display create button when warbands exist', async () => {
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -395,13 +460,13 @@ describe('WarbandList Component', () => {
       expect(screen.getByText('Create New Warband')).toBeInTheDocument();
     });
 
-    it('should call onCreateNew when create button is clicked', async () => {
+    it('should call onCreateWarband when create button is clicked', async () => {
       render(
         <WarbandList
-          dataRepository={mockDataRepository}
-          onSelectWarband={mockOnSelectWarband}
-          onDeleteWarband={mockOnDeleteWarband}
-          onCreateNew={mockOnCreateNew}
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
         />
       );
 
@@ -412,7 +477,7 @@ describe('WarbandList Component', () => {
       const createButton = screen.getByText('Create New Warband');
       fireEvent.click(createButton);
 
-      expect(mockOnCreateNew).toHaveBeenCalled();
+      expect(mockOnCreateWarband).toHaveBeenCalled();
     });
   });
 });
@@ -443,9 +508,9 @@ describe('WarbandListItem Component', () => {
 
     expect(screen.getByText('Test Warband')).toBeInTheDocument();
     expect(screen.getByText('Cyborgs')).toBeInTheDocument();
-    expect(screen.getByText('75')).toBeInTheDocument();
-    expect(screen.getByText('50')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByLabelText('75 points')).toBeInTheDocument();
+    expect(screen.getByLabelText('50 points used')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 weirdos')).toBeInTheDocument();
   });
 
   it('should call onSelect when Load button is clicked', () => {

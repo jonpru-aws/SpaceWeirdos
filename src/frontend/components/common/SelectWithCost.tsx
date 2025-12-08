@@ -66,17 +66,19 @@ const SelectWithCostComponent = ({
   };
 
   return (
-    <div className={`select-with-cost ${className}`}>
-      <label htmlFor={id} className="select-label">
+    <div className={`select-with-cost ${className}`} role="group" aria-labelledby={`${id}-label`}>
+      <label htmlFor={id} id={`${id}-label`} className="select-label">
         {label}
-        {required && <span className="required">*</span>}
+        {required && <span className="required" aria-label="required">*</span>}
       </label>
       <select
         id={id}
         value={value}
         onChange={handleChange}
         disabled={disabled}
-        className="select-input"
+        className="select-input select"
+        aria-label={`Select ${label}`}
+        aria-required={required}
       >
         {placeholder && (
           <option value="" disabled>

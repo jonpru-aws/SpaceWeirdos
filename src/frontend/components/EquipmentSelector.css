@@ -1,0 +1,102 @@
+/**
+ * EquipmentSelector Styles
+ * 
+ * Multi-select interface for equipment with limit enforcement.
+ * Uses design system tokens for consistency.
+ * Requirements: 5.4, 5.7, 5.8, 12.3, 12.6
+ */
+
+.equipment-selector h4 {
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.equipment-selector__limit-info {
+  padding: var(--spacing-2) var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+  background: var(--color-info-light);
+  color: var(--color-text-primary);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: var(--border-width-thin) solid var(--color-info);
+}
+
+.equipment-selector__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.equipment-selector__item {
+  margin: 0;
+}
+
+.equipment-selector__label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--easing-in-out);
+  background: var(--color-bg-base);
+}
+
+.equipment-selector__label:hover:not(.disabled) {
+  border-color: var(--color-border-hover);
+  background: var(--color-neutral-50);
+}
+
+.equipment-selector__label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-neutral-50);
+}
+
+.equipment-selector__checkbox {
+  margin-top: var(--spacing-1);
+}
+
+.equipment-selector__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.equipment-selector__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-3);
+}
+
+.equipment-selector__name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.equipment-selector__cost {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-500);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.equipment-selector__cost.modified {
+  color: var(--color-success);
+}
+
+.equipment-selector__effect {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}

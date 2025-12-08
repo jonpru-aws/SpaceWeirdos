@@ -4,27 +4,44 @@ This guide explains how to work with specification documents in this project.
 
 ## When Creating or Updating Specs
 
-Always include the spec creation standards in your chat message:
+Include the appropriate steering files based on what you're working on:
+
+### For Requirements and Design Work
 
 ```
-#spec-creation-standards
+#spec-methodology
 
 I want to create a new feature for [feature description]...
 ```
 
-or
-
-```
-#spec-creation-standards
-
-I want to update the requirements for [feature name] to add...
-```
-
-This ensures the AI has access to:
+This provides:
 - EARS and INCOSE requirements standards
 - Design principles and correctness properties
-- Task granularity and structure guidelines
+- Common correctness patterns
 - Property-based testing requirements
+
+### For Task Planning
+
+```
+#spec-task-planning
+
+Help me break down the implementation tasks for [feature name]...
+```
+
+This provides:
+- Task granularity and structure guidelines
+- Task breakdown criteria
+- Implementation/testing separation patterns
+
+### For Complete Spec Creation
+
+```
+#spec-methodology #spec-task-planning
+
+I want to create a complete spec for [feature description]...
+```
+
+This provides all spec-related guidance for the full workflow.
 
 ## When Executing Tasks from Specs
 
@@ -90,18 +107,20 @@ Each spec should have three documents:
 
 ## Token Efficiency
 
-The steering file separation saves tokens:
-- **Spec creation**: ~6,200 tokens (with `#spec-creation-standards`)
-- **Task execution**: ~4,200 tokens (automatic)
-- **General questions**: ~500 tokens (automatic)
+The steering file separation provides granular control:
+- **Complete spec creation**: ~4,250 tokens (with `#spec-methodology #spec-task-planning`)
+- **Requirements/design only**: ~3,450 tokens (with `#spec-methodology`)
+- **Task planning only**: ~3,050 tokens (with `#spec-task-planning`)
+- **Task execution**: ~2,250 tokens (automatic)
+- **General questions**: ~450 tokens (automatic)
 
-This 30-92% reduction allows for longer sessions and more complex features.
+This granular approach saves 800+ tokens when you only need methodology or planning guidance, allowing for longer sessions and more complex features.
 
 ## Example Workflows
 
-### Creating a New Spec
+### Creating a New Spec (Full Workflow)
 ```
-#spec-creation-standards
+#spec-methodology #spec-task-planning
 
 I want to create a spec for a user authentication feature that includes:
 - Login with username/password
@@ -109,9 +128,23 @@ I want to create a spec for a user authentication feature that includes:
 - Password reset functionality
 ```
 
-### Updating an Existing Spec
+### Writing Requirements and Design
 ```
-#spec-creation-standards
+#spec-methodology
+
+I want to create requirements and design for a bulk editing feature
+```
+
+### Planning Implementation Tasks
+```
+#spec-task-planning
+
+Help me break down the implementation tasks for the authentication feature
+```
+
+### Updating Requirements
+```
+#spec-methodology
 
 Update the weirdo-editor spec to add a requirement for bulk editing multiple weirdos at once
 ```
@@ -121,9 +154,11 @@ Update the weirdo-editor spec to add a requirement for bulk editing multiple wei
 Execute task 2.1 from the ui-design-system spec
 ```
 
+No steering files needed - task execution standards are automatically included.
+
 ### Reviewing Specs
 ```
+#spec-methodology
+
 Review the requirements for the realtime-feedback-polish spec and suggest improvements
 ```
-
-Note: For review, you may want to include `#spec-creation-standards` to get spec-specific guidance.

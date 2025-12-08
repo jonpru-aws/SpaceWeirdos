@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { WarbandService } from '../src/backend/services/WarbandService';
 import { DataRepository } from '../src/backend/services/DataRepository';
-import { WarbandAbility } from '../src/backend/models/types';
+import { WarbandAbility, LeaderTrait } from '../src/backend/models/types';
 
 describe('WarbandService', () => {
   let service: WarbandService;
@@ -31,15 +31,15 @@ describe('WarbandService', () => {
       // Generate valid point limits
       const pointLimitGen = fc.constantFrom(75, 125);
 
-      // Generate non-empty names
-      const nameGen = fc.string({ minLength: 1, maxLength: 50 });
+      // Generate non-empty names (excluding whitespace-only strings)
+      const nameGen = fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0);
 
       fc.assert(
         fc.property(nameGen, pointLimitGen, warbandAbilityGen, (name, pointLimit, ability) => {
           // Create a new warband
           const warband = service.createWarband({
             name,
-            pointLimit,
+            pointLimit: pointLimit as 75 | 125,
             ability
           });
 
@@ -134,7 +134,7 @@ describe('WarbandService', () => {
             maxLength: type === 'leader' ? (warbandAbility === 'Cyborgs' ? 3 : 2) : warbandAbility === 'Cyborgs' ? 2 : 1
           }),
           psychicPowers: fc.array(psychicPowerGen, { minLength: 0, maxLength: 2 }),
-          leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic'), { nil: null }) : fc.constant(null),
+          leaderTrait: type === 'leader' ? fc.option(fc.constantFrom('Bounty Hunter', 'Healer', 'Majestic', 'Monstrous', 'Political Officer'), { nil: null }) : fc.constant(null),
           notes: fc.string(),
           totalCost: fc.integer({ min: 0, max: 20 })
         }).map((weirdo) => {
@@ -145,10 +145,14 @@ describe('WarbandService', () => {
               attributes: {
                 ...weirdo.attributes,
                 firepower: '2d8' as 'None' | '2d8' | '2d10'
-              }
+              },
+              leaderTrait: weirdo.leaderTrait as LeaderTrait | null
             };
           }
-          return weirdo;
+          return {
+            ...weirdo,
+            leaderTrait: weirdo.leaderTrait as LeaderTrait | null
+          };
         });
 
       const warbandGen = fc.record({
@@ -245,7 +249,7 @@ describe('WarbandService', () => {
 
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1 }),
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
           fc.constantFrom(75 as const, 125 as const),
           warbandAbilityGen,
           attributesGen,

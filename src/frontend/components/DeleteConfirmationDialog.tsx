@@ -57,6 +57,8 @@ export function DeleteConfirmationDialog({
 
       if (!focusableElements || focusableElements.length === 0) return;
 
+      // Type assertions are safe: querySelectorAll returns Elements, but we know they're HTMLElements
+      // because we're querying for interactive elements that are always HTMLElements
       const firstElement = focusableElements[0] as HTMLElement;
       const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 

@@ -72,7 +72,7 @@ const psychicPowerGen = fc.record<PsychicPower>({
   effect: fc.string()
 });
 
-const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =>
+const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility | null) =>
   fc.record<Weirdo>({
     id: fc.uuid(),
     name: fc.string({ minLength: 1 }),

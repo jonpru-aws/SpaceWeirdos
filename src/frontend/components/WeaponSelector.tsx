@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Weapon, WarbandAbility } from '../../backend/models/types';
 import { CostEngine } from '../../backend/services/CostEngine';
+import './WeaponSelector.css';
 
 /**
  * WeaponSelector Component
@@ -71,39 +72,53 @@ const WeaponSelectorComponent = ({
   };
 
   const title = type === 'close-combat' ? 'Close Combat Weapons' : 'Ranged Weapons';
+  const sectionId = `weapon-selector-${type}`;
 
   return (
-    <div className="weapon-selector">
-      <h4>{title}</h4>
+    <div className="weapon-selector" role="group" aria-labelledby={`${sectionId}-heading`}>
+      <h4 id={`${sectionId}-heading`}>{title}</h4>
       {disabled && (
-        <p className="weapon-selector__disabled-message">
+        <p className="weapon-selector__disabled-message" role="alert">
           Ranged weapons are disabled when Firepower is None
         </p>
       )}
-      <ul className="weapon-selector__list">
+      <ul className="weapon-selector__list" role="list">
         {availableWeapons.map((weapon) => {
           const isSelected = selectedWeapons.some(w => w.id === weapon.id);
           const isModified = hasModifiedCost(weapon);
 
           return (
-            <li key={weapon.id} className="weapon-selector__item">
-              <label className={`weapon-selector__label ${disabled ? 'disabled' : ''}`}>
+            <li key={weapon.id} className="weapon-selector__item" role="listitem">
+              <label 
+                className={`weapon-selector__label ${disabled ? 'disabled' : ''}`}
+                htmlFor={`weapon-${weapon.id}`}
+              >
                 <input
                   type="checkbox"
+                  id={`weapon-${weapon.id}`}
                   checked={isSelected}
                   onChange={() => handleToggle(weapon)}
                   disabled={disabled}
-                  className="weapon-selector__checkbox"
+                  className="weapon-selector__checkbox checkbox"
+                  aria-describedby={weapon.notes ? `weapon-notes-${weapon.id}` : undefined}
                 />
                 <div className="weapon-selector__content">
                   <div className="weapon-selector__header">
                     <span className="weapon-selector__name">{weapon.name}</span>
-                    <span className={`weapon-selector__cost ${isModified ? 'modified' : ''}`}>
+                    <span 
+                      className={`weapon-selector__cost ${isModified ? 'modified' : ''}`}
+                      aria-label={`Cost: ${formatCostDisplay(weapon)}`}
+                    >
                       {formatCostDisplay(weapon)}
                     </span>
                   </div>
                   {weapon.notes && (
-                    <div className="weapon-selector__notes">{weapon.notes}</div>
+                    <div 
+                      className="weapon-selector__notes" 
+                      id={`weapon-notes-${weapon.id}`}
+                    >
+                      {weapon.notes}
+                    </div>
                   )}
                 </div>
               </label>

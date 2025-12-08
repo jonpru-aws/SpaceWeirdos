@@ -59,13 +59,24 @@ const ValidationErrorDisplayComponent = ({
         className={`validation-error-tooltip-container ${className}`}
         onMouseEnter={() => setIsTooltipVisible(true)}
         onMouseLeave={() => setIsTooltipVisible(false)}
+        onFocus={() => setIsTooltipVisible(true)}
+        onBlur={() => setIsTooltipVisible(false)}
+        tabIndex={0}
+        role="button"
+        aria-label={`${filteredErrors.length} validation error${filteredErrors.length !== 1 ? 's' : ''}`}
+        aria-describedby={isTooltipVisible ? 'validation-tooltip' : undefined}
       >
         <div className="validation-error-icon">
-          <span className="error-icon">⚠</span>
-          <span className="error-count">{filteredErrors.length}</span>
+          <span className="error-icon" aria-hidden="true">⚠</span>
+          <span className="error-count" aria-hidden="true">{filteredErrors.length}</span>
         </div>
         {isTooltipVisible && (
-          <div className="validation-error-tooltip" role="tooltip">
+          <div 
+            id="validation-tooltip"
+            className="validation-error-tooltip" 
+            role="tooltip"
+            aria-live="polite"
+          >
             {fieldNames.map(field => (
               <div key={field} className="tooltip-error-group">
                 {field !== 'general' && (

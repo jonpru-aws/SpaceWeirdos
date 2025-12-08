@@ -2,69 +2,70 @@
  * WeirdosList Styles
  * 
  * Styling for weirdo list and management controls.
+ * Uses design system tokens for consistency.
  * Requirements: 2.3, 2.4, 2.7, 11.1, 11.2, 11.3
  */
 
 .weirdos-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 /* Add buttons section */
 .weirdos-list__actions {
   display: flex;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  gap: var(--spacing-3);
+  padding-bottom: var(--spacing-4);
+  border-bottom: var(--border-width-thin) solid var(--color-border-default);
 }
 
 .weirdos-list__add-button {
   flex: 1;
-  padding: 0.75rem 1rem;
-  background: #1976d2;
-  color: white;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-primary-500);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-fast) var(--easing-in-out);
 }
 
 .weirdos-list__add-button:hover:not(:disabled) {
-  background: #1565c0;
+  background: var(--color-primary-600);
 }
 
 .weirdos-list__add-button:active:not(:disabled) {
-  background: #0d47a1;
+  background: var(--color-primary-700);
 }
 
 .weirdos-list__add-button:disabled {
-  background: #bdbdbd;
+  background: var(--color-neutral-300);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .weirdos-list__add-button:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.3);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 /* List items container */
 .weirdos-list__items {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
 }
 
 /* Empty state */
 .weirdos-list__empty {
-  padding: 2rem 1rem;
+  padding: var(--spacing-8) var(--spacing-4);
   text-align: center;
-  color: #888;
-  font-size: 0.875rem;
-  background: #f5f5f5;
-  border-radius: 4px;
-  border: 1px dashed #ccc;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  background: var(--color-neutral-50);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width-thin) dashed var(--color-border-default);
 }

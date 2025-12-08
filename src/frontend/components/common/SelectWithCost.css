@@ -22,7 +22,9 @@
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  transition: border-color var(--transition-fast) var(--easing-in-out),
+              box-shadow var(--transition-fast) var(--easing-out),
+              background-color var(--transition-fast) var(--easing-in-out);
   background: white;
   cursor: pointer;
 }
@@ -69,5 +71,12 @@
   .select-with-cost .select-input {
     padding: 0.625rem 0.875rem;
     font-size: 0.9375rem;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .select-with-cost .select-input {
+    transition: none !important;
   }
 }

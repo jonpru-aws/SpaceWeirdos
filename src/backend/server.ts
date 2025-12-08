@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { DataRepository } from './services/DataRepository';
 import { createWarbandRouter } from './routes/warbandRoutes';
+import { isError } from './utils/typeGuards';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -85,11 +86,17 @@ async function startServer() {
       console.log('  POST   /api/warbands/:id/weirdos');
       console.log('  PUT    /api/warbands/:id/weirdos/:weirdoId');
       console.log('  DELETE /api/warbands/:id/weirdos/:weirdoId');
+      console.log('  GET    /api/game-data/warband-abilities');
+      console.log('  POST   /api/validation/warband');
       console.log('  POST   /api/calculate-cost');
       console.log('  POST   /api/validate');
     });
-  } catch (error) {
-    console.error('Failed to start server:', error);
+  } catch (error: unknown) {
+    if (isError(error)) {
+      console.error('Failed to start server:', error.message);
+    } else {
+      console.error('Failed to start server:', error);
+    }
     process.exit(1);
   }
 }

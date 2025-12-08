@@ -29,6 +29,8 @@ export interface AttributeSelectorProps {
 }
 
 // Define available levels for each attribute type
+// Type assertions needed: TypeScript cannot infer the specific union types from array literals
+// These are safe because the values match the exact types defined in the type system
 const ATTRIBUTE_LEVELS = {
   speed: [1, 2, 3] as SpeedLevel[],
   defense: ['2d6', '2d8', '2d10'] as DiceLevel[],

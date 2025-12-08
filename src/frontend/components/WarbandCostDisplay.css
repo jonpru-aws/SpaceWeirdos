@@ -2,26 +2,29 @@
  * WarbandCostDisplay Styles
  * 
  * Sticky positioning at top of editor with semi-transparent background.
- * Warning and error state styling.
+ * Warning and error state styling using design system tokens.
  * 
- * Requirements: 1.4, 3.2, 3.3, 3.5, 6.2, 6.4, 6.5, 6.6
+ * Requirements: 1.3, 2.3, 2.4, 2.5, 2.6, 3.2, 3.4, 3.5, 3.6
  */
 
 .warband-cost-display {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-index-sticky);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(4px);
-  border-bottom: 2px solid #e0e0e0;
-  padding: 1rem;
-  margin: -1.5rem -1.5rem 1rem -1.5rem;
+  border-bottom: 2px solid var(--color-border-default);
+  padding: var(--spacing-4);
+  margin: calc(var(--spacing-4) * -1) calc(var(--spacing-4) * -1) var(--spacing-4) calc(var(--spacing-4) * -1);
+  transition: border-color var(--transition-normal) var(--easing-in-out),
+              background-color var(--transition-normal) var(--easing-in-out),
+              box-shadow var(--transition-fast) var(--easing-out);
 }
 
 .warband-cost-display__content {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 }
 
 .warband-cost-display__main {
@@ -32,48 +35,63 @@
 
 .warband-cost-display__label {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 1rem;
 }
 
 .warband-cost-display__value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1976d2;
+  color: var(--color-primary-600);
+  transition: color var(--transition-normal) var(--easing-in-out),
+              transform var(--transition-fast) var(--easing-out);
 }
 
 .warband-cost-display__remaining {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--color-text-secondary);
   text-align: right;
+  transition: color var(--transition-normal) var(--easing-in-out),
+              opacity var(--transition-fast) var(--easing-in-out);
 }
 
 /* Warning state - approaching limit (within 15 points) */
 .warband-cost-display--warning {
-  border-bottom-color: #ff9800;
-  background: rgba(255, 152, 0, 0.05);
+  border-bottom-color: var(--color-warning);
+  background: var(--color-warning-light);
 }
 
 .warband-cost-display--warning .warband-cost-display__value {
-  color: #ff9800;
+  color: var(--color-warning);
 }
 
 .warband-cost-display__warning-text {
-  color: #ff9800;
+  color: var(--color-warning);
   font-weight: 600;
+  transition: color var(--transition-normal) var(--easing-in-out);
 }
 
 /* Error state - exceeding limit */
 .warband-cost-display--error {
-  border-bottom-color: #d32f2f;
-  background: rgba(211, 47, 47, 0.05);
+  border-bottom-color: var(--color-error);
+  background: var(--color-error-light);
 }
 
 .warband-cost-display--error .warband-cost-display__value {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .warband-cost-display__over {
-  color: #d32f2f;
+  color: var(--color-error);
   font-weight: 700;
+  transition: color var(--transition-normal) var(--easing-in-out);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .warband-cost-display,
+  .warband-cost-display__value,
+  .warband-cost-display__remaining {
+    transition: none;
+  }
 }

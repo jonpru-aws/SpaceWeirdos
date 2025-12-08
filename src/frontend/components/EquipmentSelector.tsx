@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Equipment, WarbandAbility } from '../../backend/models/types';
 import { CostEngine } from '../../backend/services/CostEngine';
+import './EquipmentSelector.css';
 
 /**
  * EquipmentSelector Component
@@ -88,35 +89,54 @@ const EquipmentSelectorComponent = ({
   };
 
   return (
-    <div className="equipment-selector">
-      <h4>Equipment</h4>
-      <div className="equipment-selector__limit-info">
+    <div className="equipment-selector" role="group" aria-labelledby="equipment-heading">
+      <h4 id="equipment-heading">Equipment</h4>
+      <div 
+        className="equipment-selector__limit-info" 
+        role="status" 
+        aria-live="polite"
+        aria-label={`Equipment limit: ${selectedEquipment.length} of ${limit} selected`}
+      >
         Selected: {selectedEquipment.length}/{limit}
       </div>
-      <ul className="equipment-selector__list">
+      <ul className="equipment-selector__list" role="list">
         {availableEquipment.map((equipment) => {
           const isSelected = selectedEquipment.some(e => e.id === equipment.id);
           const isDisabled = !isSelected && isLimitReached;
           const isModified = hasModifiedCost(equipment);
 
           return (
-            <li key={equipment.id} className="equipment-selector__item">
-              <label className={`equipment-selector__label ${isDisabled ? 'disabled' : ''}`}>
+            <li key={equipment.id} className="equipment-selector__item" role="listitem">
+              <label 
+                className={`equipment-selector__label ${isDisabled ? 'disabled' : ''}`}
+                htmlFor={`equipment-${equipment.id}`}
+              >
                 <input
                   type="checkbox"
+                  id={`equipment-${equipment.id}`}
                   checked={isSelected}
                   onChange={() => handleToggle(equipment)}
                   disabled={isDisabled}
-                  className="equipment-selector__checkbox"
+                  className="equipment-selector__checkbox checkbox"
+                  aria-describedby={`equipment-effect-${equipment.id}`}
+                  aria-label={`${equipment.name}, ${formatCostDisplay(equipment)}`}
                 />
                 <div className="equipment-selector__content">
                   <div className="equipment-selector__header">
                     <span className="equipment-selector__name">{equipment.name}</span>
-                    <span className={`equipment-selector__cost ${isModified ? 'modified' : ''}`}>
+                    <span 
+                      className={`equipment-selector__cost ${isModified ? 'modified' : ''}`}
+                      aria-label={`Cost: ${formatCostDisplay(equipment)}`}
+                    >
                       {formatCostDisplay(equipment)}
                     </span>
                   </div>
-                  <div className="equipment-selector__effect">{equipment.effect}</div>
+                  <div 
+                    className="equipment-selector__effect" 
+                    id={`equipment-effect-${equipment.id}`}
+                  >
+                    {equipment.effect}
+                  </div>
                 </div>
               </label>
             </li>

@@ -36,6 +36,36 @@ Designs must include:
 - Each property must start with "For any..." (universal quantification)
 - Properties must reference specific requirements they validate
 
+## API Architecture Requirements
+
+All frontend-backend communication must use a dedicated API layer:
+
+### Mandatory API Layer
+- **Frontend components** MUST NOT directly access backend services, repositories, or business logic
+- **All data exchange** between frontend and backend MUST go through HTTP API endpoints
+- **API client layer** (`src/frontend/services/apiClient.ts`) MUST be the sole interface for backend communication
+- **Type definitions** for API requests/responses MUST be defined in `src/frontend/services/apiTypes.ts`
+
+### API Design Standards
+- Use RESTful conventions for endpoint design
+- Return consistent response structures (success/error patterns)
+- Include proper HTTP status codes
+- Implement error handling at the API boundary
+- Define clear request/response TypeScript types
+
+### Benefits of API Layer
+- Clear separation of concerns between frontend and backend
+- Easier testing through API mocking
+- Consistent error handling
+- Type safety across the boundary
+- Enables future backend changes without frontend modifications
+
+### When Designing Features
+- Identify all data operations needed by the frontend
+- Design API endpoints before implementing UI components
+- Document API contracts in the design document
+- Consider API versioning for breaking changes
+
 ### Common Correctness Patterns
 
 1. **Invariants**: Properties that remain constant despite changes

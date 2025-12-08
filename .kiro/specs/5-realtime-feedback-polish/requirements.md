@@ -81,6 +81,20 @@ This spec focuses on the UX enhancements that make the application feel responsi
 4. WHEN the cost breakdown is collapsed THEN the Warband Builder SHALL show only the total cost
 5. WHEN the cost breakdown is toggled THEN the Warband Builder SHALL animate the transition smoothly
 
+### Requirement 6
+
+**User Story:** As a developer, I want all frontend-backend communication to use API calls, so that the frontend and backend remain properly decoupled and maintainable.
+
+#### Acceptance Criteria
+
+1. WHEN the frontend needs real-time cost calculations THEN the Frontend SHALL make HTTP POST requests to backend cost calculation API endpoints
+2. WHEN the frontend needs validation results THEN the Frontend SHALL make HTTP POST requests to backend validation API endpoints
+3. WHEN the frontend receives cost calculation responses THEN the Frontend SHALL update the UI within 100 milliseconds
+4. WHEN the frontend receives validation responses THEN the Frontend SHALL display error indicators and tooltips appropriately
+5. WHEN making API calls THEN the Frontend SHALL NOT directly import or use backend service classes (CostEngine, ValidationService)
+6. WHEN the backend provides cost calculations THEN the Backend SHALL expose RESTful API endpoints that return cost breakdowns
+7. WHEN the backend provides validation THEN the Backend SHALL expose RESTful API endpoints that return validation errors
+
 ## Items Requiring Clarification
 
 ### 1. Cost Update Debouncing

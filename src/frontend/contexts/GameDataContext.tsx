@@ -6,6 +6,7 @@ import {
   LeaderTrait,
   WarbandAbility,
 } from '../../backend/models/types';
+import { apiClient } from '../services/apiClient';
 
 /**
  * GameDataContext
@@ -99,33 +100,36 @@ export function GameDataProvider({ children }: GameDataProviderProps) {
         warbandAbilities,
         attributes,
       ] = await Promise.all([
-        fetch('/data/closeCombatWeapons.json').then(r => {
+        fetch('/data/closeCombatWeapons.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load close combat weapons');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<Weapon[]>;
         }),
-        fetch('/data/rangedWeapons.json').then(r => {
+        fetch('/data/rangedWeapons.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load ranged weapons');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<Weapon[]>;
         }),
-        fetch('/data/equipment.json').then(r => {
+        fetch('/data/equipment.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load equipment');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<Equipment[]>;
         }),
-        fetch('/data/psychicPowers.json').then(r => {
+        fetch('/data/psychicPowers.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load psychic powers');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<PsychicPower[]>;
         }),
-        fetch('/data/leaderTraits.json').then(r => {
+        fetch('/data/leaderTraits.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load leader traits');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<{ id: string; name: LeaderTrait; description: string }[]>;
         }),
-        fetch('/data/warbandAbilities.json').then(r => {
-          if (!r.ok) throw new Error('Failed to load warband abilities');
-          return r.json();
-        }),
-        fetch('/data/attributes.json').then(r => {
+        apiClient.getWarbandAbilities(),
+        fetch('/data/attributes.json').then(async r => {
           if (!r.ok) throw new Error('Failed to load attributes');
-          return r.json();
+          // Type assertion is safe: we control the JSON file structure
+          return r.json() as Promise<GameData['attributes']>;
         }),
       ]);
 

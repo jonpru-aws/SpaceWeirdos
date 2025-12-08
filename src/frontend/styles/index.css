@@ -1,0 +1,77 @@
+/**
+ * Design System Entry Point
+ * 
+ * This file imports all design system styles in the correct order:
+ * 1. Design tokens (CSS custom properties) - Must be first so variables are available
+ * 2. Base styles (resets, typography, components) - Foundation styles
+ * 3. Utility classes (spacing, layout, text) - Override and helper classes
+ * 
+ * Import Order Rationale:
+ * - Tokens define CSS custom properties used throughout the system
+ * - Reset normalizes browser defaults before applying custom styles
+ * - Base styles provide default component styling
+ * - Utilities provide single-purpose classes that can override base styles
+ */
+
+/* ============================================
+   DESIGN TOKENS
+   CSS custom properties for colors, spacing, typography, etc.
+   ============================================ */
+@import './tokens/colors.css';
+@import './tokens/spacing.css';
+@import './tokens/typography.css';
+@import './tokens/shadows.css';
+@import './tokens/borders.css';
+@import './tokens/transitions.css';
+@import './tokens/z-index.css';
+@import './tokens/breakpoints.css';
+
+/* ============================================
+   BASE STYLES
+   Resets and default component styles
+   ============================================ */
+@import './base/reset.css';
+@import './base/buttons.css';
+@import './base/forms.css';
+@import './base/labels.css';
+@import './base/cards.css';
+
+/* ============================================
+   UTILITY CLASSES
+   Single-purpose helper classes
+   ============================================ */
+@import './utilities/spacing.css';
+@import './utilities/layout.css';
+@import './utilities/display.css';
+@import './utilities/text.css';
+@import './utilities/typography.css';
+
+/* ============================================
+   ACCESSIBILITY: REDUCED MOTION SUPPORT
+   Respects user preference for reduced motion
+   ============================================ */
+
+/**
+ * When users enable "reduce motion" in their OS settings,
+ * disable or minimize all animations and transitions.
+ * 
+ * This is critical for users with vestibular disorders or
+ * those who find motion distracting or uncomfortable.
+ * 
+ * Requirement 7.4: Respect user preferences for reduced motion
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* Reduce animation duration to near-instant */
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    
+    /* Reduce transition duration to near-instant */
+    transition-duration: 0.01ms !important;
+    
+    /* Disable smooth scrolling */
+    scroll-behavior: auto !important;
+  }
+}

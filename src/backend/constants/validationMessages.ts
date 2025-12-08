@@ -16,7 +16,7 @@ export const VALIDATION_MESSAGES = {
   MULTIPLE_25_POINT_WEIRDOS: 'Only one weirdo may cost {min}-{max} points',
   WARBAND_POINT_LIMIT_EXCEEDED: 'Warband total cost ({totalCost}) exceeds point limit ({pointLimit})',
   LEADER_TRAIT_INVALID: 'Leader trait can only be assigned to leaders',
-} as const;
+} as const; // Type assertion makes object readonly with literal types for type safety
 
 /**
  * Type-safe validation error code
@@ -39,7 +39,7 @@ export function getValidationMessage(
   code: ValidationErrorCode,
   params?: Record<string, string | number>
 ): string {
-  let message = VALIDATION_MESSAGES[code];
+  let message: string = VALIDATION_MESSAGES[code];
   
   if (params) {
     Object.entries(params).forEach(([key, value]) => {

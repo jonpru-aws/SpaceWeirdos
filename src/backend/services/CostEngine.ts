@@ -66,16 +66,18 @@ export class CostEngine {
     let baseCost = 0;
 
     // Look up base cost from table
+    // Type assertions are safe: level parameter type matches the specific attribute level type
+    // TypeScript can't narrow the union type based on the attribute check
     if (attribute === 'speed') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.speed[level as SpeedLevel];
+      baseCost = CostEngine.ATTRIBUTE_COSTS.speed[level as SpeedLevel]; // Type assertion documented above
     } else if (attribute === 'defense') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.defense[level as DiceLevel];
+      baseCost = CostEngine.ATTRIBUTE_COSTS.defense[level as DiceLevel]; // Type assertion documented above
     } else if (attribute === 'firepower') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.firepower[level as FirepowerLevel];
+      baseCost = CostEngine.ATTRIBUTE_COSTS.firepower[level as FirepowerLevel]; // Type assertion documented above
     } else if (attribute === 'prowess') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.prowess[level as DiceLevel];
+      baseCost = CostEngine.ATTRIBUTE_COSTS.prowess[level as DiceLevel]; // Type assertion documented above
     } else if (attribute === 'willpower') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.willpower[level as DiceLevel];
+      baseCost = CostEngine.ATTRIBUTE_COSTS.willpower[level as DiceLevel]; // Type assertion documented above
     }
 
     // Apply warband ability modifiers using strategy pattern

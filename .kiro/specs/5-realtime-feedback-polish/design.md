@@ -17,7 +17,7 @@ This design document specifies the real-time feedback and polish features that e
 - Spec 2: Warband List & Navigation
 - Spec 3: Warband Properties Editor
 - Spec 4: Weirdo Editor
-- Game Rules Spec (CostEngine, ValidationService)
+- Game Rules Spec (backend API for cost calculations and validation)
 
 ## Components
 
@@ -105,13 +105,64 @@ interface ValidationErrorDisplayProps {
 - Performance tests for cost calculation timing
 - Accessibility tests for tooltips and indicators
 
+## API Endpoints
+
+**Backend must expose these RESTful endpoints:**
+
+```
+POST   /api/cost/calculate                - Calculate costs with breakdown
+POST   /api/validation/warband            - Validate complete warband
+POST   /api/validation/weirdo             - Validate individual weirdo
+```
+
+**Real-time Cost Calculation:**
+```typescript
+// Request (debounced to 100ms)
+POST /api/cost/calculate
+{
+  weirdoType: 'leader' | 'trooper',
+  attributes: AttributeSet,
+  weapons: string[],
+  equipment: string[],
+  psychicPowers: string[],
+  warbandAbility: string | null
+}
+
+// Response (must return within 100ms)
+{
+  success: true,
+  data: {
+    totalCost: number,
+    breakdown: {
+      attributes: number,
+      weapons: number,
+      equipment: number,
+      psychicPowers: number
+    },
+    warnings: string[],
+    isApproachingLimit: boolean,
+    isOverLimit: boolean
+  }
+}
+```
+
 ## Implementation Notes
 
+### API Communication
+
+- **Frontend**: Use `apiClient` for all HTTP requests
+- **Frontend**: NEVER directly import CostEngine or ValidationService
+- **Frontend**: Debounce API calls to 100ms to reduce network traffic
+- **Backend**: Optimize cost calculation endpoints for < 100ms response time
+- **Backend**: Return cost breakdowns and warning indicators
+
 ### Performance Optimization
-- Debounce cost calculations to 100ms
+- Debounce cost calculation API calls to 100ms
 - Use React.memo for expensive components
 - Memoize computed values (costs, validation results)
 - Use CSS containment for sticky elements
+- Cache validation results when weirdo hasn't changed
+- Batch multiple cost calculations when possible
 
 ### CSS Strategy
 ```css

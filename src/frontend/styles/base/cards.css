@@ -1,0 +1,46 @@
+/* Card Component Base Styles */
+
+.card {
+  background-color: var(--color-bg-base);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal) var(--easing-in-out);
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+  padding-bottom: var(--spacing-3);
+  border-bottom: var(--border-width-thin) solid var(--color-border-default);
+  margin-bottom: var(--spacing-3);
+}
+
+.card-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+  margin: 0;
+}
+
+.card-body {
+  padding: var(--spacing-3) 0;
+}
+
+.card-footer {
+  padding-top: var(--spacing-3);
+  border-top: var(--border-width-thin) solid var(--color-border-default);
+  margin-top: var(--spacing-3);
+}

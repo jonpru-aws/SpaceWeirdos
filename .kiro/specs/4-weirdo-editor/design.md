@@ -15,7 +15,7 @@ This design document specifies the weirdo (character) editing interface. The sys
 - Spec 1: UI Design System
 - Spec 2: Warband List & Navigation (WarbandContext)
 - Spec 3: Warband Properties Editor (WarbandEditor shell)
-- Game Rules Spec (CostEngine, ValidationService, game data)
+- Game Rules Spec (backend API for cost calculations, validation, and game data)
 
 ## Components
 
@@ -77,9 +77,63 @@ Dropdown for leader trait (only shown for leaders).
 - Integration tests for weirdo creation and editing flows
 - Accessibility tests for form controls
 
+## API Endpoints
+
+**Backend must expose these RESTful endpoints:**
+
+```
+GET    /api/game-data/attributes          - Fetch attribute options
+GET    /api/game-data/weapons/close       - Fetch close combat weapons
+GET    /api/game-data/weapons/ranged      - Fetch ranged weapons
+GET    /api/game-data/equipment           - Fetch equipment options
+GET    /api/game-data/psychic-powers      - Fetch psychic powers
+GET    /api/game-data/leader-traits       - Fetch leader traits
+POST   /api/cost/calculate                - Calculate weirdo cost
+POST   /api/validation/weirdo             - Validate weirdo configuration
+```
+
+**Request/Response Examples:**
+```typescript
+// Cost calculation request
+POST /api/cost/calculate
+{
+  weirdoType: 'leader' | 'trooper',
+  attributes: { speed: number, defense: number, ... },
+  weapons: string[],
+  equipment: string[],
+  psychicPowers: string[],
+  warbandAbility: string | null
+}
+
+// Cost calculation response
+{
+  success: true,
+  data: {
+    totalCost: number,
+    breakdown: {
+      attributes: number,
+      weapons: number,
+      equipment: number,
+      psychicPowers: number
+    }
+  }
+}
+```
+
 ## Implementation Notes
 
+### API Communication
+
+- **Frontend**: Use `apiClient` for all HTTP requests
+- **Frontend**: NEVER directly import CostEngine, ValidationService, or DataRepository
+- **Backend**: Expose game data and calculation endpoints
+- **Backend**: Handle cost calculations server-side
+- **Backend**: Return structured cost breakdowns
+
+### Component Behavior
+
 - Use shared SelectWithCost and ItemList components for consistency
-- Integrate with CostEngine for real-time cost calculations
+- Call cost calculation API when weirdo properties change
 - Apply design system styles throughout
 - Implement progressive disclosure with conditional rendering
+- Cache game data API responses to reduce network calls

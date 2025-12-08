@@ -49,6 +49,15 @@ export class DataRepository {
   }
 
   /**
+   * Type guard to check if an error is a Node.js error with a code property.
+   * @param error - The error to check
+   * @returns True if the error is a Node.js error with a code property
+   */
+  private isNodeError(error: unknown): error is NodeJS.ErrnoException {
+    return error instanceof Error && 'code' in error;
+  }
+
+  /**
    * Validates a warband object to ensure all required fields are present and valid.
    * 
    * @param warband - The warband to validate
@@ -292,9 +301,9 @@ export class DataRepository {
       const dir = path.dirname(this.filePath);
       try {
         await fs.mkdir(dir, { recursive: true });
-      } catch (err: any) {
-        // Check for permission errors
-        if (err.code === 'EACCES' || err.code === 'EPERM') {
+      } catch (err: unknown) {
+        // Check for permission errors using type guard
+        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot create directory ${dir}`,
             PersistenceErrorCode.PERMISSION_ERROR,
@@ -311,9 +320,9 @@ export class DataRepository {
           JSON.stringify(warbandsArray, null, 2),
           'utf-8'
         );
-      } catch (err: any) {
-        // Check for permission errors
-        if (err.code === 'EACCES' || err.code === 'EPERM') {
+      } catch (err: unknown) {
+        // Check for permission errors using type guard
+        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot write to file ${this.filePath}`,
             PersistenceErrorCode.PERMISSION_ERROR,
@@ -321,22 +330,24 @@ export class DataRepository {
           );
         }
         // Other file write errors
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         throw new PersistenceError(
-          `Failed to write warband data to file: ${err.message}`,
+          `Failed to write warband data to file: ${errorMessage}`,
           PersistenceErrorCode.FILE_WRITE_ERROR,
-          { path: this.filePath, originalError: err.message }
+          { path: this.filePath, originalError: errorMessage }
         );
       }
-    } catch (err) {
+    } catch (err: unknown) {
       // Re-throw PersistenceErrors as-is
       if (err instanceof PersistenceError) {
         throw err;
       }
       // Wrap unexpected errors
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       throw new PersistenceError(
-        `Unexpected error during file persistence: ${(err as Error).message}`,
+        `Unexpected error during file persistence: ${errorMessage}`,
         PersistenceErrorCode.FILE_WRITE_ERROR,
-        { originalError: (err as Error).message }
+        { originalError: errorMessage }
       );
     }
   }
@@ -355,9 +366,9 @@ export class DataRepository {
       const dir = path.dirname(this.filePath);
       try {
         await fs.mkdir(dir, { recursive: true });
-      } catch (err: any) {
-        // Check for permission errors
-        if (err.code === 'EACCES' || err.code === 'EPERM') {
+      } catch (err: unknown) {
+        // Check for permission errors using type guard
+        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot create directory ${dir}`,
             PersistenceErrorCode.PERMISSION_ERROR,
@@ -375,11 +386,12 @@ export class DataRepository {
         let warbandsArray: Warband[];
         try {
           warbandsArray = JSON.parse(data);
-        } catch (parseErr: any) {
+        } catch (parseErr: unknown) {
+          const errorMessage = parseErr instanceof Error ? parseErr.message : 'Unknown parse error';
           throw new PersistenceError(
             `Failed to parse warband data: File contains invalid JSON`,
             PersistenceErrorCode.JSON_PARSE_ERROR,
-            { path: this.filePath, originalError: parseErr.message }
+            { path: this.filePath, originalError: errorMessage }
           );
         }
 
@@ -394,11 +406,11 @@ export class DataRepository {
           
           this.cache.set(warband.id, warband);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // If file doesn't exist, create an empty one
-        if (err.code === 'ENOENT') {
+        if (this.isNodeError(err) && err.code === 'ENOENT') {
           await this.persistToFile();
-        } else if (err.code === 'EACCES' || err.code === 'EPERM') {
+        } else if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
           // Permission error reading file
           throw new PersistenceError(
             `Permission denied: Cannot read file ${this.filePath}`,
@@ -410,10 +422,11 @@ export class DataRepository {
           throw err;
         } else {
           // Other file read errors
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
           throw new PersistenceError(
-            `Failed to read warband data from file: ${err.message}`,
+            `Failed to read warband data from file: ${errorMessage}`,
             PersistenceErrorCode.FILE_READ_ERROR,
-            { path: this.filePath, originalError: err.message }
+            { path: this.filePath, originalError: errorMessage }
           );
         }
       }
