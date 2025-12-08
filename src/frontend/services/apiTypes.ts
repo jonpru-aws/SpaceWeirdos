@@ -8,6 +8,7 @@
 import {
   Warband,
   ValidationResult,
+  WarbandAbility,
 } from '../../backend/models/types';
 
 /**
@@ -112,6 +113,29 @@ export interface ValidateWeirdoResponse {
 export interface ApiErrorResponse {
   error: string;
   details?: string;
+}
+
+/**
+ * Request for POST /api/cost/batch (batch cost calculation)
+ */
+export interface BatchCostRequest {
+  items: Array<{
+    id: string;
+    type: 'weapon' | 'equipment' | 'psychicPower';
+    name: string;
+    weaponType?: 'close' | 'ranged';
+  }>;
+  warbandAbility: WarbandAbility | null;
+}
+
+/**
+ * Response from POST /api/cost/batch (batch cost calculation)
+ */
+export interface BatchCostResponse {
+  success: boolean;
+  data: {
+    costs: Record<string, number>; // id -> cost mapping
+  };
 }
 
 /**

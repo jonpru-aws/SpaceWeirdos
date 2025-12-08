@@ -1,5 +1,5 @@
 import { useWarband } from '../contexts/WarbandContext';
-import { WarbandAbility } from '../../backend/models/types';
+import type { WarbandAbility } from '../../backend/models/types';
 
 /**
  * WarbandProperties Component

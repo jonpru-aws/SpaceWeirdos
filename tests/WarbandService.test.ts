@@ -124,7 +124,7 @@ describe('WarbandService', () => {
       const weirdoGen = (type: 'leader' | 'trooper', warbandAbility: WarbandAbility) =>
         fc.record({
           id: fc.uuid(),
-          name: fc.string({ minLength: 1 }),
+          name: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
           type: fc.constant(type),
           attributes: attributesGen,
           closeCombatWeapons: fc.array(closeCombatWeaponGen, { minLength: 1, maxLength: 2 }),
@@ -157,7 +157,7 @@ describe('WarbandService', () => {
 
       const warbandGen = fc.record({
         id: fc.uuid(),
-        name: fc.string({ minLength: 1 }),
+        name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
         ability: warbandAbilityGen,
         pointLimit: fc.constantFrom(75 as const, 125 as const),
         totalCost: fc.integer({ min: 0, max: 125 }),
@@ -335,7 +335,7 @@ describe('WarbandService', () => {
       );
 
       const simpleWarbandGen = fc.record({
-        name: fc.string({ minLength: 1, maxLength: 30 }),
+        name: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
         ability: warbandAbilityGen,
         pointLimit: fc.constantFrom(75 as const, 125 as const),
         weirdos: fc.constant([])

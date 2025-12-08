@@ -1,6 +1,6 @@
 // Core type definitions for Space Weirdos Warband Builder
 
-import type { ValidationErrorCode } from '../constants/validationMessages';
+import type { ValidationErrorCode } from '../constants/validationMessages.js';
 
 export type SpeedLevel = 1 | 2 | 3;
 export type DiceLevel = '2d6' | '2d8' | '2d10';
@@ -91,9 +91,16 @@ export interface ValidationError {
   code: ValidationErrorCode;
 }
 
+export interface ValidationWarning {
+  field: string;
+  message: string;
+  code: string;
+}
+
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
+  warnings: ValidationWarning[];
 }
 
 export interface WarbandSummary {

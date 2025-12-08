@@ -24,6 +24,8 @@ This spec focuses exclusively on business logic and can be implemented independe
 - **Warband Ability**: A faction-wide ability that applies to all members of the warband
 - **Cost Engine**: The system component that calculates point costs with modifiers
 - **Validation Service**: The system component that enforces game rules and constraints
+- **Validation Warning**: A non-blocking notification that alerts users when approaching limits without preventing the action
+- **Applicable Limit**: The point cost limit that applies to a specific weirdo (20 points for most weirdos, 25 points for the one allowed premium weirdo)
 
 ## Requirements
 
@@ -118,6 +120,11 @@ This spec focuses exclusively on business logic and can be implemented independe
 2. WHEN a warband already contains one weirdo with cost between 21 and 25 points THEN the Validation Service SHALL prevent any other weirdo from exceeding 20 points
 3. WHEN validating a trooper with cost exceeding 20 points AND no 25-point weirdo exists THEN the Validation Service SHALL allow it if cost is 25 or less
 4. WHEN validating a trooper with cost exceeding 20 points AND a 25-point weirdo exists THEN the Validation Service SHALL reject it
+5. WHEN a weirdo cost is within 3 points of the applicable limit THEN the Validation Service SHALL generate a warning
+6. WHEN no 25-point weirdo exists in the warband AND a weirdo cost is between 18 and 20 points THEN the Validation Service SHALL generate a warning for approaching the 20-point limit
+7. WHEN no 25-point weirdo exists in the warband AND a weirdo cost is between 23 and 25 points THEN the Validation Service SHALL generate a warning for approaching the 25-point limit
+8. WHEN a 25-point weirdo exists in the warband AND another weirdo cost is between 18 and 20 points THEN the Validation Service SHALL generate a warning for approaching the 20-point limit
+9. WHEN a 25-point weirdo exists in the warband AND that same weirdo cost is between 23 and 25 points THEN the Validation Service SHALL generate a warning for approaching the 25-point limit
 
 ### Requirement 8
 

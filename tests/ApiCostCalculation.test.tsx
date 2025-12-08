@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { WarbandProvider, useWarband } from '../src/frontend/contexts/WarbandContext';
-import { CostEngine } from '../src/backend/services/CostEngine';
 import { apiClient } from '../src/frontend/services/apiClient';
 
 /**
@@ -11,13 +10,10 @@ import { apiClient } from '../src/frontend/services/apiClient';
  * Tests that cost calculations use API endpoints with proper debouncing,
  * memoization, and error handling.
  * 
- * Requirements: 1.1, 1.2, 1.4, 6.1, 6.3, 6.5
+ * Requirements: 1.1, 1.2, 1.4, 6.1, 6.3, 6.5, 9.2, 9.6
  */
 describe('API Cost Calculation', () => {
-  let costEngine: CostEngine;
-
   beforeEach(() => {
-    costEngine = new CostEngine();
     vi.clearAllMocks();
   });
 
@@ -44,7 +40,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -120,7 +116,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -175,7 +171,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -230,7 +226,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -280,7 +276,7 @@ describe('API Cost Calculation', () => {
     act(() => {
       result.current.updateWeirdo(weirdoId, {
         attributes: {
-          speed: 4,
+          speed: 3,
           defense: '2d10',
           firepower: '2d10',
           prowess: '2d10',
@@ -323,7 +319,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -392,7 +388,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -445,7 +441,7 @@ describe('API Cost Calculation', () => {
     );
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -513,7 +509,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -573,7 +569,7 @@ describe('API Cost Calculation', () => {
     });
 
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider costEngine={costEngine}>
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -645,3 +641,4 @@ describe('API Cost Calculation', () => {
     );
   });
 });
+

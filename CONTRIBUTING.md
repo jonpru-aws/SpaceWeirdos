@@ -293,10 +293,36 @@ src/frontend/
 
 1. User interacts with React components
 2. Components use Context API for shared state (GameDataContext, WarbandContext)
-3. API client makes requests to Express backend
-4. Backend services process requests using Strategy pattern for cost modifiers
-5. DataRepository manages in-memory data
-6. JSON files provide persistence
+3. Components use cost calculation hooks (useCostCalculation, useItemCost) for real-time cost feedback
+4. Hooks implement caching (5s TTL, LRU eviction) and debouncing (300ms) for performance
+5. API client makes requests to Express backend
+6. Backend services process requests using Strategy pattern for cost modifiers
+7. DataRepository manages in-memory data
+8. JSON files provide persistence
+
+### Frontend-Backend Separation
+
+**Important:** Frontend code must NOT duplicate backend business logic.
+
+**Acceptable imports:**
+```typescript
+// ✅ Type-only imports are allowed
+import type { Warband, Weirdo } from '../../backend/models/types';
+```
+
+**Prohibited imports:**
+```typescript
+// ❌ Never import backend services or business logic
+import { CostEngine } from '../../backend/services/CostEngine';
+import { ValidationService } from '../../backend/services/ValidationService';
+```
+
+**For cost calculations:**
+- Use `useCostCalculation` hook for complete weirdo costs
+- Use `useItemCost` hook for individual item costs
+- Never duplicate cost calculation logic in frontend
+
+See [Frontend-Backend API Separation Guide](.kiro/specs/6-frontend-backend-api-separation/API_SEPARATION_GUIDE.md) for complete documentation.
 
 ## Common Tasks
 
@@ -593,6 +619,7 @@ test('renders component', () => {
 - [Testing Guide](TESTING.md) - Comprehensive testing documentation
 - [Spec Documentation](.kiro/specs/) - Feature specifications
 - [Working with Specs](.kiro/specs/WORKING-WITH-SPECS.md) - Guide to creating and executing specs
+- [Frontend-Backend API Separation Guide](.kiro/specs/6-frontend-backend-api-separation/API_SEPARATION_GUIDE.md) - Architecture and best practices for API communication
 
 ### Questions
 

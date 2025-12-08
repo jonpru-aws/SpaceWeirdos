@@ -20,6 +20,8 @@ import {
   ValidateWeirdoResponse,
   ApiErrorResponse,
   JsonResponse,
+  BatchCostRequest,
+  BatchCostResponse,
 } from './apiTypes';
 
 /**
@@ -148,6 +150,7 @@ export const apiClient = {
     name: string;
     pointLimit: 75 | 125;
     ability: WarbandAbility | null;
+    weirdos?: Weirdo[];
   }): Promise<Warband> {
     return fetchWithRetry<CreateWarbandResponse>('/warbands', {
       method: 'POST',
@@ -272,6 +275,19 @@ export const apiClient = {
       method: 'POST',
       body: params,
     });
+  },
+
+  /**
+   * Calculate costs for multiple items in a single batch request
+   * Optimized for displaying costs in selector components
+   * Returns a map of item IDs to their calculated costs
+   */
+  async calculateBatchCosts(request: BatchCostRequest): Promise<Record<string, number>> {
+    const response = await fetchWithRetry<BatchCostResponse>('/cost/batch', {
+      method: 'POST',
+      body: request,
+    });
+    return response.data.costs;
   },
 
   /**

@@ -232,7 +232,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'WEIRDO_NAME_REQUIRED');
           }
         ),
@@ -279,7 +280,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'ATTRIBUTES_INCOMPLETE');
           }
         ),
@@ -326,7 +328,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             // Should not have name or attribute errors
             return !errors.some(e => e.code === 'WEIRDO_NAME_REQUIRED' || e.code === 'ATTRIBUTES_INCOMPLETE');
           }
@@ -371,7 +374,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'CLOSE_COMBAT_WEAPON_REQUIRED');
           }
         ),
@@ -412,7 +416,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return !errors.some(e => e.code === 'CLOSE_COMBAT_WEAPON_REQUIRED');
           }
         ),
@@ -469,7 +474,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'RANGED_WEAPON_REQUIRED');
           }
         ),
@@ -521,7 +527,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return !errors.some(e => e.code === 'RANGED_WEAPON_REQUIRED');
           }
         ),
@@ -578,7 +585,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
           }
         ),
@@ -632,7 +640,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return !errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
           }
         ),
@@ -692,7 +701,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(trooper, warband);
+            const result = validationService.validateWeirdo(trooper, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
           }
         ),
@@ -761,7 +771,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
           }
         ),
@@ -813,7 +824,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return !errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
           }
         ),
@@ -909,7 +921,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             const hasAttributeError = errors.some(e => e.code === 'ATTRIBUTES_INCOMPLETE');
             
             // Check if attributes are complete
@@ -981,7 +994,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             const hasRangedWeaponError = errors.some(e => e.code === 'RANGED_WEAPON_REQUIRED');
             const hasFirepowerError = errors.some(e => e.code === 'FIREPOWER_REQUIRED_FOR_RANGED_WEAPON');
             
@@ -1045,7 +1059,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             const hasEquipmentError = errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
             
             // Calculate expected limit based on type and ability
@@ -1101,7 +1116,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             const hasWeaponError = errors.some(e => e.code === 'CLOSE_COMBAT_WEAPON_REQUIRED');
             
             // Validation behavior: empty weapon array should produce error
@@ -1161,7 +1177,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
           }
         ),
@@ -1213,7 +1230,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
           }
         ),
@@ -1266,7 +1284,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
           }
         ),
@@ -1323,7 +1342,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             // Should not have any psychic power limit errors
             return !errors.some(e => e.message.includes('psychic power'));
           }
@@ -1381,7 +1401,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return errors.some(e => e.code === 'LEADER_TRAIT_INVALID');
           }
         ),
@@ -1434,7 +1455,8 @@ describe('ValidationService', () => {
               updatedAt: new Date()
             };
 
-            const errors = validationService.validateWeirdo(weirdo, warband);
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
             return !errors.some(e => e.code === 'LEADER_TRAIT_INVALID');
           }
         ),
@@ -1501,7 +1523,8 @@ describe('ValidationService', () => {
             };
 
             const cost = costEngine.calculateWeirdoCost(trooper, ability);
-            const errors = validationService.validateWeirdo(trooper, warband);
+            const result = validationService.validateWeirdo(trooper, warband);
+            const errors = result.errors;
             
             // If cost > 25, should have error
             if (cost > 25) {
@@ -1746,3 +1769,4 @@ describe('ValidationService', () => {
     });
   });
 });
+

@@ -191,6 +191,22 @@
   - **Property 2: Cost warning indicators appear correctly**
   - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6**
 
+- [x] 6.4 Update weirdo warning logic to use backend ValidationService
+  - Remove frontend calculation of isApproachingLimit (within 10 points)
+  - Use warnings from backend ValidationService API response
+  - Backend generates warnings when cost is within 3 points of applicable limit
+  - Update WeirdoCostDisplay to use backend warnings
+  - Update WarbandCostDisplay to continue using 15-point threshold for warband total
+  - Remove hardcoded 10-point threshold from frontend code
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.10_
+
+- [ ]* 6.5 Write unit tests for updated warning logic
+  - Test warnings come from backend API response
+  - Test 3-point threshold (18-20, 23-25) via backend
+  - Test frontend correctly displays backend warnings
+  - Test warband warnings still use 15-point threshold
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.10_
+
 - [x] 7. Refactor validation to use API
 
 
@@ -270,7 +286,12 @@
   - Cache API responses to prevent unnecessary calls
   - _Requirements: All (performance), 6.5_
 
-- [ ]* 9.2 Write performance tests
+- [x] 9.2 Write performance tests
+
+
+
+
+
   - Test cost API calls complete within 100ms
   - Test component re-renders are minimized
   - Test memoization prevents unnecessary updates
@@ -299,61 +320,70 @@
   - Test animations are smooth
   - _Requirements: 5.5_
 
-- [x] 11. Accessibility and polish
+- [x] 11. Implement automatic unarmed selection
 
 
 
 
 
+- [x] 11.1 Add automatic unarmed selection logic
 
+  - Monitor close combat weapons array in weirdo state
+  - Automatically select "unarmed" when array becomes empty
+  - Trigger on weirdo creation and weapon deselection
+  - Ensure cost recalculation occurs after automatic selection
+  - Handle edge case: prevent deselecting "unarmed" when it's the only weapon
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.6_
 
-- [x] 11.1 Add accessibility features
+- [x] 11.2 Write unit tests for automatic unarmed selection
 
+  - Test "unarmed" is selected when weirdo has no weapons
+  - Test "unarmed" is selected when last weapon is deselected
+  - Test cost recalculates after automatic selection
+  - Test "unarmed" cannot be deselected when it's the only weapon
+  - Test multiple weapons can coexist with "unarmed"
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+
+- [ ]* 11.3 Write property test for automatic unarmed selection
+  - **Property 6: Automatic unarmed selection prevents validation errors**
+  - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.6**
+
+- [x] 12. Accessibility and polish
+
+- [x] 12.1 Add accessibility features
   - Add ARIA labels for cost displays
   - Add ARIA live regions for cost updates from API
   - Add ARIA descriptions for validation errors from API
   - Ensure tooltips are keyboard accessible
   - _Requirements: All_
 
-- [x] 11.2 Apply final polish
-
-
+- [x] 12.2 Apply final polish
   - Verify all colors use design system tokens
   - Verify all spacing uses design system utilities
   - Verify all animations are smooth
   - Test on different screen sizes
   - _Requirements: All_
 
-- [x] 12. Final verification
+- [x] 13. Final verification
 
-
-
-
-
-
-- [x] 12.1 Ensure all tests pass
-
-
+- [x] 13.1 Ensure all tests pass
   - Run full test suite
   - Fix any failing tests
   - Verify property tests run minimum 50 iterations
   - Verify API integration works correctly
   - _Requirements: All_
 
-- [x] 12.2 Verify feature completeness
-
-
+- [x] 13.2 Verify feature completeness
   - Confirm all acceptance criteria are met
   - Review implementation against design document
   - Test all user workflows manually with API
   - Verify performance meets requirements (< 100ms for cost calculations)
   - Verify API error handling works correctly
   - Test debouncing and caching strategies
-  - _Requirements: All, 6.1-6.7_
+  - Test automatic unarmed selection works in all scenarios
+  - _Requirements: All, 6.1-6.7, 7.1-7.7_
 
-- [x] 12.3 Clean up temporary build artifacts
-
-
+- [x] 13.3 Clean up temporary build artifacts
   - Remove `*.timestamp-*.mjs` files from workspace root
   - Verify all tests pass after cleanup
   - _Requirements: All_

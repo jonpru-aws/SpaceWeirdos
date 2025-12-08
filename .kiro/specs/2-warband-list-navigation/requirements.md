@@ -89,7 +89,7 @@ This spec focuses on the list view, CRUD operations, and user feedback. It depen
 
 ### Requirement 6
 
-**User Story:** As a player, I want to navigate between the list view and editor view seamlessly, so that I can switch between managing multiple warbands and editing a specific one.
+**User Story:** As a player, I want to navigate between the list view and warband editor view seamlessly, so that I can switch between managing multiple warbands and editing a specific one.
 
 #### Acceptance Criteria
 
@@ -98,6 +98,8 @@ This spec focuses on the list view, CRUD operations, and user feedback. It depen
 3. WHEN navigating to the warband list THEN the Warband Builder SHALL preserve any unsaved changes in the editor (or warn about losing changes)
 4. WHEN navigating from list to editor THEN the Warband Builder SHALL load the selected warband data
 5. WHEN navigation occurs THEN the Warband Builder SHALL update the browser URL to reflect the current view
+
+
 
 ### Requirement 7
 

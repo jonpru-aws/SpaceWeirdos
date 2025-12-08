@@ -4,16 +4,20 @@
 
 This document specifies the weirdo (character) editor for the Space Weirdos Warband Builder. It defines how users create, edit, and manage individual weirdos including attributes, weapons, equipment, psychic powers, and leader traits.
 
-This spec focuses on the weirdo editing interface. It depends on the design system spec (for styling), the warband properties spec (for WarbandEditor shell), and the game rules spec (for cost calculations and validation).
+This spec focuses on the weirdo editing interface as a modal dialog. It depends on the design system spec (for styling), the warband list navigation spec (for WarbandContext), and the game rules spec (for cost calculations and validation).
 
 ## Glossary
 
 - **Weirdo**: An individual character in the warband (leader or trooper)
-- **Weirdo Editor**: The UI component for editing individual weirdo properties
+- **Weirdo Editor Modal**: A modal dialog for editing individual weirdo properties
+- **Modal Dialog**: An overlay window that appears on top of the warband editor
 - **Attributes**: The five core stats (Speed, Defense, Firepower, Prowess, Willpower)
 - **Equipment Limit**: Maximum number of equipment items based on weirdo type and warband ability
-- **Progressive Disclosure**: Showing weirdo editing options only after warband is created
 - **Selector Component**: A form control for choosing from available options
+- **Warband Ability**: A faction-wide ability that modifies costs and limits (Mutants, Soldiers, Heavily Armed, Cyborgs)
+- **Cost Modifier**: A reduction or change to point costs based on warband ability
+- **Base Cost**: The unmodified point cost of an item from the data files
+- **Modified Cost**: The point cost after applying warband ability modifiers
 
 ## Requirements
 
@@ -26,7 +30,7 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 1. WHEN a warband exists THEN the Warband Builder SHALL provide a button to add a leader
 2. WHEN a warband exists THEN the Warband Builder SHALL provide a button to add a trooper
 3. WHEN a warband already has a leader THEN the Warband Builder SHALL disable the add leader button
-4. WHEN a weirdo is added THEN the Warband Builder SHALL automatically select it for editing
+4. WHEN a weirdo is added THEN the Warband Builder SHALL open the weirdo editor modal with the new weirdo
 5. WHEN a weirdo is added THEN the Warband Builder SHALL display it in the weirdo list
 6. WHEN a weirdo is added THEN the Warband Builder SHALL initialize it with default attribute values
 
@@ -39,8 +43,8 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 1. WHEN a weirdo is displayed in the list THEN the Warband Builder SHALL provide a remove button
 2. WHEN a user clicks remove THEN the Warband Builder SHALL delete the weirdo from the warband
 3. WHEN a weirdo is removed THEN the Warband Builder SHALL update the warband total cost immediately
-4. WHEN the last weirdo is removed THEN the Warband Builder SHALL clear the weirdo editor section
-5. WHEN a selected weirdo is removed THEN the Warband Builder SHALL deselect it
+4. WHEN a weirdo is removed from the weirdo editor modal THEN the Warband Builder SHALL close the modal
+5. WHEN a weirdo is removed THEN the Warband Builder SHALL update the weirdo list immediately
 
 ### Requirement 3
 
@@ -48,7 +52,7 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 
 #### Acceptance Criteria
 
-1. WHEN a weirdo is selected THEN the Warband Builder SHALL display dropdown selectors for all five attributes
+1. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL display dropdown selectors for all five attributes
 2. WHEN a user changes an attribute THEN the Warband Builder SHALL update the weirdo immediately
 3. WHEN an attribute is displayed THEN the Warband Builder SHALL show the point cost for each level
 4. WHEN a warband ability modifies attribute costs THEN the Warband Builder SHALL display the modified cost
@@ -60,12 +64,15 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 
 #### Acceptance Criteria
 
-1. WHEN a weirdo is selected THEN the Warband Builder SHALL display a multi-select interface for close combat weapons
-2. WHEN a weirdo is selected THEN the Warband Builder SHALL display a multi-select interface for ranged weapons
+1. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL display a multi-select interface for close combat weapons
+2. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL display a multi-select interface for ranged weapons
 3. WHEN weapons are displayed THEN the Warband Builder SHALL show name, cost, and notes for each weapon
 4. WHEN a weirdo's Firepower is None THEN the Warband Builder SHALL disable ranged weapon selections
 5. WHEN a warband ability modifies weapon costs THEN the Warband Builder SHALL display the modified cost
-6. WHEN weapons change THEN the Warband Builder SHALL recalculate the weirdo's total cost
+6. WHEN a user has Mutants ability selected AND views close combat weapons THEN the Warband Builder SHALL display costs reduced by 1 for Claws & Teeth, Horrible Claws & Teeth, and Whip/Tail
+7. WHEN a user has Heavily Armed ability selected AND views ranged weapons THEN the Warband Builder SHALL display costs reduced by 1 for all ranged weapons
+8. WHEN any weapon cost reduction would result in negative cost THEN the Warband Builder SHALL display 0 as the minimum cost
+9. WHEN weapons change THEN the Warband Builder SHALL recalculate the weirdo's total cost
 
 ### Requirement 5
 
@@ -73,12 +80,14 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 
 #### Acceptance Criteria
 
-1. WHEN a weirdo is selected THEN the Warband Builder SHALL display a multi-select interface for equipment
+1. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL display a multi-select interface for equipment
 2. WHEN equipment is displayed THEN the Warband Builder SHALL show name, cost, and effect for each item
 3. WHEN equipment is displayed THEN the Warband Builder SHALL show the current count vs limit
 4. WHEN the equipment limit is reached THEN the Warband Builder SHALL disable additional equipment selections
 5. WHEN a warband ability modifies equipment costs THEN the Warband Builder SHALL display the modified cost
-6. WHEN equipment changes THEN the Warband Builder SHALL recalculate the weirdo's total cost
+6. WHEN a user has Soldiers ability selected AND views equipment THEN the Warband Builder SHALL display 0 cost for Grenade, Heavy Armor, and Medkit
+7. WHEN any equipment cost reduction would result in negative cost THEN the Warband Builder SHALL display 0 as the minimum cost
+8. WHEN equipment changes THEN the Warband Builder SHALL recalculate the weirdo's total cost
 
 ### Requirement 6
 
@@ -86,9 +95,10 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 
 #### Acceptance Criteria
 
-1. WHEN a weirdo is selected THEN the Warband Builder SHALL display a multi-select interface for psychic powers
+1. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL display a multi-select interface for psychic powers
 2. WHEN psychic powers are displayed THEN the Warband Builder SHALL show name, cost, and effect for each power
-3. WHEN psychic powers change THEN the Warband Builder SHALL recalculate the weirdo's total cost
+3. WHEN no warband ability currently modifies psychic power costs THEN the Warband Builder SHALL display base costs, but SHALL use the same cost calculation pattern for future extensibility
+4. WHEN psychic powers change THEN the Warband Builder SHALL recalculate the weirdo's total cost
 
 ### Requirement 7
 
@@ -96,21 +106,25 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 
 #### Acceptance Criteria
 
-1. WHEN a leader is selected THEN the Warband Builder SHALL display a dropdown for leader trait selection
-2. WHEN a trooper is selected THEN the Warband Builder SHALL hide the leader trait selector
+1. WHEN the weirdo editor modal displays a leader THEN the Warband Builder SHALL display a dropdown for leader trait selection
+2. WHEN the weirdo editor modal displays a trooper THEN the Warband Builder SHALL hide the leader trait selector
 3. WHEN leader traits are displayed THEN the Warband Builder SHALL show the description for each trait
 4. WHEN a leader trait is selected THEN the Warband Builder SHALL include a "None" option
 
 ### Requirement 8
 
-**User Story:** As a player, I want the system to require warband creation before showing weirdo options, so that I establish the warband context first.
+**User Story:** As a player, I want to open and close the weirdo editor modal, so that I can edit weirdos without scrolling and maintain focus on the warband editor.
 
 #### Acceptance Criteria
 
-1. WHEN no warband exists THEN the Warband Builder SHALL hide all weirdo creation options
-2. WHEN a warband is created THEN the Warband Builder SHALL display the weirdo creation options
-3. WHEN weirdo options are hidden THEN the Warband Builder SHALL display a message indicating warband creation is required
-4. WHEN weirdo options are revealed THEN the Warband Builder SHALL provide clear visual indication
+1. WHEN a user clicks on a weirdo in the weirdo list THEN the Warband Builder SHALL open the weirdo editor modal with that weirdo loaded
+2. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL show the weirdo's name and type prominently in the modal header
+3. WHEN the weirdo editor modal is displayed THEN the Warband Builder SHALL provide a close button
+4. WHEN a user clicks the close button THEN the Warband Builder SHALL close the modal and preserve any changes made to the weirdo
+5. WHEN a user clicks outside the modal THEN the Warband Builder SHALL close the modal and preserve any changes
+6. WHEN a user presses the Escape key THEN the Warband Builder SHALL close the modal and preserve any changes
+7. WHEN the modal is open THEN the Warband Builder SHALL prevent scrolling of the underlying warband editor
+8. WHEN the modal is open THEN the Warband Builder SHALL display a semi-transparent overlay behind the modal
 
 ### Requirement 9
 
@@ -125,6 +139,19 @@ This spec focuses on the weirdo editing interface. It depends on the design syst
 5. WHEN the frontend receives API responses THEN the Frontend SHALL handle both success and error responses appropriately
 6. WHEN making API calls THEN the Frontend SHALL NOT directly import or use backend service classes (CostEngine, ValidationService, DataRepository)
 7. WHEN the backend provides game data and calculations THEN the Backend SHALL expose RESTful API endpoints for all weirdo operations
+
+### Requirement 10
+
+**User Story:** As a user, I want the item cost displays in selectors to match the backend calculations, so that the UI is consistent and accurate.
+
+#### Acceptance Criteria
+
+1. WHEN the backend CostEngine calculates a weapon cost THEN the WeaponSelector SHALL display the same cost
+2. WHEN the backend CostEngine calculates an equipment cost THEN the EquipmentSelector SHALL display the same cost
+3. WHEN the backend CostEngine calculates a psychic power cost THEN the PsychicPowerSelector SHALL display the same cost
+4. WHEN no warband ability is selected THEN the selectors SHALL display base costs unchanged
+5. WHEN the total weirdo cost is calculated THEN it SHALL match the sum of displayed item costs plus attribute costs
+6. WHEN a user changes the warband ability THEN the WeaponSelector, EquipmentSelector, and PsychicPowerSelector SHALL immediately update displayed costs to reflect the new modifiers
 
 ## Items Requiring Clarification
 

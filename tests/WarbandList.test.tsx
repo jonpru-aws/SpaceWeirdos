@@ -230,6 +230,7 @@ describe('WarbandList Component', () => {
 
     it('should display total cost', async () => {
       // Requirement 7.5: Show total point cost
+      // Requirement 12.1: Display total cost for each warband
       render(
         <WarbandList
           onLoadWarband={mockOnLoadWarband}
@@ -240,9 +241,38 @@ describe('WarbandList Component', () => {
       );
 
       await waitFor(() => {
-        // Costs are calculated from weirdo attributes
-        expect(screen.getByLabelText('12 points used')).toBeInTheDocument();
-        expect(screen.getByLabelText('6 points used')).toBeInTheDocument();
+        // Costs come from warband.totalCost (API-calculated)
+        expect(screen.getByLabelText('50 points used')).toBeInTheDocument();
+        expect(screen.getByLabelText('100 points used')).toBeInTheDocument();
+      });
+    });
+
+    it('should display zero cost for empty warband', async () => {
+      // Requirement 12.3: Handle empty warband (0 cost) correctly
+      const emptyWarband: Warband = {
+        id: '3',
+        name: 'Empty Warband',
+        ability: null,
+        pointLimit: 75,
+        totalCost: 0,
+        weirdos: [],
+        createdAt: new Date('2024-01-03'),
+        updatedAt: new Date('2024-01-03'),
+      };
+
+      vi.mocked(apiClient.apiClient.getAllWarbands).mockResolvedValue([emptyWarband]);
+
+      render(
+        <WarbandList
+          onLoadWarband={mockOnLoadWarband}
+          onDeleteSuccess={mockOnDeleteSuccess}
+          onDeleteError={mockOnDeleteError}
+          onCreateWarband={mockOnCreateWarband}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('0 points used')).toBeInTheDocument();
       });
     });
 

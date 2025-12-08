@@ -1,15 +1,15 @@
 import { memo } from 'react';
-import { Equipment, WarbandAbility } from '../../backend/models/types';
-import { CostEngine } from '../../backend/services/CostEngine';
+import type { Equipment, WarbandAbility } from '../../backend/models/types';
+import { useItemCost } from '../hooks/useItemCost';
 import './EquipmentSelector.css';
 
 /**
  * EquipmentSelector Component
  * 
  * Multi-select interface for equipment with limit enforcement.
- * Displays name, cost, and effect for each item.
+ * Displays name, cost (with warband ability modifiers applied), and effect for each item.
  * Shows current count vs limit and disables checkboxes when limit reached.
- * Shows modified costs when warband abilities apply.
+ * Applies warband ability cost modifiers (e.g., Soldiers makes certain equipment free).
  * 
  * Equipment limits:
  * - Leader without Cyborgs: 2
@@ -17,7 +17,7 @@ import './EquipmentSelector.css';
  * - Trooper without Cyborgs: 1
  * - Trooper with Cyborgs: 2
  * 
- * Requirements: 5.4, 5.7, 5.8, 12.3, 12.6
+ * Requirements: 5.4, 5.7, 5.8, 12.3, 12.6, 9.2, 9.6, 1.2, 1.4, 2.2
  */
 
 interface EquipmentSelectorProps {
@@ -26,16 +26,93 @@ interface EquipmentSelectorProps {
   weirdoType: 'leader' | 'trooper';
   warbandAbility: WarbandAbility | null;
   onChange: (equipment: Equipment[]) => void;
-  costEngine: CostEngine;
 }
+
+/**
+ * EquipmentItem Component
+ * 
+ * Individual equipment item that uses useItemCost hook for API-based cost calculation
+ */
+interface EquipmentItemProps {
+  equipment: Equipment;
+  isSelected: boolean;
+  warbandAbility: WarbandAbility | null;
+  onToggle: (equipment: Equipment) => void;
+  disabled: boolean;
+}
+
+const EquipmentItem = memo(({
+  equipment,
+  isSelected,
+  warbandAbility,
+  onToggle,
+  disabled
+}: EquipmentItemProps) => {
+  // Use the useItemCost hook to get cost from API
+  const { cost, isLoading, error } = useItemCost({
+    itemType: 'equipment',
+    itemName: equipment.name,
+    warbandAbility,
+  });
+
+  const formatCostDisplay = (): string => {
+    if (isLoading) {
+      return '... pts';
+    }
+    if (error) {
+      return '? pts';
+    }
+    return `${cost} pts`;
+  };
+
+  return (
+    <li className="equipment-selector__item" role="listitem">
+      <label 
+        className={`equipment-selector__label ${disabled ? 'disabled' : ''}`}
+        htmlFor={`equipment-${equipment.id}`}
+      >
+        <input
+          type="checkbox"
+          id={`equipment-${equipment.id}`}
+          checked={isSelected}
+          onChange={() => onToggle(equipment)}
+          disabled={disabled}
+          className="equipment-selector__checkbox checkbox"
+          aria-describedby={`equipment-effect-${equipment.id}`}
+          aria-label={`${equipment.name}, ${formatCostDisplay()}`}
+        />
+        <div className="equipment-selector__content">
+          <div className="equipment-selector__header">
+            <span className="equipment-selector__name">{equipment.name}</span>
+            <span 
+              className="equipment-selector__cost"
+              aria-label={`Cost: ${formatCostDisplay()}`}
+              data-loading={isLoading}
+              data-error={error !== null}
+            >
+              {formatCostDisplay()}
+            </span>
+          </div>
+          <div 
+            className="equipment-selector__effect" 
+            id={`equipment-effect-${equipment.id}`}
+          >
+            {equipment.effect}
+          </div>
+        </div>
+      </label>
+    </li>
+  );
+});
+
+EquipmentItem.displayName = 'EquipmentItem';
 
 const EquipmentSelectorComponent = ({
   selectedEquipment,
   availableEquipment,
   weirdoType,
   warbandAbility,
-  onChange,
-  costEngine
+  onChange
 }: EquipmentSelectorProps) => {
   // Calculate equipment limit based on weirdo type and warband ability
   const getEquipmentLimit = (): number => {
@@ -67,27 +144,6 @@ const EquipmentSelectorComponent = ({
     }
   };
 
-  const getEquipmentCost = (equipment: Equipment): { baseCost: number; modifiedCost: number } => {
-    const baseCost = equipment.baseCost;
-    const modifiedCost = costEngine.getEquipmentCost(equipment, warbandAbility);
-    return { baseCost, modifiedCost };
-  };
-
-  const formatCostDisplay = (equipment: Equipment): string => {
-    const { baseCost, modifiedCost } = getEquipmentCost(equipment);
-    
-    if (baseCost !== modifiedCost) {
-      // Show modified cost with strikethrough on base cost
-      return `${modifiedCost} pts (was ${baseCost} pts)`;
-    }
-    return `${baseCost} pts`;
-  };
-
-  const hasModifiedCost = (equipment: Equipment): boolean => {
-    const { baseCost, modifiedCost } = getEquipmentCost(equipment);
-    return baseCost !== modifiedCost;
-  };
-
   return (
     <div className="equipment-selector" role="group" aria-labelledby="equipment-heading">
       <h4 id="equipment-heading">Equipment</h4>
@@ -103,43 +159,16 @@ const EquipmentSelectorComponent = ({
         {availableEquipment.map((equipment) => {
           const isSelected = selectedEquipment.some(e => e.id === equipment.id);
           const isDisabled = !isSelected && isLimitReached;
-          const isModified = hasModifiedCost(equipment);
 
           return (
-            <li key={equipment.id} className="equipment-selector__item" role="listitem">
-              <label 
-                className={`equipment-selector__label ${isDisabled ? 'disabled' : ''}`}
-                htmlFor={`equipment-${equipment.id}`}
-              >
-                <input
-                  type="checkbox"
-                  id={`equipment-${equipment.id}`}
-                  checked={isSelected}
-                  onChange={() => handleToggle(equipment)}
-                  disabled={isDisabled}
-                  className="equipment-selector__checkbox checkbox"
-                  aria-describedby={`equipment-effect-${equipment.id}`}
-                  aria-label={`${equipment.name}, ${formatCostDisplay(equipment)}`}
-                />
-                <div className="equipment-selector__content">
-                  <div className="equipment-selector__header">
-                    <span className="equipment-selector__name">{equipment.name}</span>
-                    <span 
-                      className={`equipment-selector__cost ${isModified ? 'modified' : ''}`}
-                      aria-label={`Cost: ${formatCostDisplay(equipment)}`}
-                    >
-                      {formatCostDisplay(equipment)}
-                    </span>
-                  </div>
-                  <div 
-                    className="equipment-selector__effect" 
-                    id={`equipment-effect-${equipment.id}`}
-                  >
-                    {equipment.effect}
-                  </div>
-                </div>
-              </label>
-            </li>
+            <EquipmentItem
+              key={equipment.id}
+              equipment={equipment}
+              isSelected={isSelected}
+              warbandAbility={warbandAbility}
+              onToggle={handleToggle}
+              disabled={isDisabled}
+            />
           );
         })}
       </ul>

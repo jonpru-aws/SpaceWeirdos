@@ -87,6 +87,15 @@ Only core project info is included automatically, keeping token usage minimal.
 - Spec creation: **Granular control** (save 800 tokens when only methodology needed)
 - Over 10 tasks: **2,500+ additional tokens saved**
 
+## Documentation
+
+For detailed project documentation, see the [docs/](../../docs/) directory:
+
+- **[Architecture](../../docs/ARCHITECTURE.md)** - System architecture and design patterns
+- **[API Documentation](../../docs/API-DOCUMENTATION.md)** - Backend API reference
+- **[Features Guide](../../docs/FEATURES.md)** - Complete feature overview
+- **[Warning System](../../docs/WARNING-SYSTEM.md)** - Context-aware warning system guide
+
 ## Maintenance
 
 When updating standards:
@@ -94,4 +103,5 @@ When updating standards:
 - **Testing practices**: Update `task-execution-standards.md`
 - **Requirements/design methodology**: Update `spec-methodology.md`
 - **Task planning patterns**: Update `spec-task-planning.md`
+- **Documentation structure**: Follow guidelines in `core-project-info.md`
 - Keep files focused and avoid duplication

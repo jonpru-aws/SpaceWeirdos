@@ -554,6 +554,160 @@ const weirdo = createMockWeirdo('leader', {
 - [Task Execution Standards](.kiro/steering/task-execution-standards.md)
 - [Efficient Testing Practices](.kiro/steering/efficient-testing.md)
 
+## Lessons Learned from Test Suite Remediation
+
+### Async Testing with Context Providers
+
+**Issue:** Tests using `renderHook` with context providers can fail in async scenarios if the context isn't fully initialized.
+
+**Solution:** Always wrap context provider tests with proper async waiting:
+
+```typescript
+// ❌ Don't: Access result.current immediately
+const { result } = renderHook(() => useWarband(), { wrapper });
+result.current.createWarband(); // May be null!
+
+// ✅ Do: Wait for context to be available
+const { result } = renderHook(() => useWarband(), { wrapper });
+await waitFor(() => {
+  expect(result.current).toBeDefined();
+});
+result.current.createWarband(); // Safe to use
+```
+
+**Alternative Pattern:** For complex async tests, consider using a test component instead of `renderHook`:
+
+```typescript
+function TestComponent() {
+  const context = useWarband();
+  return <div data-testid="context-ready">{context ? 'Ready' : 'Loading'}</div>;
+}
+
+test('should work with context', async () => {
+  renderWithProviders(<TestComponent />);
+  await screen.findByTestId('context-ready');
+  // Context is now guaranteed to be available
+});
+```
+
+### Async Cost Calculations
+
+**Issue:** Tests that depend on async cost calculations may timeout if they don't wait properly.
+
+**Solution:** Use appropriate timeouts for async queries:
+
+```typescript
+// ❌ Don't: Use default timeout for async operations
+await screen.findByText(/pts/);
+
+// ✅ Do: Specify timeout for async operations
+await screen.findByText(/pts/, {}, { timeout: 5000 });
+
+// ✅ Better: Use waitFor with explicit expectations
+await waitFor(() => {
+  expect(screen.getByText(/pts/)).toBeInTheDocument();
+}, { timeout: 5000 });
+```
+
+### Property-Based Test Generators
+
+**Issue:** Property tests can fail with edge cases like single-character special names (e.g., "!").
+
+**Solution:** Constrain generators to valid input domains:
+
+```typescript
+// ❌ Don't: Allow any string
+const nameGen = fc.string();
+
+// ✅ Do: Constrain to valid names
+const nameGen = fc.string({ 
+  minLength: 2, 
+  maxLength: 50 
+}).filter(name => name.trim().length >= 2);
+
+// ✅ Better: Use domain-specific generators
+const nameGen = fc.stringOf(
+  fc.constantFrom(...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_'.split(''))
+).filter(name => {
+  const trimmed = name.trim();
+  return trimmed.length >= 2 && trimmed.length <= 50;
+});
+```
+
+### Mock Cleanup in Property Tests
+
+**Issue:** Mock state can persist between property test iterations, causing false failures.
+
+**Solution:** Always clean up mocks between iterations:
+
+```typescript
+// ❌ Don't: Let mock state persist
+fc.assert(
+  fc.asyncProperty(generators, async (data) => {
+    // Test logic using mocks
+  })
+);
+
+// ✅ Do: Clean up mocks after each iteration
+fc.assert(
+  fc.asyncProperty(generators, async (data) => {
+    try {
+      // Test logic using mocks
+    } finally {
+      vi.clearAllMocks(); // Clean up after each iteration
+    }
+  })
+);
+```
+
+### Integration Test Provider Setup
+
+**Issue:** Integration tests may fail if all required providers aren't properly initialized.
+
+**Solution:** Ensure `renderWithProviders` includes all necessary context providers:
+
+```typescript
+// Verify your test helper includes all providers
+export function renderWithProviders(
+  ui: React.ReactElement,
+  options?: { gameData?: GameData }
+) {
+  const gameData = options?.gameData || createMockGameData();
+  
+  return render(
+    <GameDataProvider initialData={gameData}>
+      <WarbandProvider>
+        {ui}
+      </WarbandProvider>
+    </GameDataProvider>
+  );
+}
+```
+
+### Test Timeouts
+
+**Issue:** Some tests may timeout due to slow operations or infinite loops.
+
+**Solution:** Configure appropriate timeouts based on test complexity:
+
+```typescript
+// For slow operations
+test('should handle complex calculation', async () => {
+  // Test logic
+}, 10000); // 10 second timeout
+
+// For property tests with many iterations
+test('property test', () => {
+  fc.assert(
+    fc.property(/* ... */),
+    { 
+      numRuns: 100,
+      timeout: 10000 // 10 second timeout
+    }
+  );
+}, 15000); // Test timeout should be longer than property timeout
+```
+
 ## Contributing
 
 When adding new tests:
@@ -565,8 +719,13 @@ When adding new tests:
 5. Use descriptive test names
 6. Test one thing per test
 7. Keep tests maintainable and readable
+8. **Always wait for async context providers to initialize**
+9. **Use appropriate timeouts for async operations**
+10. **Constrain property test generators to valid input domains**
+11. **Clean up mocks between property test iterations**
 
 For more details, see:
 - [Core Project Info](.kiro/steering/core-project-info.md) - Technology stack and code style
 - [Task Execution Standards](.kiro/steering/task-execution-standards.md) - Testing strategy and execution guidelines
 - [Efficient Testing Practices](.kiro/steering/efficient-testing.md) - Token-efficient testing approaches
+- [Remaining Issues](.kiro/specs/test-suite-remediation/REMAINING_ISSUES.md) - Known test issues and solutions

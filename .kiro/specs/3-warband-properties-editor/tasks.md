@@ -34,7 +34,7 @@
 - [x] 2. Create warband editor shell structure
 
 - [x] 2.1 Create WarbandEditor component
-  - Build three-section layout (properties at top, weirdo list middle, weirdo editor bottom)
+  - Build two-section layout (properties at top, weirdo list below)
   - Implement conditional rendering (show message if no warband selected)
   - Apply layout styles from design system
   - _Requirements: 4.1, 4.2, 4.3_
@@ -45,7 +45,7 @@
 
 
 
-  - Test three-section layout renders correctly
+  - Test two-section layout renders correctly
   - Test message displays when no warband selected
   - _Requirements: 4.1, 4.2, 4.3_
 

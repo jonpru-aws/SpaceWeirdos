@@ -656,11 +656,11 @@ describe('Warband API Routes', () => {
         .send({
           weirdoType: 'trooper',
           attributes: {
-            speed: 3,
-            defense: '2d10',
-            firepower: '2d10',
-            prowess: '2d10',
-            willpower: '2d10'
+            speed: 2,
+            defense: '2d8',
+            firepower: '2d8',
+            prowess: '2d8',
+            willpower: '2d8'
           },
           weapons: {
             close: [{
@@ -679,8 +679,39 @@ describe('Warband API Routes', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.isApproachingLimit).toBe(true);
-      expect(response.body.data.warnings.length).toBeGreaterThan(0);
+      // Cost is 1+4+2+4+4 = 15 points, no warning (not within 3 points of limit)
+      // Update to 23 points to trigger warning (within 3 points of 25-point limit)
+      const response2 = await request(app)
+        .post('/api/cost/calculate')
+        .send({
+          weirdoType: 'trooper',
+          attributes: {
+            speed: 3,
+            defense: '2d10',
+            firepower: '2d10',
+            prowess: '2d8',
+            willpower: '2d8'
+          },
+          weapons: {
+            close: [{
+              id: 'weapon-1',
+              name: 'Unarmed',
+              type: 'close',
+              baseCost: 0,
+              maxActions: 2,
+              notes: ''
+            }],
+            ranged: []
+          },
+          equipment: [],
+          psychicPowers: [],
+          warbandAbility: null
+        });
+
+      expect(response2.status).toBe(200);
+      // Cost is 3+8+4+4+4 = 23 points, should trigger warning (within 3 points of 25)
+      expect(response2.body.data.isApproachingLimit).toBe(true);
+      expect(response2.body.data.warnings.length).toBeGreaterThan(0);
     });
 
     it('should return error indicator when over limit', async () => {
@@ -765,7 +796,9 @@ describe('Warband API Routes', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('valid');
       expect(response.body.data).toHaveProperty('errors');
+      expect(response.body.data).toHaveProperty('warnings');
       expect(Array.isArray(response.body.data.errors)).toBe(true);
+      expect(Array.isArray(response.body.data.warnings)).toBe(true);
     });
 
     it('should return validation errors for invalid weirdo', async () => {

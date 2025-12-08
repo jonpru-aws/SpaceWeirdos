@@ -4,7 +4,6 @@ import { WarbandEditor } from './components/WarbandEditor';
 import { ToastNotification, ToastType } from './components/ToastNotification';
 import { GameDataProvider } from './contexts/GameDataContext';
 import { WarbandProvider } from './contexts/WarbandContext';
-import { CostEngine } from '../backend/services/CostEngine';
 
 type View = 'list' | 'editor';
 
@@ -12,9 +11,6 @@ interface ToastState {
   message: string;
   type: ToastType;
 }
-
-// Create singleton instance of CostEngine
-const costEngine = new CostEngine();
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('list');
@@ -87,9 +83,7 @@ function App() {
 
   return (
     <GameDataProvider>
-      <WarbandProvider
-        costEngine={costEngine}
-      >
+      <WarbandProvider>
         <div className="app">
           {currentView === 'list' ? (
             <WarbandList 

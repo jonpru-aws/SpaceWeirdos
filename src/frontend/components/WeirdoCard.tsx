@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Weirdo, ValidationError } from '../../backend/models/types';
+import type { Weirdo, ValidationError } from '../../backend/models/types';
 import './WeirdoCard.css';
 
 /**

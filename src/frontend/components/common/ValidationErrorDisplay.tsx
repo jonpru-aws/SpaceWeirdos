@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { ValidationError } from '../../../backend/models/types';
+import type { ValidationError } from '../../../backend/models/types';
 import './ValidationErrorDisplay.css';
 
 /**
@@ -43,6 +43,7 @@ const ValidationErrorDisplayComponent = ({
     }
     acc[field].push(error);
     return acc;
+  // Type assertion safe: reduce accumulator is initialized as empty object and built up with ValidationError arrays
   }, {} as Record<string, ValidationError[]>);
 
   // If no errors, don't render anything

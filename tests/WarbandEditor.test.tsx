@@ -101,19 +101,16 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      // Verify all three sections are present
+      // Verify two main sections are present (modal is separate)
       expect(screen.getByText('Warband Properties')).toBeInTheDocument();
       expect(screen.getByText('Weirdos')).toBeInTheDocument();
-      expect(screen.getByText('Weirdo Editor')).toBeInTheDocument();
 
       // Verify sections have proper CSS classes
       const propertiesSection = screen.getByText('Warband Properties').closest('section');
       const weirdosSection = screen.getByText('Weirdos').closest('section');
-      const editorSection = screen.getByText('Weirdo Editor').closest('section');
 
       expect(propertiesSection).toHaveClass('warband-editor__properties');
       expect(weirdosSection).toHaveClass('warband-editor__weirdos-list');
-      expect(editorSection).toHaveClass('warband-editor__weirdo-editor');
     });
 
     /**
@@ -253,7 +250,7 @@ describe('Warband Editor Components', () => {
      * Requirements: 5.2, 6.1
      */
     it('should call validation API before attempting to save', async () => {
-      const validateSpy = vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      const validateSpy = vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: true,
         errors: []
       });
@@ -297,12 +294,12 @@ describe('Warband Editor Components', () => {
 
       // Verify validation API was called
       expect(validateSpy).toHaveBeenCalled();
-      expect(validateSpy).toHaveBeenCalledWith({
-        warband: expect.objectContaining({
+      expect(validateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
           name: 'Test Warband',
           pointLimit: 75
         })
-      });
+      );
       
       // Verify save API was called after validation
       expect(createSpy).toHaveBeenCalled();
@@ -314,7 +311,7 @@ describe('Warband Editor Components', () => {
      */
     it('should prevent save API call when validation fails', async () => {
       // Mock validation to fail
-      const validateSpy = vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      const validateSpy = vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: false,
         errors: [{
           field: 'warband.name',
@@ -323,7 +320,16 @@ describe('Warband Editor Components', () => {
         }]
       });
       
-      const createSpy = vi.spyOn(apiClient.apiClient, 'createWarband');
+      const createSpy = vi.spyOn(apiClient.apiClient, 'createWarband').mockResolvedValue({
+        id: 'test-id',
+        name: 'Test Warband',
+        ability: null,
+        pointLimit: 75,
+        totalCost: 0,
+        weirdos: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       const updateSpy = vi.spyOn(apiClient.apiClient, 'updateWarband');
       
       const mockOnBack = () => {};
@@ -332,23 +338,9 @@ describe('Warband Editor Components', () => {
       const mockOnDeleteSuccess = () => {};
       const mockOnDeleteError = () => {};
 
-      const InvalidWarband = ({ children }: { children: ReactNode }) => {
-        const { createWarband } = useWarband();
-        const initialized = useRef(false);
-        
-        useEffect(() => {
-          if (!initialized.current) {
-            createWarband('   ', 75); // Whitespace-only name should fail validation
-            initialized.current = true;
-          }
-        }, [createWarband]);
-        
-        return <>{children}</>;
-      };
-
       render(
         createWrapper(
-          <InvalidWarband>
+          <WithWarband>
             <WarbandEditor 
               onBack={mockOnBack}
               onSaveSuccess={mockOnSaveSuccess}
@@ -356,9 +348,14 @@ describe('Warband Editor Components', () => {
               onDeleteSuccess={mockOnDeleteSuccess}
               onDeleteError={mockOnDeleteError}
             />
-          </InvalidWarband>
+          </WithWarband>
         )
       );
+
+      // Reset spies to only count calls after this point
+      createSpy.mockClear();
+      updateSpy.mockClear();
+      validateSpy.mockClear();
 
       const saveButton = screen.getByText('Save Warband');
       saveButton.click();
@@ -369,7 +366,7 @@ describe('Warband Editor Components', () => {
       // Verify validation API was called
       expect(validateSpy).toHaveBeenCalled();
       
-      // Verify save APIs were NOT called
+      // Verify save APIs were NOT called (validation failed)
       expect(createSpy).not.toHaveBeenCalled();
       expect(updateSpy).not.toHaveBeenCalled();
       
@@ -384,7 +381,7 @@ describe('Warband Editor Components', () => {
      */
     it('should call save API when validation passes', async () => {
       // Mock validation to succeed
-      vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: true,
         errors: []
       });
@@ -432,7 +429,8 @@ describe('Warband Editor Components', () => {
       expect(createSpy).toHaveBeenCalledWith({
         name: 'Test Warband',
         pointLimit: 75,
-        ability: null
+        ability: null,
+        weirdos: []
       });
     });
 
@@ -442,7 +440,7 @@ describe('Warband Editor Components', () => {
      */
     it('should call success callback when save API succeeds', async () => {
       // Mock validation to succeed
-      vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: true,
         errors: []
       });
@@ -496,7 +494,7 @@ describe('Warband Editor Components', () => {
      */
     it('should call error callback when save API fails', async () => {
       // Mock validation to succeed
-      vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: true,
         errors: []
       });
@@ -548,11 +546,11 @@ describe('Warband Editor Components', () => {
      */
     it('should display validation errors inline when validation fails', async () => {
       // Mock validation to fail with specific error
-      vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: false,
         errors: [{
           field: 'warband.name',
-          message: 'Warband name is required',
+          message: 'Warband name cannot be empty or whitespace',
           code: 'WARBAND_NAME_EMPTY'
         }]
       });
@@ -563,23 +561,9 @@ describe('Warband Editor Components', () => {
       const mockOnDeleteSuccess = () => {};
       const mockOnDeleteError = () => {};
 
-      const EmptyNameWarband = ({ children }: { children: ReactNode }) => {
-        const { createWarband } = useWarband();
-        const initialized = useRef(false);
-        
-        useEffect(() => {
-          if (!initialized.current) {
-            createWarband('', 75);
-            initialized.current = true;
-          }
-        }, [createWarband]);
-        
-        return <>{children}</>;
-      };
-
       render(
         createWrapper(
-          <EmptyNameWarband>
+          <WithWarband>
             <WarbandEditor 
               onBack={mockOnBack}
               onSaveSuccess={mockOnSaveSuccess}
@@ -587,7 +571,7 @@ describe('Warband Editor Components', () => {
               onDeleteSuccess={mockOnDeleteSuccess}
               onDeleteError={mockOnDeleteError}
             />
-          </EmptyNameWarband>
+          </WithWarband>
         )
       );
 
@@ -598,7 +582,7 @@ describe('Warband Editor Components', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify error message is displayed
-      const errorMessage = await screen.findByText('Warband name is required');
+      const errorMessage = await screen.findByText('Warband name cannot be empty or whitespace');
       expect(errorMessage).toBeInTheDocument();
       expect(errorMessage).toHaveAttribute('role', 'alert');
     });
@@ -609,7 +593,7 @@ describe('Warband Editor Components', () => {
      */
     it('should call update API for existing warband with ID', async () => {
       // Mock validation to succeed
-      vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+      vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
         valid: true,
         errors: []
       });

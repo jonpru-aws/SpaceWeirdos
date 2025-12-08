@@ -17,8 +17,8 @@ This design document specifies the warband properties editing interface. The sys
 
 ## Components
 
-### WarbandEditor (Shell)
-Container for entire editor with three sections: properties, weirdo list, weirdo editor.
+### WarbandEditor
+Container for warband editor screen with two main sections: properties and weirdo list.
 
 ### WarbandProperties
 Form for editing warband-level settings.

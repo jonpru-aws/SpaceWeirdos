@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { WarbandService } from '../services/WarbandService';
-import { DataRepository } from '../services/DataRepository';
-import { CostEngine } from '../services/CostEngine';
-import { ValidationService } from '../services/ValidationService';
-import { Weirdo } from '../models/types';
-import { AppError, ValidationError, NotFoundError } from '../errors/AppError';
+import { WarbandService } from '../services/WarbandService.js';
+import { DataRepository } from '../services/DataRepository.js';
+import { CostEngine } from '../services/CostEngine.js';
+import { ValidationService } from '../services/ValidationService.js';
+import { Weirdo, Weapon, Equipment, PsychicPower } from '../models/types.js';
+import { AppError, ValidationError, NotFoundError } from '../errors/AppError.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -69,7 +69,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
    */
   router.post('/warbands', (req: Request, res: Response) => {
     try {
-      const { name, pointLimit, ability } = req.body;
+      const { name, pointLimit, ability, weirdos } = req.body;
 
       // Validate required fields (ability is now optional)
       if (!name || !pointLimit) {
@@ -89,7 +89,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
         );
       }
 
-      const warband = warbandService.createWarband({ name, pointLimit, ability });
+      const warband = warbandService.createWarband({ name, pointLimit, ability, weirdos });
       res.status(201).json(warband);
     } catch (error: unknown) {
       handleError(error, res);
@@ -233,7 +233,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       }
 
       // Find and update weirdo
-      const weirdoIndex = warband.weirdos.findIndex(w => w.id === weirdoId);
+      const weirdoIndex = warband.weirdos.findIndex((w: Weirdo) => w.id === weirdoId);
       if (weirdoIndex === -1) {
         throw new NotFoundError('Weirdo', weirdoId);
       }
@@ -263,7 +263,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       }
 
       // Find and remove weirdo
-      const weirdoIndex = warband.weirdos.findIndex(w => w.id === weirdoId);
+      const weirdoIndex = warband.weirdos.findIndex((w: Weirdo) => w.id === weirdoId);
       if (weirdoIndex === -1) {
         throw new NotFoundError('Weirdo', weirdoId);
       }
@@ -273,6 +273,96 @@ export function createWarbandRouter(repository: DataRepository): Router {
       // Update warband (recalculates costs)
       const updatedWarband = warbandService.updateWarband(id, warband);
       res.json(updatedWarband);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/attributes
+   * Get all available attributes with costs
+   */
+  router.get('/game-data/attributes', async (_req: Request, res: Response) => {
+    try {
+      const attributesPath = path.join(process.cwd(), 'data', 'attributes.json');
+      const data = await fs.readFile(attributesPath, 'utf-8');
+      const attributes = JSON.parse(data);
+      res.json(attributes);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/weapons/close
+   * Get all available close combat weapons
+   */
+  router.get('/game-data/weapons/close', async (_req: Request, res: Response) => {
+    try {
+      const weaponsPath = path.join(process.cwd(), 'data', 'closeCombatWeapons.json');
+      const data = await fs.readFile(weaponsPath, 'utf-8');
+      const weapons = JSON.parse(data);
+      res.json(weapons);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/weapons/ranged
+   * Get all available ranged weapons
+   */
+  router.get('/game-data/weapons/ranged', async (_req: Request, res: Response) => {
+    try {
+      const weaponsPath = path.join(process.cwd(), 'data', 'rangedWeapons.json');
+      const data = await fs.readFile(weaponsPath, 'utf-8');
+      const weapons = JSON.parse(data);
+      res.json(weapons);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/equipment
+   * Get all available equipment
+   */
+  router.get('/game-data/equipment', async (_req: Request, res: Response) => {
+    try {
+      const equipmentPath = path.join(process.cwd(), 'data', 'equipment.json');
+      const data = await fs.readFile(equipmentPath, 'utf-8');
+      const equipment = JSON.parse(data);
+      res.json(equipment);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/psychic-powers
+   * Get all available psychic powers
+   */
+  router.get('/game-data/psychic-powers', async (_req: Request, res: Response) => {
+    try {
+      const powersPath = path.join(process.cwd(), 'data', 'psychicPowers.json');
+      const data = await fs.readFile(powersPath, 'utf-8');
+      const powers = JSON.parse(data);
+      res.json(powers);
+    } catch (error: unknown) {
+      handleError(error, res);
+    }
+  });
+
+  /**
+   * GET /api/game-data/leader-traits
+   * Get all available leader traits
+   */
+  router.get('/game-data/leader-traits', async (_req: Request, res: Response) => {
+    try {
+      const traitsPath = path.join(process.cwd(), 'data', 'leaderTraits.json');
+      const data = await fs.readFile(traitsPath, 'utf-8');
+      const traits = JSON.parse(data);
+      res.json(traits);
     } catch (error: unknown) {
       handleError(error, res);
     }
@@ -344,16 +434,19 @@ export function createWarbandRouter(repository: DataRepository): Router {
         );
       }
 
-      let errors;
+      let result;
       if (warband) {
         // Full validation with warband context
-        errors = validationService.validateWeirdo(weirdo, warband);
+        result = validationService.validateWeirdo(weirdo, warband);
       } else {
         // Partial validation without warband context
         // Create a minimal warband context for validation
+        // Type assertion needed: TypeScript requires explicit union type for literal values
+        // Safe because 75 is a valid member of the 75 | 125 union type
         const minimalWarband = {
           id: 'temp',
           name: 'temp',
+          // Type assertion safe: 75 is a valid member of the 75 | 125 union type
           pointLimit: 75 as 75 | 125,
           ability: null,
           weirdos: [weirdo],
@@ -361,14 +454,15 @@ export function createWarbandRouter(repository: DataRepository): Router {
           createdAt: new Date(),
           updatedAt: new Date()
         };
-        errors = validationService.validateWeirdo(weirdo, minimalWarband);
+        result = validationService.validateWeirdo(weirdo, minimalWarband);
       }
 
       res.json({
         success: true,
         data: {
-          valid: errors.length === 0,
-          errors
+          valid: result.valid,
+          errors: result.errors,
+          warnings: result.warnings
         }
       });
     } catch (error: unknown) {
@@ -378,13 +472,24 @@ export function createWarbandRouter(repository: DataRepository): Router {
 
   /**
    * POST /api/cost/calculate
-   * Optimized real-time cost calculation with breakdown and warnings
-   * Returns within 100ms for real-time feedback
+   * Optimized real-time cost calculation with breakdown
+   * Accepts weirdo configuration and returns total cost with breakdown
+   * Optimized for < 100ms response time
    */
-  router.post('/cost/calculate', (req: Request, res: Response) => {
+  router.post('/cost/calculate', async (req: Request, res: Response) => {
     try {
       const startTime = Date.now();
       const { weirdoType, attributes, weapons, equipment, psychicPowers, warbandAbility } = req.body;
+
+      // Log incoming request for debugging
+      console.log('Cost calculation request:', {
+        weirdoType,
+        attributes,
+        weapons,
+        equipment,
+        psychicPowers,
+        warbandAbility
+      });
 
       // Validate required fields
       if (!weirdoType || !attributes) {
@@ -395,20 +500,70 @@ export function createWarbandRouter(repository: DataRepository): Router {
         );
       }
 
+      // Load game data from JSON files to look up items by name
+      const closeCombatWeaponsData = JSON.parse(
+        await fs.readFile(path.join(process.cwd(), 'data', 'closeCombatWeapons.json'), 'utf-8')
+      // Type assertion safe: JSON files are validated to match type definitions at build time
+      ) as Weapon[];
+      
+      const rangedWeaponsData = JSON.parse(
+        await fs.readFile(path.join(process.cwd(), 'data', 'rangedWeapons.json'), 'utf-8')
+      // Type assertion safe: JSON files are validated to match type definitions at build time
+      ) as Weapon[];
+      
+      const equipmentData = JSON.parse(
+        await fs.readFile(path.join(process.cwd(), 'data', 'equipment.json'), 'utf-8')
+      // Type assertion safe: JSON files are validated to match type definitions at build time
+      ) as Equipment[];
+      
+      const psychicPowersData = JSON.parse(
+        await fs.readFile(path.join(process.cwd(), 'data', 'psychicPowers.json'), 'utf-8')
+      // Type assertion safe: JSON files are validated to match type definitions at build time
+      ) as PsychicPower[];
+
       // Build a minimal weirdo object for cost calculation
+      // Note: weapons, equipment, and psychicPowers are passed as name strings
       const weirdo: Weirdo = {
         id: 'temp',
         name: 'temp',
         type: weirdoType,
         attributes,
-        closeCombatWeapons: weapons?.close || [],
-        rangedWeapons: weapons?.ranged || [],
-        equipment: equipment || [],
-        psychicPowers: psychicPowers || [],
+        closeCombatWeapons: [],
+        rangedWeapons: [],
+        equipment: [],
+        psychicPowers: [],
         leaderTrait: null,
         notes: '',
         totalCost: 0
       };
+
+      // Look up weapons by name
+      if (weapons) {
+        if (weapons.close && Array.isArray(weapons.close)) {
+          weirdo.closeCombatWeapons = weapons.close
+            .map((name: string) => closeCombatWeaponsData.find(w => w.name === name))
+            .filter((w: Weapon | undefined): w is Weapon => w !== undefined);
+        }
+        if (weapons.ranged && Array.isArray(weapons.ranged)) {
+          weirdo.rangedWeapons = weapons.ranged
+            .map((name: string) => rangedWeaponsData.find(w => w.name === name))
+            .filter((w: Weapon | undefined): w is Weapon => w !== undefined);
+        }
+      }
+
+      // Look up equipment by name
+      if (equipment && Array.isArray(equipment)) {
+        weirdo.equipment = equipment
+          .map((name: string) => equipmentData.find(e => e.name === name))
+          .filter((e: Equipment | undefined): e is Equipment => e !== undefined);
+      }
+
+      // Look up psychic powers by name
+      if (psychicPowers && Array.isArray(psychicPowers)) {
+        weirdo.psychicPowers = psychicPowers
+          .map((name: string) => psychicPowersData.find(p => p.name === name))
+          .filter((p: PsychicPower | undefined): p is PsychicPower => p !== undefined);
+      }
 
       // Calculate costs with breakdown
       const attributeCosts = {
@@ -440,16 +595,32 @@ export function createWarbandRouter(repository: DataRepository): Router {
       const totalCost = Object.values(attributeCosts).reduce((sum, cost) => sum + cost, 0) +
                         weaponsCost + equipmentCost + psychicPowersCost;
 
-      // Determine limits and warnings
-      const limit = weirdoType === 'leader' ? 25 : 25; // Max limit for any weirdo
-      const warningThreshold = weirdoType === 'leader' ? 15 : 10; // 10 points for troopers, 15 for leaders
-      const isApproachingLimit = totalCost >= (limit - warningThreshold);
-      const isOverLimit = totalCost > limit;
+      // Update weirdo total cost for validation
+      weirdo.totalCost = totalCost;
 
-      const warnings: string[] = [];
-      if (isApproachingLimit && !isOverLimit) {
-        warnings.push(`Cost is within ${warningThreshold} points of the ${limit}-point limit`);
-      }
+      // Create a minimal warband context for validation
+      // Note: This is a simplified context for real-time cost calculation
+      // For full validation, use the /api/validation/weirdo endpoint
+      const tempWarband: Warband = {
+        id: 'temp',
+        name: 'temp',
+        ability: warbandAbility || null,
+        pointLimit: 125, // Use max limit for real-time calculation
+        totalCost: 0,
+        weirdos: [weirdo],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Use ValidationService to generate warnings
+      const validationResult = validationService.validateWeirdo(weirdo, tempWarband);
+      const warnings: string[] = validationResult.warnings.map(w => w.message);
+
+      // Determine if over limit (error state)
+      const limit = weirdoType === 'leader' ? 25 : 25; // Max limit for any weirdo
+      const isOverLimit = totalCost > limit;
+      const isApproachingLimit = validationResult.warnings.length > 0;
+
       if (isOverLimit) {
         warnings.push(`Cost exceeds the ${limit}-point limit`);
       }
@@ -468,10 +639,14 @@ export function createWarbandRouter(repository: DataRepository): Router {
           },
           warnings,
           isApproachingLimit,
-          isOverLimit,
-          calculationTime: elapsedTime
+          isOverLimit
         }
       });
+
+      // Log performance warning if over 100ms
+      if (elapsedTime > 100) {
+        console.warn(`Cost calculation took ${elapsedTime}ms (target: <100ms)`);
+      }
     } catch (error: unknown) {
       handleError(error, res);
     }

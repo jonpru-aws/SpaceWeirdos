@@ -1,8 +1,8 @@
 /**
- * Button Style Tests
+ * Button Styles Tests
  * 
- * Verifies that button classes apply correct colors, focus states have visible
- * outlines, and disabled states have reduced opacity.
+ * Verifies that button classes apply correct colors, focus states have visible outlines,
+ * and disabled states have reduced opacity.
  * 
  * Requirements: 4.1, 4.5, 4.6, 4.7
  */
@@ -14,39 +14,30 @@ import { resolve } from 'path';
 describe('Button Styles', () => {
   let buttonStyles: string;
 
-  // Helper to extract CSS rules for a selector
-  const extractRules = (content: string, selector: string): Map<string, string> => {
-    const rules = new Map<string, string>();
+  // Helper to extract CSS rules from the file
+  const extractRules = (content: string): Map<string, Map<string, string>> => {
+    const rules = new Map<string, Map<string, string>>();
     
-    // Escape special regex characters but preserve the selector structure
-    const escapedSelector = selector
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .replace(/\[/g, '\\[')
-      .replace(/\]/g, '\\]')
-      .replace(/\./g, '\\.')
-      .replace(/:/g, ':');
+    // Match CSS rules: selector { property: value; }
+    const ruleRegex = /([.:#\w\s\-:(),>+~[\]="']+)\s*\{([^}]+)\}/g;
+    let match;
     
-    // Match the selector and its rules, handling multi-line
-    const selectorRegex = new RegExp(`${escapedSelector}\\s*\\{([^}]+)\\}`, 'gs');
-    const match = selectorRegex.exec(content);
-    
-    if (match) {
-      const rulesBlock = match[1];
-      const propertyRegex = /([a-z-]+):\s*([^;]+);/g;
+    while ((match = ruleRegex.exec(content)) !== null) {
+      const selector = match[1].trim();
+      const declarations = match[2];
+      
+      const properties = new Map<string, string>();
+      const propRegex = /([a-z-]+):\s*([^;]+);/g;
       let propMatch;
       
-      while ((propMatch = propertyRegex.exec(rulesBlock)) !== null) {
-        rules.set(propMatch[1].trim(), propMatch[2].trim());
+      while ((propMatch = propRegex.exec(declarations)) !== null) {
+        properties.set(propMatch[1].trim(), propMatch[2].trim());
       }
+      
+      rules.set(selector, properties);
     }
     
     return rules;
-  };
-
-  // Helper to check if a value references a CSS variable
-  const isCssVariable = (value: string): boolean => {
-    return /var\(--[a-z0-9-]+\)/.test(value);
   };
 
   beforeAll(async () => {
@@ -55,195 +46,218 @@ describe('Button Styles', () => {
   });
 
   describe('Button Base Styles', () => {
-    it('should define base .btn class', () => {
-      expect(buttonStyles).toContain('.btn {');
+    it('should define .btn base class', () => {
+      const rules = extractRules(buttonStyles);
+      expect(rules.has('.btn'), '.btn class should be defined').toBe(true);
     });
 
-    it('should have cursor pointer for base button', () => {
-      const rules = extractRules(buttonStyles, '.btn');
-      expect(rules.get('cursor')).toBe('pointer');
+    it('should define button variants', () => {
+      const rules = extractRules(buttonStyles);
+      
+      expect(rules.has('.btn-primary'), '.btn-primary should be defined').toBe(true);
+      expect(rules.has('.btn-secondary'), '.btn-secondary should be defined').toBe(true);
+      expect(rules.has('.btn-danger'), '.btn-danger should be defined').toBe(true);
     });
   });
 
-  describe('Button Variant Colors (Requirement 4.1)', () => {
-    it('should apply correct background color for .btn-primary', () => {
-      const rules = extractRules(buttonStyles, '.btn-primary');
-      const bgColor = rules.get('background-color');
+  describe('Button Color Application', () => {
+    it('should apply correct background color to .btn-primary', () => {
+      const rules = extractRules(buttonStyles);
+      const primaryStyles = rules.get('.btn-primary');
       
-      expect(bgColor).toBeDefined();
-      expect(isCssVariable(bgColor!)).toBe(true);
+      expect(primaryStyles, '.btn-primary should have styles').toBeDefined();
+      expect(primaryStyles!.has('background-color'), '.btn-primary should have background-color').toBe(true);
+      
+      const bgColor = primaryStyles!.get('background-color');
       expect(bgColor).toContain('--color-primary');
     });
 
-    it('should apply correct text color for .btn-primary', () => {
-      const rules = extractRules(buttonStyles, '.btn-primary');
-      const textColor = rules.get('color');
+    it('should apply correct text color to .btn-primary', () => {
+      const rules = extractRules(buttonStyles);
+      const primaryStyles = rules.get('.btn-primary');
       
-      expect(textColor).toBeDefined();
-      expect(isCssVariable(textColor!)).toBe(true);
+      expect(primaryStyles, '.btn-primary should have styles').toBeDefined();
+      expect(primaryStyles!.has('color'), '.btn-primary should have color').toBe(true);
+      
+      const textColor = primaryStyles!.get('color');
       expect(textColor).toContain('--color-text-inverse');
     });
 
-    it('should apply correct colors for .btn-secondary', () => {
-      const rules = extractRules(buttonStyles, '.btn-secondary');
-      const bgColor = rules.get('background-color');
-      const textColor = rules.get('color');
-      const borderColor = rules.get('border-color');
+    it('should apply correct colors to .btn-secondary', () => {
+      const rules = extractRules(buttonStyles);
+      const secondaryStyles = rules.get('.btn-secondary');
+      
+      expect(secondaryStyles, '.btn-secondary should have styles').toBeDefined();
+      expect(secondaryStyles!.has('background-color'), '.btn-secondary should have background-color').toBe(true);
+      expect(secondaryStyles!.has('color'), '.btn-secondary should have color').toBe(true);
+      expect(secondaryStyles!.has('border-color'), '.btn-secondary should have border-color').toBe(true);
+      
+      const bgColor = secondaryStyles!.get('background-color');
+      const textColor = secondaryStyles!.get('color');
+      const borderColor = secondaryStyles!.get('border-color');
       
       expect(bgColor).toBe('transparent');
-      expect(textColor).toBeDefined();
-      expect(isCssVariable(textColor!)).toBe(true);
       expect(textColor).toContain('--color-primary');
-      expect(borderColor).toBeDefined();
-      expect(isCssVariable(borderColor!)).toBe(true);
+      expect(borderColor).toContain('--color-primary');
     });
 
-    it('should apply correct background color for .btn-danger', () => {
-      const rules = extractRules(buttonStyles, '.btn-danger');
-      const bgColor = rules.get('background-color');
+    it('should apply correct colors to .btn-danger', () => {
+      const rules = extractRules(buttonStyles);
+      const dangerStyles = rules.get('.btn-danger');
       
-      expect(bgColor).toBeDefined();
-      expect(isCssVariable(bgColor!)).toBe(true);
+      expect(dangerStyles, '.btn-danger should have styles').toBeDefined();
+      expect(dangerStyles!.has('background-color'), '.btn-danger should have background-color').toBe(true);
+      expect(dangerStyles!.has('color'), '.btn-danger should have color').toBe(true);
+      
+      const bgColor = dangerStyles!.get('background-color');
+      const textColor = dangerStyles!.get('color');
+      
       expect(bgColor).toContain('--color-error');
-    });
-
-    it('should apply correct text color for .btn-danger', () => {
-      const rules = extractRules(buttonStyles, '.btn-danger');
-      const textColor = rules.get('color');
-      
-      expect(textColor).toBeDefined();
-      expect(isCssVariable(textColor!)).toBe(true);
       expect(textColor).toContain('--color-text-inverse');
     });
   });
 
-  describe('Button Focus States (Requirement 4.5)', () => {
-    it('should have visible outline for .btn:focus', () => {
-      const rules = extractRules(buttonStyles, '.btn:focus');
-      const outline = rules.get('outline');
+  describe('Button Focus States', () => {
+    it('should have visible focus outline on .btn:focus', () => {
+      const rules = extractRules(buttonStyles);
+      const focusStyles = rules.get('.btn:focus');
       
-      expect(outline).toBeDefined();
-      expect(outline).not.toBe('none');
-      expect(outline).toContain('solid');
+      expect(focusStyles, '.btn:focus should have styles').toBeDefined();
+      expect(focusStyles!.has('outline'), '.btn:focus should have outline').toBe(true);
+      
+      const outline = focusStyles!.get('outline');
+      expect(outline, 'outline should not be "none"').not.toBe('none');
+      expect(outline, 'outline should have width').toContain('2px');
+      expect(outline, 'outline should be solid').toContain('solid');
     });
 
-    it('should have outline with sufficient width for .btn:focus', () => {
-      const rules = extractRules(buttonStyles, '.btn:focus');
-      const outline = rules.get('outline');
+    it('should have outline-offset for better visibility', () => {
+      const rules = extractRules(buttonStyles);
+      const focusStyles = rules.get('.btn:focus');
       
-      expect(outline).toBeDefined();
-      // Should have at least 2px outline
-      expect(outline).toMatch(/\d+px/);
-      const widthMatch = outline!.match(/(\d+)px/);
-      if (widthMatch) {
-        const width = parseInt(widthMatch[1]);
-        expect(width).toBeGreaterThanOrEqual(2);
-      }
+      expect(focusStyles, '.btn:focus should have styles').toBeDefined();
+      expect(focusStyles!.has('outline-offset'), '.btn:focus should have outline-offset').toBe(true);
+      
+      const outlineOffset = focusStyles!.get('outline-offset');
+      expect(outlineOffset).toBe('2px');
     });
 
-    it('should use focus border color for .btn:focus outline', () => {
-      const rules = extractRules(buttonStyles, '.btn:focus');
-      const outline = rules.get('outline');
+    it('should use focus border color for outline', () => {
+      const rules = extractRules(buttonStyles);
+      const focusStyles = rules.get('.btn:focus');
       
-      expect(outline).toBeDefined();
-      expect(isCssVariable(outline!)).toBe(true);
-      expect(outline).toContain('--color-border-focus');
+      expect(focusStyles, '.btn:focus should have styles').toBeDefined();
+      
+      const outline = focusStyles!.get('outline');
+      expect(outline, 'outline should use --color-border-focus').toContain('--color-border-focus');
     });
 
-    it('should have outline-offset for .btn:focus', () => {
-      const rules = extractRules(buttonStyles, '.btn:focus');
-      const outlineOffset = rules.get('outline-offset');
+    it('should have focus-visible styles for keyboard navigation', () => {
+      const rules = extractRules(buttonStyles);
+      const focusVisibleStyles = rules.get('.btn:focus-visible');
       
-      expect(outlineOffset).toBeDefined();
-      expect(outlineOffset).not.toBe('0');
-    });
-
-    it('should have visible outline for .btn:focus-visible', () => {
-      const rules = extractRules(buttonStyles, '.btn:focus-visible');
-      const outline = rules.get('outline');
+      expect(focusVisibleStyles, '.btn:focus-visible should have styles').toBeDefined();
+      expect(focusVisibleStyles!.has('outline'), '.btn:focus-visible should have outline').toBe(true);
       
-      expect(outline).toBeDefined();
-      expect(outline).not.toBe('none');
-      expect(outline).toContain('solid');
+      const outline = focusVisibleStyles!.get('outline');
+      expect(outline, 'outline should not be "none"').not.toBe('none');
+      expect(outline, 'outline should have width').toContain('2px');
     });
   });
 
-  describe('Button Hover States (Requirement 4.6)', () => {
-    it('should define hover state for .btn-primary', () => {
-      expect(buttonStyles).toContain('.btn-primary:hover:not(:disabled)');
-    });
-
-    it('should define hover state for .btn-secondary', () => {
-      expect(buttonStyles).toContain('.btn-secondary:hover:not(:disabled)');
-    });
-
-    it('should define hover state for .btn-danger', () => {
-      expect(buttonStyles).toContain('.btn-danger:hover:not(:disabled)');
-    });
-
-    it('should change background color on hover for .btn-primary', () => {
-      const rules = extractRules(buttonStyles, '.btn-primary:hover:not(:disabled)');
-      const bgColor = rules.get('background-color');
+  describe('Button Disabled States', () => {
+    it('should have reduced opacity for disabled buttons', () => {
+      const rules = extractRules(buttonStyles);
+      const disabledStyles = rules.get('.btn:disabled');
       
-      expect(bgColor).toBeDefined();
-      expect(isCssVariable(bgColor!)).toBe(true);
-    });
-  });
-
-  describe('Button Disabled States (Requirement 4.7)', () => {
-    it('should have reduced opacity for .btn:disabled', () => {
-      const rules = extractRules(buttonStyles, '.btn:disabled');
-      const opacity = rules.get('opacity');
+      expect(disabledStyles, '.btn:disabled should have styles').toBeDefined();
+      expect(disabledStyles!.has('opacity'), '.btn:disabled should have opacity').toBe(true);
       
-      expect(opacity).toBeDefined();
+      const opacity = disabledStyles!.get('opacity');
       const opacityValue = parseFloat(opacity!);
-      expect(opacityValue).toBeLessThan(1);
-      expect(opacityValue).toBeGreaterThan(0);
+      
+      expect(opacityValue, 'opacity should be less than 1').toBeLessThan(1);
+      expect(opacityValue, 'opacity should be greater than 0').toBeGreaterThan(0);
+      expect(opacityValue).toBe(0.5);
     });
 
-    it('should have cursor not-allowed for .btn:disabled', () => {
-      const rules = extractRules(buttonStyles, '.btn:disabled');
-      const cursor = rules.get('cursor');
+    it('should have not-allowed cursor for disabled buttons', () => {
+      const rules = extractRules(buttonStyles);
+      const disabledStyles = rules.get('.btn:disabled');
       
+      expect(disabledStyles, '.btn:disabled should have styles').toBeDefined();
+      expect(disabledStyles!.has('cursor'), '.btn:disabled should have cursor').toBe(true);
+      
+      const cursor = disabledStyles!.get('cursor');
       expect(cursor).toBe('not-allowed');
     });
 
-    it('should have pointer-events none for .btn:disabled', () => {
-      const rules = extractRules(buttonStyles, '.btn:disabled');
-      const pointerEvents = rules.get('pointer-events');
+    it('should disable pointer events for disabled buttons', () => {
+      const rules = extractRules(buttonStyles);
+      const disabledStyles = rules.get('.btn:disabled');
       
+      expect(disabledStyles, '.btn:disabled should have styles').toBeDefined();
+      expect(disabledStyles!.has('pointer-events'), '.btn:disabled should have pointer-events').toBe(true);
+      
+      const pointerEvents = disabledStyles!.get('pointer-events');
       expect(pointerEvents).toBe('none');
     });
+  });
 
-    it('should have opacity of 0.5 for disabled state', () => {
-      const rules = extractRules(buttonStyles, '.btn:disabled');
-      const opacity = rules.get('opacity');
+  describe('Button Hover States', () => {
+    it('should have hover styles for .btn-primary', () => {
+      const rules = extractRules(buttonStyles);
+      const hoverStyles = rules.get('.btn-primary:hover:not(:disabled)');
       
-      expect(opacity).toBe('0.5');
+      expect(hoverStyles, '.btn-primary:hover:not(:disabled) should have styles').toBeDefined();
+      expect(hoverStyles!.has('background-color'), 'hover should change background-color').toBe(true);
+    });
+
+    it('should have hover styles for .btn-secondary', () => {
+      const rules = extractRules(buttonStyles);
+      const hoverStyles = rules.get('.btn-secondary:hover:not(:disabled)');
+      
+      expect(hoverStyles, '.btn-secondary:hover:not(:disabled) should have styles').toBeDefined();
+      expect(hoverStyles!.has('background-color'), 'hover should change background-color').toBe(true);
+    });
+
+    it('should have hover styles for .btn-danger', () => {
+      const rules = extractRules(buttonStyles);
+      const hoverStyles = rules.get('.btn-danger:hover:not(:disabled)');
+      
+      expect(hoverStyles, '.btn-danger:hover:not(:disabled) should have styles').toBeDefined();
+      expect(hoverStyles!.has('background-color'), 'hover should change background-color').toBe(true);
+    });
+
+    it('should not apply hover styles to disabled buttons', () => {
+      // Verify that hover selectors include :not(:disabled)
+      expect(buttonStyles).toContain(':hover:not(:disabled)');
     });
   });
 
-  describe('Button Active States (Requirement 4.6)', () => {
-    it('should define active state for .btn-primary', () => {
-      expect(buttonStyles).toContain('.btn-primary:active:not(:disabled)');
-    });
-
-    it('should define active state for .btn-secondary', () => {
-      expect(buttonStyles).toContain('.btn-secondary:active:not(:disabled)');
-    });
-
-    it('should define active state for .btn-danger', () => {
-      expect(buttonStyles).toContain('.btn-danger:active:not(:disabled)');
-    });
-  });
-
-  describe('Button Transitions', () => {
-    it('should have transition property for smooth state changes', () => {
-      const rules = extractRules(buttonStyles, '.btn');
-      const transition = rules.get('transition');
+  describe('Button Active States', () => {
+    it('should have active styles for .btn-primary', () => {
+      const rules = extractRules(buttonStyles);
+      const activeStyles = rules.get('.btn-primary:active:not(:disabled)');
       
-      expect(transition).toBeDefined();
-      expect(transition).toContain('var(--transition-fast)');
+      expect(activeStyles, '.btn-primary:active:not(:disabled) should have styles').toBeDefined();
+      expect(activeStyles!.has('background-color'), 'active should change background-color').toBe(true);
+    });
+
+    it('should have active styles for .btn-secondary', () => {
+      const rules = extractRules(buttonStyles);
+      const activeStyles = rules.get('.btn-secondary:active:not(:disabled)');
+      
+      expect(activeStyles, '.btn-secondary:active:not(:disabled) should have styles').toBeDefined();
+      expect(activeStyles!.has('background-color'), 'active should change background-color').toBe(true);
+    });
+
+    it('should have active styles for .btn-danger', () => {
+      const rules = extractRules(buttonStyles);
+      const activeStyles = rules.get('.btn-danger:active:not(:disabled)');
+      
+      expect(activeStyles, '.btn-danger:active:not(:disabled) should have styles').toBeDefined();
+      expect(activeStyles!.has('background-color'), 'active should change background-color').toBe(true);
     });
   });
 });

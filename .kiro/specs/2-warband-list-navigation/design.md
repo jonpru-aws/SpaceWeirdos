@@ -18,11 +18,18 @@ This design document specifies the warband list view and navigation system for t
 
 ## Architecture
 
+### URL Structure
+
+The application uses the following URL patterns for navigation:
+
+- **Warband List**: `/` or `/warbands`
+- **Warband Editor**: `/warband/:warbandId`
+
 ### Component Hierarchy
 
 ```
 App
-├── WarbandList
+├── WarbandList (route: /)
 │   ├── WarbandListHeader
 │   │   └── CreateNewButton
 │   ├── WarbandListContent
@@ -36,6 +43,11 @@ App
 │       ├── DialogOverlay
 │       ├── DialogContent
 │       └── DialogActions
+├── WarbandEditor (route: /warband/:warbandId)
+│   ├── WarbandProperties
+│   ├── WeirdosList (clickable items open modal)
+│   └── WeirdoEditorModal (conditional)
+│       └── WeirdoEditor
 └── ToastNotification
     ├── NotificationIcon
     ├── NotificationMessage
@@ -262,6 +274,8 @@ After reviewing all properties:
 *For any* navigation from list to editor, the selected warband data should be loaded; for any navigation from editor to list, the list should refresh to show current warbands.
 **Validates: Requirements 6.2, 6.4**
 
+
+
 ## Testing Strategy
 
 ### Unit Testing
@@ -314,6 +328,27 @@ DELETE /api/warbands/:id       - Delete warband
 ```
 
 ## Implementation Notes
+
+### Navigation Flow
+
+**Two-Level Navigation:**
+1. **Warband List** → Click warband → **Warband Editor**
+2. **Warband Editor** → Click back → **Warband List**
+
+**URL Patterns:**
+- List: `/` or `/warbands`
+- Warband: `/warband/:warbandId`
+
+**Navigation Triggers:**
+- Clicking warband in list navigates to warband editor
+- Back button navigates to warband list
+- Browser back/forward buttons work correctly
+
+**Modal Interactions:**
+- Clicking weirdo in list opens weirdo editor modal (no URL change)
+- "Add Leader" or "Add Trooper" buttons create weirdo and open modal
+- Modal closes via close button, clicking outside, or Escape key
+- Modal does not affect browser navigation
 
 ### API Communication
 

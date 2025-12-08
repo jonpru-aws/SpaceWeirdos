@@ -1,24 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWarband } from '../contexts/WarbandContext';
 import { WarbandProperties } from './WarbandProperties';
 import { WarbandCostDisplay } from './WarbandCostDisplay';
 import { WeirdosList } from './WeirdosList';
+import { WeirdoEditorModal } from './WeirdoEditorModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import './WarbandEditor.css';
-import { useState } from 'react';
 
 /**
  * WarbandEditor Component
  * 
  * Main editing interface for warband and weirdos.
- * Provides three-section layout:
+ * Provides two-section layout:
  * - Warband properties (name, ability, point limit)
  * - List of weirdos with add buttons
- * - Selected weirdo editor
  * 
- * Implements progressive disclosure: hides weirdo management until warband exists.
+ * Weirdo editing happens in a modal dialog overlay.
  * 
- * Requirements: 2.1, 2.2, 2.6, 10.1, 10.2, 10.3, 10.4
+ * Requirements: 2.1, 2.2, 2.6, 10.1, 10.2
  */
 
 interface WarbandEditorProps {
@@ -38,8 +37,9 @@ export function WarbandEditor({
   onDeleteSuccess,
   onDeleteError
 }: WarbandEditorProps) {
-  const { currentWarband, loadWarband, createWarband, saveWarband, deleteWarband } = useWarband();
+  const { currentWarband, loadWarband, createWarband, saveWarband, deleteWarband, selectedWeirdoId, selectWeirdo } = useWarband();
   const [deleteConfirmation, setDeleteConfirmation] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   /**
    * Load warband on mount if warbandId provided
@@ -64,10 +64,10 @@ export function WarbandEditor({
     try {
       await saveWarband();
       onSaveSuccess();
-    } catch (err) {
-      // Type assertion needed: catch blocks receive unknown type, but callback expects Error
-      // This is safe because saveWarband only throws Error instances
-      onSaveError(err as Error);
+    } catch (error: unknown) {
+      // Type guard to ensure error is Error before passing to callback
+      const err = error instanceof Error ? error : new Error(String(error));
+      onSaveError(err);
     }
   };
 
@@ -90,11 +90,11 @@ export function WarbandEditor({
       await deleteWarband(currentWarband.id);
       setDeleteConfirmation(false);
       onDeleteSuccess();
-    } catch (err) {
+    } catch (error: unknown) {
       setDeleteConfirmation(false);
-      // Type assertion needed: catch blocks receive unknown type, but callback expects Error
-      // This is safe because deleteWarband only throws Error instances
-      onDeleteError(err as Error);
+      // Type guard to ensure error is Error before passing to callback
+      const err = error instanceof Error ? error : new Error(String(error));
+      onDeleteError(err);
     }
   };
 
@@ -104,6 +104,25 @@ export function WarbandEditor({
    */
   const handleCancelDelete = () => {
     setDeleteConfirmation(false);
+  };
+
+  /**
+   * Open modal when weirdo is selected
+   * Requirements: 8.1
+   */
+  useEffect(() => {
+    if (selectedWeirdoId) {
+      setIsModalOpen(true);
+    }
+  }, [selectedWeirdoId]);
+
+  /**
+   * Close modal and clear selection
+   * Requirements: 8.4, 8.5, 8.6
+   */
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    selectWeirdo(null);
   };
 
   // Progressive disclosure: show message when no warband exists (Requirements 2.1, 2.2, 2.6)
@@ -118,7 +137,7 @@ export function WarbandEditor({
     );
   }
 
-  // Three-section layout (Requirements 10.1, 10.2, 10.3, 10.4)
+  // Two-section layout with modal (Requirements 10.1, 10.2)
   return (
     <div className="warband-editor">
       {/* Action buttons */}
@@ -159,12 +178,11 @@ export function WarbandEditor({
         <WeirdosList />
       </section>
 
-      {/* Section 3: Weirdo Editor */}
-      <section className="warband-editor__weirdo-editor">
-        <h2>Weirdo Editor</h2>
-        {/* WeirdoEditor component will be added in task 6.1 */}
-        <div>Weirdo editor section - to be implemented</div>
-      </section>
+      {/* Weirdo Editor Modal (Requirements 8.1-8.8) */}
+      <WeirdoEditorModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
 
       {/* Delete confirmation dialog */}
       {deleteConfirmation && (

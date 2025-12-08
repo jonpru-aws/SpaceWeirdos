@@ -1,7 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PsychicPowerSelector } from '../src/frontend/components/PsychicPowerSelector';
-import { PsychicPower } from '../src/backend/models/types';
+import { PsychicPower, WarbandAbility } from '../src/backend/models/types';
+import * as apiClient from '../src/frontend/services/apiClient';
+import { itemCostCache } from '../src/frontend/hooks/useItemCost';
+
+// Mock the API client
+vi.mock('../src/frontend/services/apiClient', () => ({
+  apiClient: {
+    calculateCostRealTime: vi.fn(),
+  },
+}));
 
 /**
  * Unit tests for PsychicPowerSelector component
@@ -9,6 +18,28 @@ import { PsychicPower } from '../src/backend/models/types';
  */
 
 describe('PsychicPowerSelector Component', () => {
+  beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks();
+    itemCostCache.clear();
+    
+    // Setup default mock response for API calls
+    vi.mocked(apiClient.apiClient.calculateCostRealTime).mockResolvedValue({
+      success: true,
+      data: {
+        totalCost: 0,
+        breakdown: {
+          attributes: 0,
+          weapons: 0,
+          equipment: 0,
+          psychicPowers: 0,
+        },
+        warnings: [],
+        isApproachingLimit: false,
+        isOverLimit: false,
+      },
+    });
+  });
   const mockPowers: PsychicPower[] = [
     {
       id: 'fear',
@@ -41,6 +72,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={[]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -54,19 +86,51 @@ describe('PsychicPowerSelector Component', () => {
       expect(screen.getByText('Mind Stab')).toBeInTheDocument();
     });
 
-    it('should display name, cost, and effect for each power', () => {
+    it('should display name, cost, and effect for each power', async () => {
       const mockOnChange = vi.fn();
+
+      // Mock API responses for each psychic power
+      vi.mocked(apiClient.apiClient.calculateCostRealTime).mockImplementation(async (params) => {
+        const powerName = params.psychicPowers?.[0] || '';
+        let powerCost = 0;
+        
+        if (powerName === 'Fear' || powerName === 'Healing') {
+          powerCost = 1;
+        } else if (powerName === 'Mind Stab') {
+          powerCost = 3;
+        }
+
+        return {
+          success: true,
+          data: {
+            totalCost: powerCost,
+            breakdown: {
+              attributes: 0,
+              weapons: 0,
+              equipment: 0,
+              psychicPowers: powerCost,
+            },
+            warnings: [],
+            isApproachingLimit: false,
+            isOverLimit: false,
+          },
+        };
+      });
 
       render(
         <PsychicPowerSelector
           selectedPowers={[]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
 
-      // Check costs
-      expect(screen.getAllByText('1 pts')).toHaveLength(2); // Fear and Healing
+      // Wait for costs to load
+      await waitFor(() => {
+        expect(screen.getAllByText('1 pts')).toHaveLength(2); // Fear and Healing
+      });
+      
       expect(screen.getByText('3 pts')).toBeInTheDocument(); // Mind Stab
 
       // Check effects
@@ -84,6 +148,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={[]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -102,6 +167,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={[mockPowers[0]]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -120,6 +186,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={[mockPowers[0], mockPowers[1]]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -139,6 +206,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={[mockPowers[0], mockPowers[1]]}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -159,6 +227,7 @@ describe('PsychicPowerSelector Component', () => {
         <PsychicPowerSelector
           selectedPowers={mockPowers}
           availablePowers={mockPowers}
+          warbandAbility={null}
           onChange={mockOnChange}
         />
       );
@@ -169,5 +238,107 @@ describe('PsychicPowerSelector Component', () => {
         expect(checkbox).not.toBeDisabled();
       });
     });
+  });
+});
+
+/**
+ * Property-Based Tests for Psychic Power Selector API Usage
+ * 
+ * **Feature: 6-frontend-backend-api-separation, Property 12: Selector components use API for cost display**
+ * **Validates: Requirements 5.3**
+ */
+describe('Property-Based Tests: Psychic Power Selector API Usage', () => {
+  const testConfig = { numRuns: 50 };
+
+  /**
+   * Property 12: Selector components use API for cost display
+   * 
+   * For any psychic power selector with powers and warband ability, the component should:
+   * 1. Use the useItemCost hook (which calls the API) for each psychic power
+   * 2. Display costs returned from the API
+   * 3. Handle loading states appropriately
+   * 4. Not use local cost calculation functions
+   * 
+   * This test verifies that the PsychicPowerSelector component retrieves costs from the
+   * backend API with warband ability context, rather than calculating costs locally.
+   * 
+   * **Feature: 6-frontend-backend-api-separation, Property 12: Selector components use API for cost display**
+   * **Validates: Requirements 5.3**
+   */
+  it('Property 12: PsychicPowerSelector uses API for cost display', async () => {
+    const fc = await import('fast-check');
+    
+    fc.assert(
+      fc.property(
+        // Generate random psychic powers (1-3 powers to keep test fast)
+        fc.array(
+          fc.record({
+            id: fc.string({ minLength: 1, maxLength: 20 }),
+            name: fc.string({ minLength: 1, maxLength: 30 }),
+            type: fc.constantFrom('Attack' as const, 'Effect' as const, 'Defense' as const),
+            cost: fc.integer({ min: 1, max: 5 }),
+            effect: fc.string({ minLength: 10, maxLength: 100 })
+          }),
+          { minLength: 1, maxLength: 3 }
+        ),
+        // Generate optional warband ability
+        fc.option(
+          fc.constantFrom<WarbandAbility>(
+            'Cyborgs', 'Fanatics', 'Living Weapons', 
+            'Heavily Armed', 'Mutants', 'Soldiers', 'Undead'
+          ),
+          { nil: null }
+        ),
+
+        (powers, warbandAbility) => {
+          const mockOnChange = vi.fn();
+
+          const { container, unmount } = render(
+            <PsychicPowerSelector
+              selectedPowers={[]}
+              availablePowers={powers}
+              warbandAbility={warbandAbility}
+              onChange={mockOnChange}
+            />
+          );
+
+          try {
+            // Property 1: Each psychic power should have a cost display element
+            const costElements = container.querySelectorAll('.psychic-power-selector__cost');
+            expect(costElements.length).toBe(powers.length);
+
+            // Property 2: Cost elements should have data attributes for loading/error states
+            // These attributes are set by the useItemCost hook
+            costElements.forEach(costElement => {
+              expect(costElement).toHaveAttribute('data-loading');
+              expect(costElement).toHaveAttribute('data-error');
+            });
+
+            // Property 3: Cost display should show either:
+            // - A numeric cost with "pts" (when loaded)
+            // - "... pts" (when loading)
+            // - "? pts" (when error)
+            costElements.forEach(costElement => {
+              const costText = costElement.textContent || '';
+              const isValidCostFormat = 
+                /^\d+ pts$/.test(costText) ||  // Numeric cost
+                costText === '... pts' ||       // Loading
+                costText === '? pts';           // Error
+              
+              expect(isValidCostFormat).toBe(true);
+            });
+
+            // Property 4: The component should render all psychic powers
+            expect(container.querySelectorAll('.psychic-power-selector__item').length).toBe(powers.length);
+
+            return true;
+          } finally {
+            // Clean up after each iteration
+            unmount();
+          }
+        }
+      ),
+      testConfig
+    );
   });
 });

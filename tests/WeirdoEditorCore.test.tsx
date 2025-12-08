@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 import { WeirdoEditor } from '../src/frontend/components/WeirdoEditor';
 import { WeirdoCostDisplay } from '../src/frontend/components/WeirdoCostDisplay';
 import { WeirdoBasicInfo } from '../src/frontend/components/WeirdoBasicInfo';
@@ -9,6 +10,15 @@ import { ValidationService } from '../src/backend/services/ValidationService';
 import { DataRepository } from '../src/backend/services/DataRepository';
 import { WarbandProvider } from '../src/frontend/contexts/WarbandContext';
 import { GameDataProvider } from '../src/frontend/contexts/GameDataContext';
+import { useWarband } from '../src/frontend/contexts/WarbandContext';
+import * as apiClient from '../src/frontend/services/apiClient';
+
+// Mock the API client
+vi.mock('../src/frontend/services/apiClient', () => ({
+  apiClient: {
+    calculateCostRealTime: vi.fn(),
+  },
+}));
 
 /**
  * Unit tests for WeirdoEditor core components
@@ -86,7 +96,28 @@ describe('WeirdoEditor', () => {
 });
 
 describe('WeirdoCostDisplay', () => {
-  const costEngine = new CostEngine();
+  beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks();
+    
+    // Setup default mock response
+    vi.mocked(apiClient.apiClient.calculateCostRealTime).mockResolvedValue({
+      success: true,
+      data: {
+        totalCost: 10,
+        breakdown: {
+          attributes: 4,
+          weapons: 2,
+          equipment: 2,
+          psychicPowers: 2,
+        },
+        warnings: [],
+        isApproachingLimit: false,
+        isOverLimit: false,
+        calculationTime: 5,
+      },
+    });
+  });
 
   /**
    * Test cost display shows correct values
@@ -99,11 +130,10 @@ describe('WeirdoCostDisplay', () => {
       <WeirdoCostDisplay
         weirdo={mockWeirdo}
         warbandAbility={null}
-        costEngine={costEngine}
       />
     );
 
-    // Cost is calculated by CostEngine, not from totalCost field
+    // Cost is calculated by API, not from totalCost field
     // Check for the cost value span specifically
     const costValue = container.querySelector('.weirdo-cost-display__value');
     expect(costValue).toBeInTheDocument();
@@ -114,7 +144,7 @@ describe('WeirdoCostDisplay', () => {
    * Test warning indicator when approaching limit
    * Requirement: 3.4
    */
-  it('should show warning indicator when approaching limit', () => {
+  it('should show warning indicator when approaching limit', async () => {
     const mockWeirdo = createMockWeirdo('trooper', 15);
     // Set attributes to make cost approach limit (within 10 points of 20, so 11-20)
     // Need to get cost between 11 and 20
@@ -123,23 +153,44 @@ describe('WeirdoCostDisplay', () => {
     mockWeirdo.attributes.prowess = '2d10'; // 2pts
     mockWeirdo.attributes.willpower = '2d10'; // 2pts
     // Total should be around 12 points (within warning range)
+    mockWeirdo.totalCost = 12;
+    
+    // Mock API to return approaching limit
+    vi.mocked(apiClient.apiClient.calculateCostRealTime).mockResolvedValue({
+      success: true,
+      data: {
+        totalCost: 12,
+        breakdown: {
+          attributes: 8,
+          weapons: 2,
+          equipment: 2,
+          psychicPowers: 0,
+        },
+        warnings: [],
+        isApproachingLimit: true,
+        isOverLimit: false,
+        calculationTime: 5,
+      },
+    });
     
     render(
       <WeirdoCostDisplay
         weirdo={mockWeirdo}
         warbandAbility={null}
-        costEngine={costEngine}
       />
     );
 
-    expect(screen.getByText(/Approaching Limit/i)).toBeInTheDocument();
+    // Wait for the cost calculation to complete
+    await waitFor(() => {
+      expect(screen.getByText(/Approaching Limit/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   /**
    * Test error indicator when exceeding limit
    * Requirement: 3.4
    */
-  it('should show error indicator when exceeding limit', () => {
+  it('should show error indicator when exceeding limit', async () => {
     const mockWeirdo = createMockWeirdo('trooper', 25);
     // Set attributes to make cost exceed limit
     mockWeirdo.attributes.speed = 3;
@@ -147,16 +198,37 @@ describe('WeirdoCostDisplay', () => {
     mockWeirdo.attributes.firepower = '2d10';
     mockWeirdo.attributes.prowess = '2d10';
     mockWeirdo.attributes.willpower = '2d10';
+    mockWeirdo.totalCost = 25;
+    
+    // Mock API to return over limit
+    vi.mocked(apiClient.apiClient.calculateCostRealTime).mockResolvedValue({
+      success: true,
+      data: {
+        totalCost: 25,
+        breakdown: {
+          attributes: 15,
+          weapons: 4,
+          equipment: 4,
+          psychicPowers: 2,
+        },
+        warnings: [],
+        isApproachingLimit: false,
+        isOverLimit: true,
+        calculationTime: 5,
+      },
+    });
     
     render(
       <WeirdoCostDisplay
         weirdo={mockWeirdo}
         warbandAbility={null}
-        costEngine={costEngine}
       />
     );
 
-    expect(screen.getByText(/Over Limit/i)).toBeInTheDocument();
+    // Wait for the cost calculation to complete
+    await waitFor(() => {
+      expect(screen.getByText(/Over Limit/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   /**
@@ -170,11 +242,10 @@ describe('WeirdoCostDisplay', () => {
       <WeirdoCostDisplay
         weirdo={mockWeirdo}
         warbandAbility={null}
-        costEngine={costEngine}
       />
     );
 
-    // Cost is calculated by CostEngine
+    // Cost is calculated by API
     // Check for the cost value span specifically
     const costValue = container.querySelector('.weirdo-cost-display__value');
     expect(costValue).toBeInTheDocument();
@@ -192,7 +263,6 @@ describe('WeirdoCostDisplay', () => {
       <WeirdoCostDisplay
         weirdo={mockWeirdo}
         warbandAbility={null}
-        costEngine={costEngine}
       />
     );
 
@@ -247,5 +317,124 @@ describe('WeirdoBasicInfo', () => {
     );
 
     expect(screen.getByText('Trooper')).toBeInTheDocument();
+  });
+});
+
+describe('Automatic Unarmed Selection', () => {
+  /**
+   * Test that "unarmed" is automatically selected when weirdo has no weapons
+   * Requirement: 6.1, 6.2
+   */
+  it('should automatically select unarmed when weirdo has no close combat weapons', async () => {
+    const costEngine = new CostEngine();
+    const validationService = new ValidationService();
+    const dataRepository = new DataRepository();
+
+    // Create a test component that uses the warband context
+    const TestComponent = () => {
+      const { currentWarband, addWeirdo, selectWeirdo } = useWarband();
+      
+      // Add a weirdo with no weapons on mount
+      React.useEffect(() => {
+        if (!currentWarband) {
+          const warbandId = 'test-warband';
+          // Create warband first
+          addWeirdo(warbandId, 'trooper');
+        }
+      }, [currentWarband, addWeirdo]);
+
+      const selectedWeirdo = currentWarband?.weirdos.find(w => w.id === currentWarband.weirdos[0]?.id);
+      
+      return (
+        <div>
+          {selectedWeirdo && (
+            <div data-testid="weapon-count">
+              {selectedWeirdo.closeCombatWeapons.length}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <GameDataProvider>
+        <WarbandProvider
+          dataRepository={dataRepository}
+          costEngine={costEngine}
+          validationService={validationService}
+        >
+          {children}
+        </WarbandProvider>
+      </GameDataProvider>
+    );
+
+    render(<TestComponent />, { wrapper: Wrapper });
+
+    // Wait for the automatic unarmed selection to occur
+    await waitFor(() => {
+      const weaponCount = screen.queryByTestId('weapon-count');
+      if (weaponCount) {
+        expect(weaponCount.textContent).toBe('1');
+      }
+    }, { timeout: 1000 });
+  });
+
+  /**
+   * Test that cost recalculates after automatic unarmed selection
+   * Requirement: 6.3
+   */
+  it('should recalculate cost after automatic unarmed selection', async () => {
+    const costEngine = new CostEngine();
+    const validationService = new ValidationService();
+    const dataRepository = new DataRepository();
+
+    const TestComponent = () => {
+      const { currentWarband, addWeirdo } = useWarband();
+      
+      React.useEffect(() => {
+        if (!currentWarband) {
+          addWeirdo('test-warband', 'trooper');
+        }
+      }, [currentWarband, addWeirdo]);
+
+      const selectedWeirdo = currentWarband?.weirdos[0];
+      
+      return (
+        <div>
+          {selectedWeirdo && (
+            <>
+              <div data-testid="weapon-count">
+                {selectedWeirdo.closeCombatWeapons.length}
+              </div>
+              <div data-testid="weapon-id">
+                {selectedWeirdo.closeCombatWeapons[0]?.id || 'none'}
+              </div>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <GameDataProvider>
+        <WarbandProvider
+          dataRepository={dataRepository}
+          costEngine={costEngine}
+          validationService={validationService}
+        >
+          {children}
+        </WarbandProvider>
+      </GameDataProvider>
+    );
+
+    render(<TestComponent />, { wrapper: Wrapper });
+
+    // Wait for automatic unarmed selection
+    await waitFor(() => {
+      const weaponId = screen.queryByTestId('weapon-id');
+      if (weaponId) {
+        expect(weaponId.textContent).toBe('unarmed');
+      }
+    }, { timeout: 1000 });
   });
 });

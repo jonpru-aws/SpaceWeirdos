@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { WarbandProvider, useWarband } from '../src/frontend/contexts/WarbandContext';
 import { WeirdosList } from '../src/frontend/components/WeirdosList';
@@ -9,6 +9,14 @@ import { ValidationService } from '../src/backend/services/ValidationService';
 import { Weirdo } from '../src/backend/models/types';
 import { ReactNode, useEffect, useRef } from 'react';
 import fc from 'fast-check';
+import * as apiClient from '../src/frontend/services/apiClient';
+
+// Mock the API client
+vi.mock('../src/frontend/services/apiClient', () => ({
+  apiClient: {
+    calculateCostRealTime: vi.fn(),
+  },
+}));
 
 /**
  * Unit tests for weirdo list components
@@ -29,6 +37,25 @@ describe('Weirdo List Components', () => {
     dataRepository = new DataRepository(':memory:', false);
     costEngine = new CostEngine();
     validationService = new ValidationService();
+    
+    // Reset and setup API mock
+    vi.clearAllMocks();
+    vi.mocked(apiClient.apiClient.calculateCostRealTime).mockResolvedValue({
+      success: true,
+      data: {
+        totalCost: 10,
+        breakdown: {
+          attributes: 4,
+          weapons: 2,
+          equipment: 2,
+          psychicPowers: 2,
+        },
+        warnings: [],
+        isApproachingLimit: false,
+        isOverLimit: false,
+        calculationTime: 5,
+      },
+    });
   });
 
   const createWrapper = (children: ReactNode) => (
@@ -93,7 +120,7 @@ describe('Weirdo List Components', () => {
       await waitFor(() => {
         const addLeaderButton = screen.getByRole('button', { name: /Add Leader/i });
         expect(addLeaderButton).toBeDisabled();
-      });
+      }, { timeout: 5000 });
     });
 
     /**
@@ -163,13 +190,17 @@ describe('Weirdo List Components', () => {
       const addLeaderButton = screen.getByRole('button', { name: /Add Leader/i });
       const addTrooperButton = screen.getByRole('button', { name: /Add Trooper/i });
       
+      // Add leader first and wait for it to appear
       fireEvent.click(addLeaderButton);
-      fireEvent.click(addTrooperButton);
-
       await waitFor(() => {
         expect(screen.getByText('New Leader')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Then add trooper and wait for it to appear
+      fireEvent.click(addTrooperButton);
+      await waitFor(() => {
         expect(screen.getByText('New Trooper')).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
     });
   });
 
@@ -409,7 +440,7 @@ describe('Property-Based Tests: Weirdo Management', () => {
                 const addLeaderButton = screen.getByRole('button', { name: /Add Leader/i });
                 expect(addLeaderButton).toBeInTheDocument();
               },
-              { timeout: 1000 }
+              { timeout: 3000 }
             );
 
             // Add leader if specified
@@ -422,7 +453,7 @@ describe('Property-Based Tests: Weirdo Management', () => {
                 () => {
                   expect(screen.getByText('New Leader')).toBeInTheDocument();
                 },
-                { timeout: 1000 }
+                { timeout: 3000 }
               );
             }
 
@@ -442,5 +473,5 @@ describe('Property-Based Tests: Weirdo Management', () => {
       ),
       { numRuns: 10 } // Reduced runs for async test to prevent timeout
     );
-  }, 15000); // Increased timeout for async property test
+  }, 30000); // Increased timeout for async property test
 });

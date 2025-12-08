@@ -101,3 +101,14 @@
   background: var(--color-primary-50);
   border-radius: var(--border-radius-md);
 }
+
+.weirdo-editor__info-message {
+  margin: var(--spacing-2) 0 0 0;
+  padding: var(--spacing-3);
+  background: var(--color-neutral-100);
+  border-left: 3px solid var(--color-primary-500);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}

@@ -8,6 +8,9 @@ A complete web application for creating and managing warbands for the Space Weir
 
 - **Complete Warband Management:** Create, edit, save, load, and delete warbands
 - **Real-Time Cost Calculation:** Automatic point cost calculation with warband ability modifiers
+- **Context-Aware Validation:** Smart warning system that adapts to your warband composition
+- **Intelligent Warning System:** Warns when approaching point limits (within 3 points) with context-specific messaging
+- **25-Point Weirdo Management:** Automatic detection and appropriate limit enforcement for premium weirdos
 - **Comprehensive Validation:** Enforces all game rules including point limits, equipment restrictions, and weapon requirements
 - **Persistent Storage:** In-memory database with JSON file persistence
 - **Intuitive UI:** Three main components for warband list, warband editing, and weirdo customization
@@ -48,10 +51,11 @@ TypeScript/React/Express application with property-based testing and spec-driven
 
 ```
 ├── src/
-│   ├── backend/          # Express server
-│   └── frontend/         # React application
-├── tests/                # Test files
+│   ├── backend/          # Express server (ValidationService, CostEngine)
+│   └── frontend/         # React application (WeirdoCostDisplay, etc.)
+├── tests/                # Test files (including WarningLogic.test.ts)
 ├── data/                 # JSON configuration files
+├── docs/                 # Documentation (API, Architecture, Warning System)
 └── .kiro/               # Kiro specs and steering
 ```
 
@@ -134,13 +138,22 @@ This project was built using spec-driven development methodology with formal cor
 - **Property-Based Tests:** Verify universal properties across all inputs (minimum 50 iterations)
 - Both test types complement each other for comprehensive coverage
 
+## Documentation
+
+For detailed information about the project:
+
+- **API Documentation:** [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) - Backend API endpoints and data structures
+- **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design patterns
+- **Warning System:** [docs/WARNING-SYSTEM.md](docs/WARNING-SYSTEM.md) - Context-aware warning system guide
+- **Testing:** [TESTING.md](TESTING.md) - Testing guidelines and strategies
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md) - Recent updates and changes
+- **Specifications:** `.kiro/specs/` - Detailed feature specifications
+
 ## Code Standards
 
 See the steering files in `.kiro/steering/` for detailed standards:
-- [Core Project Info](..kiro/steering/core-project-info.md) - Technology stack, libraries, and code style
+- [Core Project Info](.kiro/steering/core-project-info.md) - Technology stack, libraries, and code style
 - [Task Execution Standards](.kiro/steering/task-execution-standards.md) - Testing and execution guidelines
-- [Spec Creation Standards](.kiro/steering/spec-creation-standards.md) - Requirements and design methodology
-- [Efficient Testing Practices](.kiro/steering/efficient-testing.md) - Token-efficient testing strategies
 
 ## Contributing
 
@@ -266,33 +279,18 @@ This codebase has undergone comprehensive refactoring to improve maintainability
 - Design pattern documentation
 - Migration guides for refactored code
 
-## Changelog
+## Recent Updates
 
-### v1.0.0 (2024-12-03)
+### Context-Aware Warning System
 
-**Initial Release**
+Implemented intelligent warning system that adapts to warband composition:
+- Warnings trigger within 3 points of applicable limits (down from 10 points)
+- Context-aware logic: warnings change based on whether a 25-point weirdo exists
+- Backend ValidationService generates warnings for consistency with game rules
+- Clear messaging distinguishes between 20-point and 25-point limits
+- "Premium weirdo slot" messaging helps users understand the 25-point option
 
-Complete implementation of the Space Weirdos Warband Builder with all features, comprehensive testing, and formal correctness guarantees.
-
-**Features:**
-- Complete warband creation and management system
-- Real-time cost calculation with warband ability modifiers
-- Comprehensive validation of all game rules
-- In-memory database with JSON file persistence
-- Full React frontend with three main components
-- Express backend with RESTful API
-
-**Testing:**
-- 140 tests passing (100% success rate)
-- 25 property-based tests validating correctness properties
-- Unit tests for all services and components
-- Integration tests for API endpoints
-
-**Implementation:**
-- Spec-driven development with formal requirements
-- EARS-compliant requirements with INCOSE quality rules
-- Design with correctness properties for PBT
-- Complete task list with all items completed
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## License
 

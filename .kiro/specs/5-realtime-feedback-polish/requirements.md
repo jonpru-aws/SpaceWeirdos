@@ -14,6 +14,7 @@ This spec focuses on the UX enhancements that make the application feel responsi
 - **Cost Badge**: Component displaying base and modified costs
 - **Validation Tooltip**: Contextual error information displayed on hover
 - **Cost Breakdown**: Detailed breakdown of cost components
+- **Applicable Limit**: The point cost limit that applies to a specific weirdo (20 points for most weirdos, 25 points for the one allowed premium weirdo)
 
 ## Requirements
 
@@ -35,12 +36,16 @@ This spec focuses on the UX enhancements that make the application feel responsi
 
 #### Acceptance Criteria
 
-1. WHEN a weirdo cost is within 10 points of their limit (20 for troopers, 25 for leaders) THEN the Warband Builder SHALL display a warning indicator
-2. WHEN a weirdo cost exceeds their limit THEN the Warband Builder SHALL display an error indicator
-3. WHEN the warband cost is within 15 points of the point limit THEN the Warband Builder SHALL display a warning indicator
-4. WHEN the warband cost exceeds the point limit THEN the Warband Builder SHALL display an error indicator
-5. WHEN warning indicators are displayed THEN the Warband Builder SHALL use orange/yellow color
-6. WHEN error indicators are displayed THEN the Warband Builder SHALL use red color
+1. WHEN a weirdo cost is within 3 points of their applicable limit THEN the Warband Builder SHALL display a warning indicator
+2. WHEN a weirdo has no 25-point weirdo in the warband AND cost is between 18 and 20 points THEN the Warband Builder SHALL display a warning for approaching the 20-point limit
+3. WHEN a weirdo has no 25-point weirdo in the warband AND cost is between 23 and 25 points THEN the Warband Builder SHALL display a warning for approaching the 25-point limit
+4. WHEN a weirdo has a 25-point weirdo in the warband AND cost is between 18 and 20 points THEN the Warband Builder SHALL display a warning for approaching the 20-point limit
+5. WHEN a weirdo cost exceeds their applicable limit THEN the Warband Builder SHALL display an error indicator
+6. WHEN the warband cost is within 15 points of the point limit THEN the Warband Builder SHALL display a warning indicator
+7. WHEN the warband cost exceeds the point limit THEN the Warband Builder SHALL display an error indicator
+8. WHEN warning indicators are displayed THEN the Warband Builder SHALL use orange/yellow color
+9. WHEN error indicators are displayed THEN the Warband Builder SHALL use red color
+10. WHEN displaying weirdo cost warnings THEN the Warband Builder SHALL use the backend ValidationService warnings from the game rules API
 
 ### Requirement 3
 
@@ -82,6 +87,19 @@ This spec focuses on the UX enhancements that make the application feel responsi
 5. WHEN the cost breakdown is toggled THEN the Warband Builder SHALL animate the transition smoothly
 
 ### Requirement 6
+
+**User Story:** As a player, I want the system to automatically select "unarmed" when I have no close combat weapon, so that I don't have to manually fix this common validation error.
+
+#### Acceptance Criteria
+
+1. WHEN a weirdo has no close combat weapons selected THEN the Warband Builder SHALL automatically select the "unarmed" weapon
+2. WHEN the "unarmed" weapon is automatically selected THEN the Warband Builder SHALL update the weirdo's weapon list immediately
+3. WHEN the "unarmed" weapon is automatically selected THEN the Warband Builder SHALL recalculate the weirdo's total cost
+4. WHEN a user manually deselects all close combat weapons THEN the Warband Builder SHALL automatically select "unarmed" to prevent validation errors
+5. WHEN a user selects another close combat weapon while "unarmed" is selected THEN the Warband Builder SHALL allow both weapons to remain selected
+6. WHEN the automatic selection occurs THEN the Warband Builder SHALL not display a validation error for missing close combat weapon
+
+### Requirement 7
 
 **User Story:** As a developer, I want all frontend-backend communication to use API calls, so that the frontend and backend remain properly decoupled and maintainable.
 

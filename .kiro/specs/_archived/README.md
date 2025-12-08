@@ -2,6 +2,8 @@
 
 This directory contains specifications that have been superseded, completed, or are no longer active.
 
+**Note**: Historical implementation notes and update summaries have been moved to `docs/implementation-notes/` for better organization. This directory now contains only archived spec folders.
+
 ## space-weirdos-ui (Archived: December 6, 2025)
 
 **Reason for archiving**: This monolithic UI spec was split into 5 focused specs for better organization and maintainability.

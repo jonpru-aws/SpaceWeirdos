@@ -1,10 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { WarbandProvider, useWarband } from '../src/frontend/contexts/WarbandContext';
-import { DataRepository } from '../src/backend/services/DataRepository';
-import { CostEngine } from '../src/backend/services/CostEngine';
-import { ValidationService } from '../src/backend/services/ValidationService';
+import * as apiClient from '../src/frontend/services/apiClient';
 
 /**
  * Unit tests for real-time cost calculation with debouncing and memoization
@@ -13,14 +11,39 @@ import { ValidationService } from '../src/backend/services/ValidationService';
  * Requirements: 1.1, 1.2, 1.4
  */
 describe('Real-time cost calculation', () => {
-  let dataRepository: DataRepository;
-  let costEngine: CostEngine;
-  let validationService: ValidationService;
-
+  let callCount = 0;
+  
   beforeEach(() => {
-    dataRepository = new DataRepository();
-    costEngine = new CostEngine();
-    validationService = new ValidationService();
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+    callCount = 0;
+    
+    // Mock API calls - required because WarbandProvider uses apiClient internally
+    // Return increasing costs on each call to test cost updates
+    vi.spyOn(apiClient.apiClient, 'calculateCostRealTime').mockImplementation(async () => {
+      callCount++;
+      return {
+        data: {
+          totalCost: 10 + (callCount * 5), // Each call increases cost by 5
+          breakdown: {
+            baseCost: 10,
+            attributeCost: callCount * 5,
+            weaponsCost: 0,
+            equipmentCost: 0,
+            psychicPowersCost: 0,
+            modifiers: []
+          }
+        }
+      };
+    });
+    
+    vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
+      data: {
+        isValid: true,
+        errors: [],
+        warnings: []
+      }
+    });
   });
 
   /**
@@ -29,11 +52,7 @@ describe('Real-time cost calculation', () => {
    */
   it('should update weirdo cost when attributes change', async () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -45,8 +64,8 @@ describe('Real-time cost calculation', () => {
       result.current.createWarband('Test Warband', 75);
     });
 
-    act(() => {
-      result.current.addWeirdo('leader');
+    await act(async () => {
+      await result.current.addWeirdo('leader');
     });
 
     // Wait for weirdo to be added
@@ -70,13 +89,13 @@ describe('Real-time cost calculation', () => {
       });
     });
 
-    // Wait for debounced update (100ms)
+    // Wait for debounced update (100ms debounce + API call time)
     await waitFor(
       () => {
         const updatedCost = result.current.currentWarband!.weirdos[0].totalCost;
         expect(updatedCost).toBeGreaterThan(initialCost);
       },
-      { timeout: 200 }
+      { timeout: 500 }
     );
   });
 
@@ -86,11 +105,7 @@ describe('Real-time cost calculation', () => {
    */
   it('should update warband cost when weirdo cost changes', async () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -102,8 +117,8 @@ describe('Real-time cost calculation', () => {
       result.current.createWarband('Test Warband', 75);
     });
 
-    act(() => {
-      result.current.addWeirdo('leader');
+    await act(async () => {
+      await result.current.addWeirdo('leader');
     });
 
     // Wait for weirdo to be added
@@ -133,7 +148,7 @@ describe('Real-time cost calculation', () => {
         const updatedWarbandCost = result.current.currentWarband!.totalCost;
         expect(updatedWarbandCost).toBeGreaterThan(initialWarbandCost);
       },
-      { timeout: 200 }
+      { timeout: 500 }
     );
   });
 
@@ -143,11 +158,7 @@ describe('Real-time cost calculation', () => {
    */
   it('should debounce cost updates to 100ms', async () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -159,8 +170,8 @@ describe('Real-time cost calculation', () => {
       result.current.createWarband('Test Warband', 75);
     });
 
-    act(() => {
-      result.current.addWeirdo('leader');
+    await act(async () => {
+      await result.current.addWeirdo('leader');
     });
 
     // Wait for weirdo to be added
@@ -203,7 +214,7 @@ describe('Real-time cost calculation', () => {
         // Final cost should reflect the last update
         expect(finalCost).toBeGreaterThan(0);
       },
-      { timeout: 200 }
+      { timeout: 500 }
     );
   });
 
@@ -213,11 +224,7 @@ describe('Real-time cost calculation', () => {
    */
   it('should use memoized cost values when available', async () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -229,8 +236,8 @@ describe('Real-time cost calculation', () => {
       result.current.createWarband('Test Warband', 75);
     });
 
-    act(() => {
-      result.current.addWeirdo('leader');
+    await act(async () => {
+      await result.current.addWeirdo('leader');
     });
 
     // Wait for weirdo to be added
@@ -256,11 +263,7 @@ describe('Real-time cost calculation', () => {
    */
   it('should recalculate costs when warband ability changes', async () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         {children}
       </WarbandProvider>
     );
@@ -272,8 +275,8 @@ describe('Real-time cost calculation', () => {
       result.current.createWarband('Test Warband', 75);
     });
 
-    act(() => {
-      result.current.addWeirdo('leader');
+    await act(async () => {
+      await result.current.addWeirdo('leader');
     });
 
     // Wait for weirdo to be added
@@ -300,7 +303,7 @@ describe('Real-time cost calculation', () => {
     await waitFor(() => {
       const weirdoCost = result.current.currentWarband!.weirdos[0].totalCost;
       expect(weirdoCost).toBeGreaterThan(0);
-    }, { timeout: 200 });
+    }, { timeout: 500 });
 
     // Change warband ability to "Mutants" (cheaper attributes)
     act(() => {
@@ -314,7 +317,7 @@ describe('Real-time cost calculation', () => {
         // Cost should be recalculated (may be same or different depending on ability)
         expect(costWithAbility).toBeGreaterThanOrEqual(0);
       },
-      { timeout: 300 }
+      { timeout: 500 }
     );
   });
 });

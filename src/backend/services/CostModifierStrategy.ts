@@ -4,12 +4,12 @@ import {
   AttributeType,
   AttributeLevel,
   WarbandAbility
-} from '../models/types';
+} from '../models/types.js';
 import {
   DISCOUNT_VALUES,
   ABILITY_WEAPON_LISTS,
   ABILITY_EQUIPMENT_LISTS
-} from '../constants/costs';
+} from '../constants/costs.js';
 
 /**
  * Strategy interface for applying warband ability-based cost modifiers

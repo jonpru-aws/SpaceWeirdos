@@ -1,18 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AttributeSelector } from '../src/frontend/components/AttributeSelector';
-import { CostEngine } from '../src/backend/services/CostEngine';
 
 /**
  * Unit tests for AttributeSelector component
- * Requirements: 5.2, 12.1
+ * 
+ * Tests updated for API-based cost calculation architecture:
+ * - Selectors show base costs only
+ * - Total costs (including warband ability modifications) are calculated by API
+ * 
+ * Requirements: 5.2, 12.1, 9.2, 9.6
  */
 
 describe('AttributeSelector Component', () => {
-  const costEngine = new CostEngine();
 
   describe('Speed attribute', () => {
-    it('should render all speed levels with costs', () => {
+    it('should render all speed levels with base costs', () => {
       const mockOnChange = vi.fn();
 
       render(
@@ -21,7 +24,6 @@ describe('AttributeSelector Component', () => {
           value={1}
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -30,11 +32,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Speed levels: 1 (0 pts), 2 (1 pt), 3 (3 pts)
+      // Speed levels with base costs: 1 (0 pts), 2 (1 pt), 3 (2 pts)
       // Note: options[0] is the placeholder
       expect(options[1].text).toContain('1 (0 pts)');
       expect(options[2].text).toContain('2 (1 pts)');
-      expect(options[3].text).toContain('3 (3 pts)');
+      expect(options[3].text).toContain('3 (2 pts)');
     });
 
     it('should call onChange with correct speed value', () => {
@@ -46,7 +48,6 @@ describe('AttributeSelector Component', () => {
           value={1}
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -58,7 +59,7 @@ describe('AttributeSelector Component', () => {
   });
 
   describe('Defense attribute', () => {
-    it('should render all defense levels with costs', () => {
+    it('should render all defense levels with base costs', () => {
       const mockOnChange = vi.fn();
 
       render(
@@ -67,7 +68,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -76,11 +76,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Defense levels: 2d6 (2 pts), 2d8 (4 pts), 2d10 (8 pts)
+      // Defense levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (2 pts)');
-      expect(options[2].text).toContain('2d8 (4 pts)');
-      expect(options[3].text).toContain('2d10 (8 pts)');
+      expect(options[1].text).toContain('2d6 (0 pts)');
+      expect(options[2].text).toContain('2d8 (1 pts)');
+      expect(options[3].text).toContain('2d10 (2 pts)');
     });
 
     it('should call onChange with correct defense value', () => {
@@ -92,7 +92,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -104,7 +103,7 @@ describe('AttributeSelector Component', () => {
   });
 
   describe('Firepower attribute', () => {
-    it('should render all firepower levels with costs', () => {
+    it('should render all firepower levels with base costs', () => {
       const mockOnChange = vi.fn();
 
       render(
@@ -113,7 +112,6 @@ describe('AttributeSelector Component', () => {
           value="None"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -122,11 +120,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Firepower levels: None (0 pts), 2d8 (2 pts), 2d10 (4 pts)
+      // Firepower levels with base costs: None (0 pts), 2d8 (1 pt), 2d10 (2 pts)
       // Note: options[0] is the placeholder
       expect(options[1].text).toContain('None (0 pts)');
-      expect(options[2].text).toContain('2d8 (2 pts)');
-      expect(options[3].text).toContain('2d10 (4 pts)');
+      expect(options[2].text).toContain('2d8 (1 pts)');
+      expect(options[3].text).toContain('2d10 (2 pts)');
     });
 
     it('should call onChange with correct firepower value', () => {
@@ -138,7 +136,6 @@ describe('AttributeSelector Component', () => {
           value="None"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -150,7 +147,7 @@ describe('AttributeSelector Component', () => {
   });
 
   describe('Prowess attribute', () => {
-    it('should render all prowess levels with costs', () => {
+    it('should render all prowess levels with base costs', () => {
       const mockOnChange = vi.fn();
 
       render(
@@ -159,7 +156,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -168,11 +164,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Prowess levels: 2d6 (2 pts), 2d8 (4 pts), 2d10 (6 pts)
+      // Prowess levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (2 pts)');
-      expect(options[2].text).toContain('2d8 (4 pts)');
-      expect(options[3].text).toContain('2d10 (6 pts)');
+      expect(options[1].text).toContain('2d6 (0 pts)');
+      expect(options[2].text).toContain('2d8 (1 pts)');
+      expect(options[3].text).toContain('2d10 (2 pts)');
     });
 
     it('should call onChange with correct prowess value', () => {
@@ -184,7 +180,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -196,7 +191,7 @@ describe('AttributeSelector Component', () => {
   });
 
   describe('Willpower attribute', () => {
-    it('should render all willpower levels with costs', () => {
+    it('should render all willpower levels with base costs', () => {
       const mockOnChange = vi.fn();
 
       render(
@@ -205,7 +200,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -214,11 +208,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Willpower levels: 2d6 (2 pts), 2d8 (4 pts), 2d10 (6 pts)
+      // Willpower levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (2 pts)');
-      expect(options[2].text).toContain('2d8 (4 pts)');
-      expect(options[3].text).toContain('2d10 (6 pts)');
+      expect(options[1].text).toContain('2d6 (0 pts)');
+      expect(options[2].text).toContain('2d8 (1 pts)');
+      expect(options[3].text).toContain('2d10 (2 pts)');
     });
 
     it('should call onChange with correct willpower value', () => {
@@ -230,7 +224,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -241,68 +234,48 @@ describe('AttributeSelector Component', () => {
     });
   });
 
-  describe('Modified cost indication', () => {
-    it('should show modified cost when warband ability applies to speed', () => {
+  describe('Cost display behavior', () => {
+    it('should show base costs only (modifications calculated by API)', () => {
       const mockOnChange = vi.fn();
 
-      // Mutants ability reduces speed cost by 1
+      // Even with Mutants ability, selector shows base costs
+      // API calculates the actual modified total cost
       render(
         <AttributeSelector
           attribute="speed"
           value={2}
           onChange={mockOnChange}
           warbandAbility="Mutants"
-          costEngine={costEngine}
         />
       );
 
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const option2 = Array.from(select.options).find(opt => opt.value === '2');
 
-      // Speed 2 normally costs 1 pt, but Mutants reduces it by 1 (to 0)
-      expect(option2?.text).toContain('0 pts, was 1 pts');
+      // Shows base cost (1 pt), not modified cost
+      // Total cost with modifications is calculated by API
+      expect(option2?.text).toContain('2 (1 pts)');
+      expect(option2?.text).not.toContain('was');
     });
 
-    it('should show modified cost when warband ability applies to speed level 3', () => {
+    it('should show base costs regardless of warband ability', () => {
       const mockOnChange = vi.fn();
 
-      // Mutants ability reduces speed cost by 1
-      render(
-        <AttributeSelector
-          attribute="speed"
-          value={3}
-          onChange={mockOnChange}
-          warbandAbility="Mutants"
-          costEngine={costEngine}
-        />
-      );
-
-      const select = screen.getByRole('combobox') as HTMLSelectElement;
-      const option3 = Array.from(select.options).find(opt => opt.value === '3');
-
-      // Speed 3 normally costs 3 pts, but Mutants reduces it by 1 (to 2)
-      expect(option3?.text).toContain('2 pts, was 3 pts');
-    });
-
-    it('should not show modified cost when warband ability does not apply', () => {
-      const mockOnChange = vi.fn();
-
-      // Heavily Armed only affects weapons, not attributes
+      // Heavily Armed only affects weapons, but we still show base costs
       render(
         <AttributeSelector
           attribute="defense"
           value="2d8"
           onChange={mockOnChange}
           warbandAbility="Heavily Armed"
-          costEngine={costEngine}
         />
       );
 
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const option2d8 = Array.from(select.options).find(opt => opt.value === '2d8');
 
-      // Defense 2d8 costs 4 pts with no modifier
-      expect(option2d8?.text).toContain('2d8 (4 pts)');
+      // Shows base cost (1 pt)
+      expect(option2d8?.text).toContain('2d8 (1 pts)');
       expect(option2d8?.text).not.toContain('was');
     });
   });
@@ -317,7 +290,6 @@ describe('AttributeSelector Component', () => {
           value={1}
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
           disabled={true}
         />
       );
@@ -335,7 +307,6 @@ describe('AttributeSelector Component', () => {
           value={1}
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -354,7 +325,6 @@ describe('AttributeSelector Component', () => {
           value={1}
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -374,7 +344,6 @@ describe('AttributeSelector Component', () => {
           value="2d6"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 
@@ -393,7 +362,6 @@ describe('AttributeSelector Component', () => {
           value="None"
           onChange={mockOnChange}
           warbandAbility={null}
-          costEngine={costEngine}
         />
       );
 

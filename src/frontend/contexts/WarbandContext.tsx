@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from 'react';
-import { Warband, Weirdo, ValidationError, ValidationResult } from '../../backend/models/types';
-import { CostEngine } from '../../backend/services/CostEngine';
+import type { Warband, Weirdo, ValidationError, ValidationResult } from '../../backend/models/types';
 import { apiClient } from '../services/apiClient';
 
 /**
@@ -9,8 +8,9 @@ import { apiClient } from '../services/apiClient';
  * Provides centralized warband state management for components.
  * Reduces prop drilling by sharing warband data and update functions via Context API.
  * Integrates with API client for persistence, cost calculations, and validation.
+ * All cost calculations are performed via API (no direct CostEngine imports).
  * 
- * Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.3, 10.5, 10.6, 11.5, 6.2, 6.4, 6.5, 6.7
+ * Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.3, 10.5, 10.6, 11.5, 6.2, 6.4, 6.5, 6.7, 9.2, 9.6
  */
 
 /**
@@ -52,34 +52,42 @@ const WarbandContext = createContext<WarbandContextValue | undefined>(undefined)
  */
 interface WarbandProviderProps {
   children: ReactNode;
-  costEngine: CostEngine;
 }
 
 /**
  * WarbandProvider component
  * 
  * Manages warband state and provides update functions.
- * Integrates with API client and CostEngine.
+ * Integrates with API client for all cost calculations.
  * 
- * Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.3, 10.5, 10.6, 11.5
+ * Requirements: 1.1-1.7, 2.1-2.7, 3.1-3.3, 10.5, 10.6, 11.5, 9.2, 9.6
  */
 export function WarbandProvider({ 
-  children, 
-  costEngine
+  children
 }: WarbandProviderProps) {
   const [currentWarband, setCurrentWarband] = useState<Warband | null>(null);
   const [selectedWeirdoId, setSelectedWeirdoId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Map<string, ValidationError[]>>(new Map());
   
+  // Ref to track the latest warband state for debounced operations
+  const currentWarbandRef = useRef<Warband | null>(null);
+  
   // Debounce timer ref for cost calculations (Requirement 1.4)
   const costUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Debounce timer ref for validation
+  const validationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentWarbandRef.current = currentWarband;
+  }, [currentWarband]);
 
   /**
    * Debounced cost recalculation function using API
    * Delays cost updates by 100ms to avoid excessive API calls
    * Requirements: 1.4, 6.1, 6.3
    */
-  const debouncedCostUpdate = useCallback((warband: Warband) => {
+  const debouncedCostUpdate = useCallback(() => {
     // Clear existing timer
     if (costUpdateTimerRef.current) {
       clearTimeout(costUpdateTimerRef.current);
@@ -87,6 +95,11 @@ export function WarbandProvider({
     
     // Set new timer for 100ms debounce
     costUpdateTimerRef.current = setTimeout(async () => {
+      // Get the latest warband state from ref
+      const warband = currentWarbandRef.current;
+      
+      if (!warband) return;
+      
       try {
         // Recalculate all weirdo costs via API
         const costPromises = warband.weirdos.map(async (weirdo) => {
@@ -107,7 +120,7 @@ export function WarbandProvider({
               ...weirdo,
               totalCost: response.data.totalCost,
             };
-          } catch (error) {
+          } catch (error: unknown) {
             console.error(`Error calculating cost for weirdo ${weirdo.id}:`, error);
             // Fallback to existing cost on error
             return weirdo;
@@ -126,7 +139,7 @@ export function WarbandProvider({
         };
         
         setCurrentWarband(updatedWarband);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error in debounced cost update:', error);
         // Keep existing warband state on error
       }
@@ -134,12 +147,49 @@ export function WarbandProvider({
   }, []);
 
   /**
-   * Cleanup debounce timer on unmount
+   * Debounced validation function
+   * Delays validation by 300ms to avoid excessive API calls
+   */
+  const debouncedValidation = useCallback((weirdoId: string, warband: Warband) => {
+    // Clear existing timer
+    if (validationTimerRef.current) {
+      clearTimeout(validationTimerRef.current);
+    }
+    
+    // Set new timer for 300ms debounce
+    validationTimerRef.current = setTimeout(async () => {
+      const weirdo = warband.weirdos.find(w => w.id === weirdoId);
+      if (!weirdo) return;
+      
+      try {
+        const result = await apiClient.validateWeirdo(weirdo, warband);
+        
+        // Update validation errors for this weirdo
+        setValidationErrors(prevErrors => {
+          const newErrors = new Map(prevErrors);
+          if (result.errors.length > 0) {
+            newErrors.set(weirdoId, result.errors);
+          } else {
+            newErrors.delete(weirdoId);
+          }
+          return newErrors;
+        });
+      } catch (error: unknown) {
+        console.error('Error validating weirdo:', error);
+      }
+    }, 300);
+  }, []);
+
+  /**
+   * Cleanup debounce timers on unmount
    */
   useEffect(() => {
     return () => {
       if (costUpdateTimerRef.current) {
         clearTimeout(costUpdateTimerRef.current);
+      }
+      if (validationTimerRef.current) {
+        clearTimeout(validationTimerRef.current);
       }
     };
   }, []);
@@ -174,9 +224,9 @@ export function WarbandProvider({
       setCurrentWarband(loadedWarband);
       setSelectedWeirdoId(null);
       setValidationErrors(new Map());
-    } catch (err) {
-      console.error('Error loading warband:', err);
-      throw err;
+    } catch (error: unknown) {
+      console.error('Error loading warband:', error);
+      throw error;
     }
   };
 
@@ -195,7 +245,7 @@ export function WarbandProvider({
     
     // Trigger debounced cost recalculation if ability changed (Requirements 1.1, 1.2, 1.4)
     if (updates.ability !== undefined) {
-      debouncedCostUpdate(updatedWarband);
+      debouncedCostUpdate();
     }
   };
 
@@ -248,10 +298,10 @@ export function WarbandProvider({
       });
       
       newWeirdo.totalCost = response.data.totalCost;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error calculating initial weirdo cost:', error);
-      // Fallback to CostEngine if API fails
-      newWeirdo.totalCost = costEngine.calculateWeirdoCost(newWeirdo, currentWarband.ability);
+      // Default to 0 if API fails; will be recalculated on next update
+      newWeirdo.totalCost = 0;
     }
 
     // Add to warband
@@ -270,16 +320,18 @@ export function WarbandProvider({
 
   /**
    * Remove a weirdo from the warband
-   * Requirements: 11.4, 11.5, 11.6
+   * Requirements: 11.4, 11.5, 11.6, 9.2
    */
   const removeWeirdo = (weirdoId: string): void => {
     if (!currentWarband) return;
 
     const updatedWeirdos = currentWarband.weirdos.filter(w => w.id !== weirdoId);
+    const totalCost = updatedWeirdos.reduce((sum, w) => sum + w.totalCost, 0);
+    
     const updatedWarband = {
       ...currentWarband,
       weirdos: updatedWeirdos,
-      totalCost: costEngine.calculateWarbandCost({ ...currentWarband, weirdos: updatedWeirdos }),
+      totalCost,
     };
 
     setCurrentWarband(updatedWarband);
@@ -301,37 +353,53 @@ export function WarbandProvider({
    * Requirements: 1.1, 1.2, 1.4, 3.1, 3.2, 3.6
    */
   const updateWeirdo = (weirdoId: string, updates: Partial<Weirdo>): void => {
-    if (!currentWarband) return;
+    // Use functional update to ensure we work with latest state
+    setCurrentWarband(prevWarband => {
+      if (!prevWarband) return prevWarband;
 
-    const weirdo = currentWarband.weirdos.find(w => w.id === weirdoId);
-    if (!weirdo) {
-      throw new Error(`Weirdo with id ${weirdoId} not found`);
-    }
+      const weirdo = prevWarband.weirdos.find(w => w.id === weirdoId);
+      if (!weirdo) {
+        console.error(`Weirdo with id ${weirdoId} not found`);
+        return prevWarband;
+      }
 
-    const updatedWeirdo = { ...weirdo, ...updates };
+      // Create a copy of updates without totalCost to prevent accidental overwrites
+      // Type assertion safe: destructuring to extract and ignore totalCost field from updates object
+      const { totalCost: _ignoredCost, ...safeUpdates } = updates as any;
+      
+      // Merge updates while preserving totalCost from original weirdo
+      const updatedWeirdo = { 
+        ...weirdo, 
+        ...safeUpdates,
+        // Always preserve the existing totalCost (will be recalculated by debounced update)
+        totalCost: weirdo.totalCost
+      };
 
-    // Update warband with new weirdo (without recalculating costs yet)
-    const updatedWeirdos = currentWarband.weirdos.map(w =>
-      w.id === weirdoId ? updatedWeirdo : w
-    );
-    
-    const updatedWarband = {
-      ...currentWarband,
-      weirdos: updatedWeirdos,
-    };
+      // Update warband with new weirdo
+      const updatedWeirdos = prevWarband.weirdos.map(w =>
+        w.id === weirdoId ? updatedWeirdo : w
+      );
+      
+      const updatedWarband = {
+        ...prevWarband,
+        weirdos: updatedWeirdos,
+      };
 
-    // Immediately update state for responsive UI
-    setCurrentWarband(updatedWarband);
+      // Trigger debounced validation
+      debouncedValidation(weirdoId, updatedWarband);
+      
+      return updatedWarband;
+    });
     
     // Trigger debounced cost recalculation (Requirements 1.1, 1.2, 1.4)
-    debouncedCostUpdate(updatedWarband);
+    debouncedCostUpdate();
   };
 
   /**
-   * Select a weirdo for editing
+   * Select a weirdo for editing (or clear selection with null)
    * Requirements: 10.5
    */
-  const selectWeirdo = (id: string): void => {
+  const selectWeirdo = (id: string | null): void => {
     setSelectedWeirdoId(id);
   };
 
@@ -372,15 +440,16 @@ export function WarbandProvider({
         : await apiClient.createWarband({
             name: currentWarband.name,
             pointLimit: currentWarband.pointLimit,
-            ability: currentWarband.ability
+            ability: currentWarband.ability,
+            weirdos: currentWarband.weirdos
           });
       setCurrentWarband(savedWarband);
       
       // Clear validation errors on successful save
       setValidationErrors(new Map());
-    } catch (err) {
-      console.error('Error saving warband:', err);
-      throw err;
+    } catch (error: unknown) {
+      console.error('Error saving warband:', error);
+      throw error;
     }
   };
 
@@ -398,15 +467,15 @@ export function WarbandProvider({
         setSelectedWeirdoId(null);
         setValidationErrors(new Map());
       }
-    } catch (err) {
-      console.error('Error deleting warband:', err);
-      throw err;
+    } catch (error: unknown) {
+      console.error('Error deleting warband:', error);
+      throw error;
     }
   };
 
   /**
    * Get the cost of a specific weirdo (memoized for performance)
-   * Requirements: 1.4, 3.1, 3.3
+   * Requirements: 1.4, 3.1, 3.3, 9.2
    */
   const getWeirdoCost = useCallback((id: string): number => {
     if (!currentWarband) return 0;
@@ -414,19 +483,19 @@ export function WarbandProvider({
     const weirdo = currentWarband.weirdos.find(w => w.id === id);
     if (!weirdo) return 0;
     
-    // Return cached cost from weirdo object if available
-    return weirdo.totalCost ?? costEngine.calculateWeirdoCost(weirdo, currentWarband.ability);
-  }, [currentWarband, costEngine]);
+    // Return cached cost from weirdo object (calculated by API)
+    return weirdo.totalCost;
+  }, [currentWarband]);
 
   /**
    * Get the total cost of the warband (memoized for performance)
-   * Requirements: 1.4, 3.2, 3.3
+   * Requirements: 1.4, 3.2, 3.3, 9.2
    */
   const getWarbandCost = useCallback((): number => {
     if (!currentWarband) return 0;
-    // Return cached cost from warband object if available
-    return currentWarband.totalCost ?? costEngine.calculateWarbandCost(currentWarband);
-  }, [currentWarband, costEngine]);
+    // Return cached cost from warband object (calculated by API)
+    return currentWarband.totalCost;
+  }, [currentWarband]);
 
   /**
    * Validate the entire warband using API
@@ -458,8 +527,8 @@ export function WarbandProvider({
       setValidationErrors(newErrors);
       
       return result;
-    } catch (err) {
-      console.error('Error validating warband:', err);
+    } catch (error: unknown) {
+      console.error('Error validating warband:', error);
       return { valid: false, errors: [] };
     }
   };
@@ -491,8 +560,8 @@ export function WarbandProvider({
       setValidationErrors(newErrors);
       
       return result;
-    } catch (err) {
-      console.error('Error validating weirdo:', err);
+    } catch (error: unknown) {
+      console.error('Error validating weirdo:', error);
       return { valid: false, errors: [] };
     }
   };

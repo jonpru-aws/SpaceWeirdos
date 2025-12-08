@@ -1,82 +1,131 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { GameDataProvider, useGameData } from '../src/frontend/contexts/GameDataContext';
-import { apiClient } from '../src/frontend/services/apiClient';
 
 /**
  * Unit tests for GameDataContext
  * 
- * Tests data loading, error handling, and context provider functionality.
- * 
- * Requirements: 6.4
+ * Tests game data fetching, loading states, error handling, and caching.
+ * Requirements: 9.1, 9.5
  */
 
-// Test component that uses the hook
-function TestConsumer() {
-  const { data, loading, error } = useGameData();
+// Mock fetch globally
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!data) return <div>No data</div>;
+// Test component that uses the context
+function TestComponent() {
+  const {
+    attributes,
+    closeCombatWeapons,
+    rangedWeapons,
+    equipment,
+    psychicPowers,
+    leaderTraits,
+    warbandAbilities,
+    isLoading,
+    error,
+  } = useGameData();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
-      <div data-testid="close-combat-count">{data.closeCombatWeapons.length}</div>
-      <div data-testid="ranged-count">{data.rangedWeapons.length}</div>
-      <div data-testid="equipment-count">{data.equipment.length}</div>
+      <div data-testid="attributes">{attributes ? 'Attributes loaded' : 'No attributes'}</div>
+      <div data-testid="close-weapons">Close weapons: {closeCombatWeapons.length}</div>
+      <div data-testid="ranged-weapons">Ranged weapons: {rangedWeapons.length}</div>
+      <div data-testid="equipment">Equipment: {equipment.length}</div>
+      <div data-testid="powers">Powers: {psychicPowers.length}</div>
+      <div data-testid="traits">Traits: {leaderTraits.length}</div>
+      <div data-testid="abilities">Abilities: {warbandAbilities.length}</div>
     </div>
   );
 }
 
 describe('GameDataContext', () => {
   beforeEach(() => {
-    // Reset fetch mock and API client mock before each test
-    vi.restoreAllMocks();
+    mockFetch.mockClear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   /**
-   * Test: Data loading success
-   * Requirement: 6.4
+   * Test: Game data fetches on initialization
+   * Requirement: 9.1
    */
-  it('should load game data successfully', async () => {
-    // Mock API client for warband abilities
-    vi.spyOn(apiClient, 'getWarbandAbilities').mockResolvedValue([
-      { id: 'cyborgs', name: 'Cyborgs', description: 'Test description', rule: 'Test rule' }
-    ]);
-
-    // Mock successful fetch responses for other data
-    global.fetch = vi.fn((url) => {
-      const mockData: Record<string, any> = {
-        '/data/closeCombatWeapons.json': [
-          { id: '1', name: 'Sword', type: 'close', baseCost: 1, maxActions: 2, notes: '' }
-        ],
-        '/data/rangedWeapons.json': [
-          { id: '2', name: 'Gun', type: 'ranged', baseCost: 2, maxActions: 1, notes: '' }
-        ],
-        '/data/equipment.json': [
-          { id: '3', name: 'Armor', type: 'Passive', baseCost: 1, effect: 'Defense +1' }
-        ],
-        '/data/psychicPowers.json': [],
-        '/data/leaderTraits.json': [],
-        '/data/attributes.json': {
-          speed: [],
-          defense: [],
-          firepower: [],
-          prowess: [],
-          willpower: []
-        },
-      };
-
-      const data = mockData[url as string] || [];
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(data),
-      } as Response);
+  it('should fetch all game data on initialization', async () => {
+    // Mock successful API responses
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/game-data/attributes')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            speed: { '1': 0, '2': 1, '3': 3 },
+            defense: { '2d6': 2, '2d8': 4, '2d10': 8 },
+            firepower: { 'None': 0, '2d8': 2, '2d10': 4 },
+            prowess: { '2d6': 2, '2d8': 4, '2d10': 6 },
+            willpower: { '2d6': 2, '2d8': 4, '2d10': 6 },
+          }),
+        });
+      }
+      if (url.includes('/game-data/weapons/close')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'unarmed', name: 'Unarmed', type: 'close', baseCost: 0, notes: '' },
+            { id: 'melee-weapon', name: 'Melee Weapon', type: 'close', baseCost: 1, notes: '' },
+          ]),
+        });
+      }
+      if (url.includes('/game-data/weapons/ranged')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'pistol', name: 'Pistol', type: 'ranged', baseCost: 1, notes: '' },
+          ]),
+        });
+      }
+      if (url.includes('/game-data/equipment')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'cybernetics', name: 'Cybernetics', baseCost: 1, effect: '+1 to Power rolls' },
+          ]),
+        });
+      }
+      if (url.includes('/game-data/psychic-powers')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'fear', name: 'Fear', cost: 1, effect: 'Cause fear' },
+          ]),
+        });
+      }
+      if (url.includes('/game-data/leader-traits')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'tactician', name: 'Tactician', description: '+1DT to Initiative' },
+          ]),
+        });
+      }
+      if (url.includes('/game-data/warband-abilities')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 'ability1', name: 'Test Ability', description: 'Test', rule: 'Test rule' },
+          ]),
+        });
+      }
+      return Promise.reject(new Error('Unknown endpoint'));
     });
 
     render(
       <GameDataProvider>
-        <TestConsumer />
+        <TestComponent />
       </GameDataProvider>
     );
 
@@ -85,200 +134,202 @@ describe('GameDataContext', () => {
 
     // Wait for data to load
     await waitFor(() => {
-      expect(screen.getByTestId('close-combat-count')).toHaveTextContent('1');
+      expect(screen.getByTestId('attributes')).toHaveTextContent('Attributes loaded');
     });
 
-    expect(screen.getByTestId('ranged-count')).toHaveTextContent('1');
-    expect(screen.getByTestId('equipment-count')).toHaveTextContent('1');
+    // Verify all data was fetched
+    expect(screen.getByTestId('close-weapons')).toHaveTextContent('Close weapons: 2');
+    expect(screen.getByTestId('ranged-weapons')).toHaveTextContent('Ranged weapons: 1');
+    expect(screen.getByTestId('equipment')).toHaveTextContent('Equipment: 1');
+    expect(screen.getByTestId('powers')).toHaveTextContent('Powers: 1');
+    expect(screen.getByTestId('traits')).toHaveTextContent('Traits: 1');
+    expect(screen.getByTestId('abilities')).toHaveTextContent('Abilities: 1');
+
+    // Verify fetch was called for all endpoints
+    expect(mockFetch).toHaveBeenCalledTimes(7);
   });
 
   /**
-   * Test: Error handling
-   * Requirement: 6.4
+   * Test: Loading states
+   * Requirement: 9.5
    */
-  it('should handle fetch errors gracefully', async () => {
-    // Mock API client to succeed (so error comes from fetch)
-    vi.spyOn(apiClient, 'getWarbandAbilities').mockResolvedValue([]);
-
-    // Mock failed fetch
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({}),
-      } as Response)
+  it('should show loading state while fetching data', async () => {
+    // Mock delayed responses
+    mockFetch.mockImplementation(() => 
+      new Promise(resolve => 
+        setTimeout(() => resolve({
+          ok: true,
+          json: () => Promise.resolve([]),
+        }), 100)
+      )
     );
 
     render(
       <GameDataProvider>
-        <TestConsumer />
+        <TestComponent />
       </GameDataProvider>
     );
 
-    // Wait for error state
+    // Should show loading state
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    }, { timeout: 200 });
+  });
+
+  /**
+   * Test: Error handling for failed API calls
+   * Requirement: 9.5
+   */
+  it('should handle API errors gracefully', async () => {
+    // Mock failed API response
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
+        ok: false,
+        status: 500,
+      })
+    );
+
+    render(
+      <GameDataProvider>
+        <TestComponent />
+      </GameDataProvider>
+    );
+
+    // Wait for error to appear
     await waitFor(() => {
       expect(screen.getByText(/Error:/)).toBeInTheDocument();
     });
+
+    // Verify error message is displayed
+    expect(screen.getByText(/Failed to fetch/)).toBeInTheDocument();
   });
 
   /**
    * Test: Network error handling
-   * Requirement: 6.4
+   * Requirement: 9.5
    */
   it('should handle network errors', async () => {
-    // Mock API client to succeed (so error comes from fetch)
-    vi.spyOn(apiClient, 'getWarbandAbilities').mockResolvedValue([]);
-
-    // Mock network failure
-    global.fetch = vi.fn(() =>
-      Promise.reject(new Error('Network error'))
-    );
+    // Mock network error
+    mockFetch.mockRejectedValue(new Error('Network error'));
 
     render(
       <GameDataProvider>
-        <TestConsumer />
+        <TestComponent />
       </GameDataProvider>
     );
 
-    // Wait for error state
+    // Wait for error to appear
     await waitFor(() => {
       expect(screen.getByText(/Error:/)).toBeInTheDocument();
     });
+
+    // Verify error message is displayed
+    expect(screen.getByText(/Network error/)).toBeInTheDocument();
   });
 
   /**
-   * Test: Hook throws error outside provider
-   * Requirement: 6.4
+   * Test: Data caching
+   * Requirement: 9.1, 9.6
+   */
+  it('should cache game data and not refetch on re-render', async () => {
+    // Mock successful API responses
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      })
+    );
+
+    const { rerender } = render(
+      <GameDataProvider>
+        <TestComponent />
+      </GameDataProvider>
+    );
+
+    // Wait for initial fetch
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledTimes(7);
+    });
+
+    // Clear mock call history
+    mockFetch.mockClear();
+
+    // Re-render the component
+    rerender(
+      <GameDataProvider>
+        <TestComponent />
+      </GameDataProvider>
+    );
+
+    // Wait a bit to ensure no new fetches occur
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify no additional fetches were made (data is cached)
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Test: useGameData hook throws error outside provider
+   * Requirement: 9.1
    */
   it('should throw error when useGameData is used outside provider', () => {
     // Suppress console.error for this test
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => {
-      render(<TestConsumer />);
+      render(<TestComponent />);
     }).toThrow('useGameData must be used within a GameDataProvider');
 
-    consoleSpy.mockRestore();
+    consoleError.mockRestore();
   });
 
   /**
-   * Test: Context provider renders children
-   * Requirement: 6.4
+   * Test: Refetch function
+   * Requirement: 9.5
    */
-  it('should render children while loading', () => {
-    // Mock slow API call
-    vi.spyOn(apiClient, 'getWarbandAbilities').mockImplementation(
-      () => new Promise(() => {}) // Never resolves
-    );
-
-    // Mock slow fetch
-    global.fetch = vi.fn(() =>
-      new Promise(() => {}) // Never resolves
-    );
-
-    render(
-      <GameDataProvider>
-        <div>Child content</div>
-      </GameDataProvider>
-    );
-
-    expect(screen.getByText('Child content')).toBeInTheDocument();
-  });
-
-  /**
-   * Test: Warband abilities fetch via API on mount
-   * Requirements: 6.3, 6.4
-   */
-  it('should fetch warband abilities via API on mount', async () => {
-    const mockAbilities = [
-      { id: 'cyborgs', name: 'Cyborgs' as const, description: 'Cyborg Equipment', rule: 'Extra equipment' },
-      { id: 'fanatics', name: 'Fanatics' as const, description: 'Willpower bonus', rule: '+1DT' }
-    ];
-
-    // Mock API client
-    const apiSpy = vi.spyOn(apiClient, 'getWarbandAbilities').mockResolvedValue(mockAbilities);
-
-    // Mock other fetch calls
-    global.fetch = vi.fn((url) => {
-      const mockData: Record<string, any> = {
-        '/data/closeCombatWeapons.json': [],
-        '/data/rangedWeapons.json': [],
-        '/data/equipment.json': [],
-        '/data/psychicPowers.json': [],
-        '/data/leaderTraits.json': [],
-        '/data/attributes.json': {
-          speed: [],
-          defense: [],
-          firepower: [],
-          prowess: [],
-          willpower: []
-        },
-      };
-
-      const data = mockData[url as string] || [];
-      return Promise.resolve({
+  it('should allow refetching data via refetch function', async () => {
+    // Mock successful API responses
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(data),
-      } as Response);
-    });
+        json: () => Promise.resolve([]),
+      })
+    );
+
+    function TestRefetchComponent() {
+      const { refetch, isLoading } = useGameData();
+      
+      return (
+        <div>
+          <button onClick={() => refetch()}>Refetch</button>
+          {isLoading && <div>Loading...</div>}
+        </div>
+      );
+    }
 
     render(
       <GameDataProvider>
-        <TestConsumer />
+        <TestRefetchComponent />
       </GameDataProvider>
     );
 
-    // Wait for data to load
+    // Wait for initial fetch
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(mockFetch).toHaveBeenCalledTimes(7);
     });
 
-    // Verify API was called
-    expect(apiSpy).toHaveBeenCalledTimes(1);
-  });
+    mockFetch.mockClear();
 
-  /**
-   * Test: Handle API errors for warband abilities
-   * Requirements: 6.3, 6.4
-   */
-  it('should handle API errors when fetching warband abilities', async () => {
-    // Mock API client to fail
-    vi.spyOn(apiClient, 'getWarbandAbilities').mockRejectedValue(
-      new Error('API error')
-    );
+    // Click refetch button
+    const refetchButton = screen.getByText('Refetch');
+    refetchButton.click();
 
-    // Mock other fetch calls to succeed
-    global.fetch = vi.fn((url) => {
-      const mockData: Record<string, any> = {
-        '/data/closeCombatWeapons.json': [],
-        '/data/rangedWeapons.json': [],
-        '/data/equipment.json': [],
-        '/data/psychicPowers.json': [],
-        '/data/leaderTraits.json': [],
-        '/data/attributes.json': {
-          speed: [],
-          defense: [],
-          firepower: [],
-          prowess: [],
-          willpower: []
-        },
-      };
-
-      const data = mockData[url as string] || [];
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(data),
-      } as Response);
-    });
-
-    render(
-      <GameDataProvider>
-        <TestConsumer />
-      </GameDataProvider>
-    );
-
-    // Wait for error state
+    // Verify data is refetched
     await waitFor(() => {
-      expect(screen.getByText(/Error:/)).toBeInTheDocument();
+      expect(mockFetch).toHaveBeenCalledTimes(7);
     });
   });
 });

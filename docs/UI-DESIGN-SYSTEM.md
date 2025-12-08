@@ -12,6 +12,8 @@ The UI Design System is a foundational CSS-based design system that provides con
 - Responsive and mobile-friendly
 - ~15-20KB uncompressed CSS
 
+**Related Spec:** `.kiro/specs/1-ui-design-system/`
+
 ## Architecture
 
 ### High-Level Structure
@@ -516,7 +518,7 @@ describe('Design System Integration', () => {
 1. Add token to appropriate file in `tokens/` directory
 2. Use semantic naming (purpose, not appearance)
 3. Update tests to verify token exists
-4. Document in DESIGN_SYSTEM.md
+4. Document in design.md
 
 ```css
 /* tokens/colors.css */

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { LeaderTrait } from '../../backend/models/types';
+import type { LeaderTrait } from '../../backend/models/types';
 import './LeaderTraitSelector.css';
 
 /**

@@ -1,9 +1,9 @@
-import { Warband, ValidationResult, ValidationError, Weirdo, WarbandSummary, PersistenceError, PersistenceErrorCode } from '../models/types';
+import { Warband, ValidationResult, ValidationError, Weirdo, WarbandSummary, PersistenceError, PersistenceErrorCode } from '../models/types.js';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getValidationMessage } from '../constants/validationMessages';
-import { CostEngine } from './CostEngine';
+import { getValidationMessage } from '../constants/validationMessages.js';
+import { CostEngine } from './CostEngine.js';
 
 // Storage file path constant
 const STORAGE_PATH = path.join(process.cwd(), 'data', 'warbands.json');
@@ -95,7 +95,7 @@ export class DataRepository {
 
     // Validate all weirdos have required fields
     if (warband.weirdos && Array.isArray(warband.weirdos)) {
-      warband.weirdos.forEach((weirdo, index) => {
+      warband.weirdos.forEach((weirdo: Weirdo, index: number) => {
         const weirdoErrors = this.validateWeirdo(weirdo, index);
         errors.push(...weirdoErrors);
       });
@@ -301,16 +301,16 @@ export class DataRepository {
       const dir = path.dirname(this.filePath);
       try {
         await fs.mkdir(dir, { recursive: true });
-      } catch (err: unknown) {
+      } catch (error: unknown) {
         // Check for permission errors using type guard
-        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
+        if (this.isNodeError(error) && (error.code === 'EACCES' || error.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot create directory ${dir}`,
             PersistenceErrorCode.PERMISSION_ERROR,
-            { path: dir, originalError: err.message }
+            { path: dir, originalError: error.message }
           );
         }
-        throw err;
+        throw error;
       }
 
       // Write to file with pretty formatting
@@ -320,30 +320,30 @@ export class DataRepository {
           JSON.stringify(warbandsArray, null, 2),
           'utf-8'
         );
-      } catch (err: unknown) {
+      } catch (error: unknown) {
         // Check for permission errors using type guard
-        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
+        if (this.isNodeError(error) && (error.code === 'EACCES' || error.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot write to file ${this.filePath}`,
             PersistenceErrorCode.PERMISSION_ERROR,
-            { path: this.filePath, originalError: err.message }
+            { path: this.filePath, originalError: error.message }
           );
         }
         // Other file write errors
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         throw new PersistenceError(
           `Failed to write warband data to file: ${errorMessage}`,
           PersistenceErrorCode.FILE_WRITE_ERROR,
           { path: this.filePath, originalError: errorMessage }
         );
       }
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       // Re-throw PersistenceErrors as-is
-      if (err instanceof PersistenceError) {
-        throw err;
+      if (error instanceof PersistenceError) {
+        throw error;
       }
       // Wrap unexpected errors
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new PersistenceError(
         `Unexpected error during file persistence: ${errorMessage}`,
         PersistenceErrorCode.FILE_WRITE_ERROR,
@@ -366,16 +366,16 @@ export class DataRepository {
       const dir = path.dirname(this.filePath);
       try {
         await fs.mkdir(dir, { recursive: true });
-      } catch (err: unknown) {
+      } catch (error: unknown) {
         // Check for permission errors using type guard
-        if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
+        if (this.isNodeError(error) && (error.code === 'EACCES' || error.code === 'EPERM')) {
           throw new PersistenceError(
             `Permission denied: Cannot create directory ${dir}`,
             PersistenceErrorCode.PERMISSION_ERROR,
-            { path: dir, originalError: err.message }
+            { path: dir, originalError: error.message }
           );
         }
-        throw err;
+        throw error;
       }
 
       try {
@@ -386,8 +386,8 @@ export class DataRepository {
         let warbandsArray: Warband[];
         try {
           warbandsArray = JSON.parse(data);
-        } catch (parseErr: unknown) {
-          const errorMessage = parseErr instanceof Error ? parseErr.message : 'Unknown parse error';
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown parse error';
           throw new PersistenceError(
             `Failed to parse warband data: File contains invalid JSON`,
             PersistenceErrorCode.JSON_PARSE_ERROR,
@@ -401,28 +401,30 @@ export class DataRepository {
         // Populate cache
         for (const warband of warbandsArray) {
           // Convert date strings back to Date objects
+          // Type assertion needed: JSON.parse returns dates as strings, not Date objects
+          // Safe because parseTimestamp accepts string and returns Date
           warband.createdAt = parseTimestamp(warband.createdAt as any);
           warband.updatedAt = parseTimestamp(warband.updatedAt as any);
           
           this.cache.set(warband.id, warband);
         }
-      } catch (err: unknown) {
+      } catch (error: unknown) {
         // If file doesn't exist, create an empty one
-        if (this.isNodeError(err) && err.code === 'ENOENT') {
+        if (this.isNodeError(error) && error.code === 'ENOENT') {
           await this.persistToFile();
-        } else if (this.isNodeError(err) && (err.code === 'EACCES' || err.code === 'EPERM')) {
+        } else if (this.isNodeError(error) && (error.code === 'EACCES' || error.code === 'EPERM')) {
           // Permission error reading file
           throw new PersistenceError(
             `Permission denied: Cannot read file ${this.filePath}`,
             PersistenceErrorCode.PERMISSION_ERROR,
-            { path: this.filePath, originalError: err.message }
+            { path: this.filePath, originalError: error.message }
           );
-        } else if (err instanceof PersistenceError) {
+        } else if (error instanceof PersistenceError) {
           // Re-throw PersistenceErrors (like JSON parse errors)
-          throw err;
+          throw error;
         } else {
           // Other file read errors
-          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           throw new PersistenceError(
             `Failed to read warband data from file: ${errorMessage}`,
             PersistenceErrorCode.FILE_READ_ERROR,
@@ -430,16 +432,17 @@ export class DataRepository {
           );
         }
       }
-    } catch (err) {
+    } catch (error: unknown) {
       // Re-throw PersistenceErrors as-is
-      if (err instanceof PersistenceError) {
-        throw err;
+      if (error instanceof PersistenceError) {
+        throw error;
       }
-      // Wrap unexpected errors
+      // Wrap unexpected errors with type guard
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new PersistenceError(
-        `Unexpected error during initialization: ${(err as Error).message}`,
+        `Unexpected error during initialization: ${errorMessage}`,
         PersistenceErrorCode.FILE_READ_ERROR,
-        { originalError: (err as Error).message }
+        { originalError: errorMessage }
       );
     }
   }

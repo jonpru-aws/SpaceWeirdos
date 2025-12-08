@@ -10,8 +10,8 @@ import {
   SpeedLevel,
   DiceLevel,
   FirepowerLevel
-} from '../models/types';
-import { createCostModifierStrategy } from './CostModifierStrategy';
+} from '../models/types.js';
+import { createCostModifierStrategy } from './CostModifierStrategy.js';
 
 /**
  * Cost Engine Service
@@ -69,15 +69,19 @@ export class CostEngine {
     // Type assertions are safe: level parameter type matches the specific attribute level type
     // TypeScript can't narrow the union type based on the attribute check
     if (attribute === 'speed') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.speed[level as SpeedLevel]; // Type assertion documented above
+      baseCost = CostEngine.ATTRIBUTE_COSTS.speed[level as SpeedLevel];
     } else if (attribute === 'defense') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.defense[level as DiceLevel]; // Type assertion documented above
+      // Type assertion safe: level is DiceLevel when attribute is 'defense'
+      baseCost = CostEngine.ATTRIBUTE_COSTS.defense[level as DiceLevel];
     } else if (attribute === 'firepower') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.firepower[level as FirepowerLevel]; // Type assertion documented above
+      // Type assertion safe: level is FirepowerLevel when attribute is 'firepower'
+      baseCost = CostEngine.ATTRIBUTE_COSTS.firepower[level as FirepowerLevel];
     } else if (attribute === 'prowess') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.prowess[level as DiceLevel]; // Type assertion documented above
+      // Type assertion safe: level is DiceLevel when attribute is 'prowess'
+      baseCost = CostEngine.ATTRIBUTE_COSTS.prowess[level as DiceLevel];
     } else if (attribute === 'willpower') {
-      baseCost = CostEngine.ATTRIBUTE_COSTS.willpower[level as DiceLevel]; // Type assertion documented above
+      // Type assertion safe: level is DiceLevel when attribute is 'willpower'
+      baseCost = CostEngine.ATTRIBUTE_COSTS.willpower[level as DiceLevel];
     }
 
     // Apply warband ability modifiers using strategy pattern

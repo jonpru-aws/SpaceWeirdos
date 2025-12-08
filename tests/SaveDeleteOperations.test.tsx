@@ -4,10 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { WarbandEditor } from '../src/frontend/components/WarbandEditor';
 import { WarbandList } from '../src/frontend/components/WarbandList';
 import { WarbandProvider } from '../src/frontend/contexts/WarbandContext';
-import { DataRepository } from '../src/backend/services/DataRepository';
-import { CostEngine } from '../src/backend/services/CostEngine';
-import { ValidationService } from '../src/backend/services/ValidationService';
 import { Warband } from '../src/backend/models/types';
+import * as apiClientModule from '../src/frontend/services/apiClient';
 
 /**
  * Save/Delete Operations Tests
@@ -18,9 +16,6 @@ import { Warband } from '../src/backend/models/types';
  */
 
 describe('Save/Delete Operations', () => {
-  let dataRepository: DataRepository;
-  let costEngine: CostEngine;
-  let validationService: ValidationService;
   let mockOnSaveSuccess: ReturnType<typeof vi.fn>;
   let mockOnSaveError: ReturnType<typeof vi.fn>;
   let mockOnDeleteSuccess: ReturnType<typeof vi.fn>;
@@ -28,14 +23,14 @@ describe('Save/Delete Operations', () => {
   let mockOnBack: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    dataRepository = new DataRepository('', false); // Disable persistence for tests
-    costEngine = new CostEngine();
-    validationService = new ValidationService();
     mockOnSaveSuccess = vi.fn();
     mockOnSaveError = vi.fn();
     mockOnDeleteSuccess = vi.fn();
     mockOnDeleteError = vi.fn();
     mockOnBack = vi.fn();
+    
+    // Reset all mocks
+    vi.clearAllMocks();
   });
 
   /**
@@ -45,12 +40,18 @@ describe('Save/Delete Operations', () => {
   it('should validate warband before saving', async () => {
     const user = userEvent.setup();
 
+    // Mock API client to return validation error
+    vi.spyOn(apiClientModule.apiClient, 'validateWarband').mockResolvedValue({
+      valid: false,
+      errors: [{
+        field: 'name',
+        message: 'Warband name is required',
+        severity: 'error'
+      }]
+    });
+
     render(
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         <WarbandEditor
           onBack={mockOnBack}
           onSaveSuccess={mockOnSaveSuccess}
@@ -88,12 +89,24 @@ describe('Save/Delete Operations', () => {
   it('should show success notification on successful save', async () => {
     const user = userEvent.setup();
 
+    // Mock API client for successful save
+    vi.spyOn(apiClientModule.apiClient, 'validateWarband').mockResolvedValue({
+      valid: true,
+      errors: []
+    });
+    vi.spyOn(apiClientModule.apiClient, 'createWarband').mockResolvedValue({
+      id: 'new-id',
+      name: 'Test Warband',
+      ability: null,
+      pointLimit: 75,
+      totalCost: 0,
+      weirdos: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     render(
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         <WarbandEditor
           onBack={mockOnBack}
           onSaveSuccess={mockOnSaveSuccess}
@@ -132,7 +145,7 @@ describe('Save/Delete Operations', () => {
   it('should show confirmation dialog before deleting', async () => {
     const user = userEvent.setup();
 
-    // Create and save a warband first
+    // Create warband data
     const warband: Warband = {
       id: 'test-id',
       name: 'Test Warband',
@@ -143,14 +156,12 @@ describe('Save/Delete Operations', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    dataRepository.saveWarband(warband);
+
+    // Mock API client
+    vi.spyOn(apiClientModule.apiClient, 'getWarband').mockResolvedValue(warband);
 
     render(
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         <WarbandEditor
           warbandId="test-id"
           onBack={mockOnBack}
@@ -186,7 +197,7 @@ describe('Save/Delete Operations', () => {
   it('should delete warband and show success notification after confirmation', async () => {
     const user = userEvent.setup();
 
-    // Create and save a warband first
+    // Create warband data
     const warband: Warband = {
       id: 'test-id',
       name: 'Test Warband',
@@ -197,14 +208,13 @@ describe('Save/Delete Operations', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    dataRepository.saveWarband(warband);
+
+    // Mock API client
+    vi.spyOn(apiClientModule.apiClient, 'getWarband').mockResolvedValue(warband);
+    vi.spyOn(apiClientModule.apiClient, 'deleteWarband').mockResolvedValue(undefined);
 
     render(
-      <WarbandProvider
-        dataRepository={dataRepository}
-        costEngine={costEngine}
-        validationService={validationService}
-      >
+      <WarbandProvider>
         <WarbandEditor
           warbandId="test-id"
           onBack={mockOnBack}
@@ -240,8 +250,8 @@ describe('Save/Delete Operations', () => {
       expect(mockOnDeleteError).not.toHaveBeenCalled();
     });
 
-    // Warband should be deleted from repository
-    expect(dataRepository.getWarband('test-id')).toBeNull();
+    // API should have been called
+    expect(apiClientModule.apiClient.deleteWarband).toHaveBeenCalledWith('test-id');
   });
 
   /**
@@ -253,7 +263,7 @@ describe('Save/Delete Operations', () => {
     const mockOnCreateWarband = vi.fn();
     const mockOnLoadWarband = vi.fn();
 
-    // Create and save a warband first
+    // Create warband data
     const warband: Warband = {
       id: 'test-id',
       name: 'Test Warband',
@@ -264,11 +274,13 @@ describe('Save/Delete Operations', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    dataRepository.saveWarband(warband);
+
+    // Mock API client
+    vi.spyOn(apiClientModule.apiClient, 'getAllWarbands').mockResolvedValue([warband]);
+    vi.spyOn(apiClientModule.apiClient, 'deleteWarband').mockResolvedValue(undefined);
 
     render(
       <WarbandList
-        dataRepository={dataRepository}
         onCreateWarband={mockOnCreateWarband}
         onLoadWarband={mockOnLoadWarband}
         onDeleteSuccess={mockOnDeleteSuccess}
@@ -291,6 +303,9 @@ describe('Save/Delete Operations', () => {
       expect(screen.getByText(/confirm deletion/i)).toBeInTheDocument();
     });
 
+    // Mock the second call to getAllWarbands (after deletion) to return empty array
+    vi.spyOn(apiClientModule.apiClient, 'getAllWarbands').mockResolvedValue([]);
+
     // Confirm deletion
     const confirmButton = screen.getByRole('button', { name: /confirm deletion/i });
     await user.click(confirmButton);
@@ -300,6 +315,9 @@ describe('Save/Delete Operations', () => {
       expect(mockOnDeleteSuccess).toHaveBeenCalled();
       expect(mockOnDeleteError).not.toHaveBeenCalled();
     });
+
+    // API should have been called
+    expect(apiClientModule.apiClient.deleteWarband).toHaveBeenCalledWith('test-id');
 
     // Warband should be removed from list
     await waitFor(() => {

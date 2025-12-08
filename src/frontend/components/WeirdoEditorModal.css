@@ -1,0 +1,149 @@
+/**
+ * WeirdoEditorModal Styles
+ * 
+ * Modal dialog for editing weirdos with overlay and centered content.
+ * Uses design system z-index tokens and provides smooth animations.
+ */
+
+/* Overlay backdrop (Requirement 8.8) */
+.weirdo-editor-modal__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-index-modal, 1000);
+  padding: var(--spacing-4, 1rem);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal content container */
+.weirdo-editor-modal__content {
+  background-color: var(--color-background, #ffffff);
+  border-radius: var(--border-radius-lg, 8px);
+  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease-out;
+  outline: none;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal header (Requirement 8.2) */
+.weirdo-editor-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4, 1rem) var(--spacing-6, 1.5rem);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.weirdo-editor-modal__title {
+  margin: 0;
+  font-size: var(--font-size-xl, 1.25rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-primary, #111827);
+}
+
+.weirdo-editor-modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 0.5rem);
+}
+
+.weirdo-editor-modal__delete-button {
+  padding: var(--spacing-2, 0.5rem) var(--spacing-3, 0.75rem);
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+/* Close button (Requirement 8.3) */
+.weirdo-editor-modal__close-button {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-md, 4px);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.weirdo-editor-modal__close-button:hover {
+  background-color: var(--color-background-hover, #f3f4f6);
+  color: var(--color-text-primary, #111827);
+}
+
+.weirdo-editor-modal__close-button:focus {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Modal body (scrollable) */
+.weirdo-editor-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-6, 1.5rem);
+}
+
+/* Remove the empty state message from weirdo editor when in modal */
+.weirdo-editor-modal__body .weirdo-editor__empty {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .weirdo-editor-modal__overlay {
+    padding: 0;
+  }
+
+  .weirdo-editor-modal__content {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .weirdo-editor-modal__header {
+    padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+  }
+
+  .weirdo-editor-modal__title {
+    font-size: var(--font-size-lg, 1.125rem);
+  }
+
+  .weirdo-editor-modal__body {
+    padding: var(--spacing-4, 1rem);
+  }
+}

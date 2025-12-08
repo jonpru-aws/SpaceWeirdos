@@ -1,13 +1,13 @@
 [
   {
-    "id": "5c289ac5-b90e-4b85-b175-dfbe6adf0806",
+    "id": "5179c780-feab-426a-b36d-88911558f694",
     "name": "New Warband",
-    "ability": "Cyborgs",
-    "pointLimit": 75,
-    "totalCost": 17,
+    "ability": "Mutants",
+    "pointLimit": 125,
+    "totalCost": 0,
     "weirdos": [
       {
-        "id": "temp-1765000819456",
+        "id": "temp-1765217385190",
         "name": "New Leader",
         "type": "leader",
         "attributes": {
@@ -19,12 +19,12 @@
         },
         "closeCombatWeapons": [
           {
-            "id": "claws-teeth",
-            "name": "Claws & Teeth",
+            "id": "unarmed",
+            "name": "Unarmed",
             "type": "close",
-            "baseCost": 2,
+            "baseCost": 0,
             "maxActions": 3,
-            "notes": ""
+            "notes": "-1DT to Power rolls"
           }
         ],
         "rangedWeapons": [],
@@ -32,10 +32,10 @@
         "psychicPowers": [],
         "leaderTrait": null,
         "notes": "",
-        "totalCost": 8
+        "totalCost": 6
       },
       {
-        "id": "temp-1765000855184",
+        "id": "temp-1765217388632",
         "name": "New Trooper",
         "type": "trooper",
         "attributes": {
@@ -47,12 +47,12 @@
         },
         "closeCombatWeapons": [
           {
-            "id": "horrible-claws-teeth",
-            "name": "Horrible Claws & Teeth",
+            "id": "unarmed",
+            "name": "Unarmed",
             "type": "close",
-            "baseCost": 3,
+            "baseCost": 0,
             "maxActions": 3,
-            "notes": "+1 to Under Attack rolls"
+            "notes": "-1DT to Power rolls"
           }
         ],
         "rangedWeapons": [],
@@ -60,10 +60,10 @@
         "psychicPowers": [],
         "leaderTrait": null,
         "notes": "",
-        "totalCost": 9
+        "totalCost": 6
       }
     ],
-    "createdAt": "2025-12-06T05:25:49.592Z",
-    "updatedAt": "2025-12-06T06:01:11.507Z"
+    "createdAt": "2025-12-08T18:09:57.823Z",
+    "updatedAt": "2025-12-08T18:09:57.823Z"
   }
 ]

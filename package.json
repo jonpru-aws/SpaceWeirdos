@@ -1,7 +1,7 @@
 {
   "name": "space-weirdos",
   "version": "1.0.0",
-  "description": "TypeScript/React/Express application with property-based testing",
+  "description": "A comprehensive warband builder for the Space Weirdos tabletop game with context-aware validation, intelligent warnings, and real-time cost calculation",
   "type": "module",
   "scripts": {
     "dev:backend": "tsx watch src/backend/server.ts",
@@ -20,6 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
+    "fix": "^0.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -42,7 +43,7 @@
     "supertest": "^7.1.4",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11",
-    "vitest": "^1.2.0"
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
   }
 }

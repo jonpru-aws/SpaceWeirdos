@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { WarbandProvider, useWarband } from '../src/frontend/contexts/WarbandContext';
-import { CostEngine } from '../src/backend/services/CostEngine';
 import { ReactNode } from 'react';
 import * as apiClient from '../src/frontend/services/apiClient';
 
@@ -10,17 +9,35 @@ import * as apiClient from '../src/frontend/services/apiClient';
  * 
  * Tests warband creation, weirdo operations, cost calculations, and validation integration.
  * Requirements: 1.1-1.7, 3.1-3.3
+ * 
+ * NOTE: WarbandProvider was refactored to use API client directly instead of accepting
+ * costEngine, dataRepository, and validationService props. The provider now only accepts
+ * children. All API calls must be mocked in beforeEach for tests to work properly.
  */
 
 describe('WarbandContext', () => {
-  let costEngine: CostEngine;
-
   beforeEach(() => {
-    // Create fresh instances for each test
-    costEngine = new CostEngine();
+    // Mock API calls - required because WarbandProvider uses apiClient internally
+    vi.spyOn(apiClient.apiClient, 'calculateCostRealTime').mockResolvedValue({
+      data: {
+        totalCost: 10,
+        breakdown: {
+          baseCost: 10,
+          attributeCost: 0,
+          weaponsCost: 0,
+          equipmentCost: 0,
+          psychicPowersCost: 0,
+          modifiers: []
+        }
+      }
+    });
     
-    // Mock API calls
-    vi.spyOn(apiClient.apiClient, 'validate').mockResolvedValue({
+    vi.spyOn(apiClient.apiClient, 'validateWarband').mockResolvedValue({
+      valid: true,
+      errors: []
+    });
+    
+    vi.spyOn(apiClient.apiClient, 'validateWeirdo').mockResolvedValue({
       valid: true,
       errors: []
     });
@@ -55,9 +72,7 @@ describe('WarbandContext', () => {
      */
     it('should create warband with default values', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -84,9 +99,7 @@ describe('WarbandContext', () => {
 
     it('should create warband with 125 point limit', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -117,9 +130,7 @@ describe('WarbandContext', () => {
      */
     it('should add leader weirdo to warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -143,9 +154,7 @@ describe('WarbandContext', () => {
 
     it('should add trooper weirdo to warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -167,9 +176,7 @@ describe('WarbandContext', () => {
 
     it('should auto-select newly added weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -190,9 +197,7 @@ describe('WarbandContext', () => {
 
     it('should throw error when adding second leader', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -221,9 +226,7 @@ describe('WarbandContext', () => {
      */
     it('should remove weirdo from warband', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -249,9 +252,7 @@ describe('WarbandContext', () => {
 
     it('should clear selection when removing selected weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -282,9 +283,7 @@ describe('WarbandContext', () => {
      */
     it('should calculate weirdo cost when adding weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -305,9 +304,7 @@ describe('WarbandContext', () => {
 
     it('should recalculate warband cost when adding weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -330,9 +327,7 @@ describe('WarbandContext', () => {
 
     it('should recalculate warband cost when removing weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -359,10 +354,27 @@ describe('WarbandContext', () => {
     });
 
     it('should recalculate costs when updating weirdo attributes', async () => {
+      // Mock cost calculation to return different values for different attributes
+      let callCount = 0;
+      vi.spyOn(apiClient.apiClient, 'calculateCostRealTime').mockImplementation(async () => {
+        callCount++;
+        return {
+          data: {
+            totalCost: callCount === 1 ? 10 : 20, // First call returns 10, subsequent calls return 20
+            breakdown: {
+              baseCost: 10,
+              attributeCost: callCount === 1 ? 0 : 10,
+              weaponsCost: 0,
+              equipmentCost: 0,
+              psychicPowersCost: 0,
+              modifiers: []
+            }
+          }
+        };
+      });
+
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -393,18 +405,16 @@ describe('WarbandContext', () => {
         });
       });
 
-      // Wait for debounced cost update (100ms)
+      // Wait for debounced cost update (100ms debounce + async API call)
       await waitFor(() => {
         const newCost = result.current.currentWarband?.weirdos[0].totalCost;
         expect(newCost).toBeGreaterThan(initialCost!);
-      }, { timeout: 200 });
+      }, { timeout: 5000 });
     });
 
     it('should provide getWeirdoCost method', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -428,9 +438,7 @@ describe('WarbandContext', () => {
 
     it('should provide getWarbandCost method', () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -457,9 +465,7 @@ describe('WarbandContext', () => {
      */
     it('should validate warband and store errors', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -487,9 +493,7 @@ describe('WarbandContext', () => {
 
     it('should validate individual weirdo', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -518,9 +522,7 @@ describe('WarbandContext', () => {
 
     it('should update validation errors map', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );
@@ -544,9 +546,7 @@ describe('WarbandContext', () => {
 
     it('should clear validation errors when weirdo is removed', async () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <WarbandProvider
-          costEngine={costEngine}
-        >
+        <WarbandProvider>
           {children}
         </WarbandProvider>
       );

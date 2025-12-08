@@ -43,6 +43,29 @@ I want to create a complete spec for [feature description]...
 
 This provides all spec-related guidance for the full workflow.
 
+## Current Architecture Patterns
+
+### API-First Design
+All frontend-backend communication uses dedicated HTTP API endpoints:
+- Frontend components never directly access backend services
+- Consistent request/response structures with proper error handling
+- Type-safe API client layer (`src/frontend/services/apiClient.ts`)
+- Clear separation enables independent testing and development
+
+### Context-Aware Validation
+Intelligent validation system that adapts to warband state:
+- Backend ValidationService generates warnings based on game rules
+- Context-aware logic considers existing 25-point weirdos
+- Warnings trigger within 3 points of applicable limits
+- Clear messaging helps users understand which limits apply
+
+### Real-time Feedback
+User interface provides immediate visual feedback:
+- Cost calculations complete in <100ms with caching
+- Context-aware warning indicators appear when approaching limits
+- Sticky displays remain visible during scrolling
+- Optimistic updates provide seamless interaction
+
 ## When Executing Tasks from Specs
 
 No special inclusion needed! The task execution standards are automatically loaded:

@@ -111,89 +111,15 @@
 
 ## Remaining Tasks
 
-- [x] 12. Write property-based tests
+All tasks for this spec have been completed. The warband list navigation feature is fully implemented with:
 
+- ✅ API client for backend communication
+- ✅ Warband list view with loading, empty, and error states
+- ✅ Warband creation and deletion flows
+- ✅ Delete confirmation dialog with accessibility features
+- ✅ Toast notification system
+- ✅ Navigation between list and editor views
+- ✅ Complete styling with design system
+- ✅ Comprehensive unit test coverage
 
-
-
-
-
-
-- [x] 12.1 Write property test for warband list display
-
-
-
-
-  - **Property 1: Warband list displays complete information**
-  - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
-  - Generate random warband sets
-  - Verify all information displayed correctly
-  - Test empty state when no warbands
-
-- [x] 12.2 Write property test for warband initialization
-
-
-
-
-  - **Property 2: New warband initializes with defaults**
-  - **Validates: Requirements 2.3, 2.4, 2.5**
-  - Test new warband has name "New Warband"
-  - Test point limit defaults to 75
-  - Test ability defaults to null
-
-- [x] 12.3 Write property test for delete confirmation
-
-
-
-  - **Property 3: Delete confirmation prevents accidental deletion**
-  - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
-  - Generate random delete requests
-  - Verify confirmation dialog appears
-  - Test warband only deleted on confirm
-  - Test warband retained on cancel
-
-- [x] 12.4 Write property test for notification lifecycle
-
-
-
-  - **Property 4: Notifications provide feedback and auto-dismiss**
-  - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 4.6**
-  - Generate random operations
-  - Verify notifications appear
-  - Test auto-dismiss timing
-  - Test manual dismiss
-
-- [x] 12.5 Write property test for navigation data handling
-
-
-
-  - **Property 5: Navigation preserves or loads warband data**
-  - **Validates: Requirements 6.2, 6.4**
-  - Generate random navigation sequences
-  - Verify data loads correctly on navigation to editor
-  - Verify list refreshes on navigation from editor
-
-- [x] 13. Final verification
-
-
-
-
-
-
-- [x] 13.1 Run existing unit tests
-
-
-  - Verify WarbandList.test.tsx passes
-  - Fix any failing tests
-  - Verify API integration works correctly
-  - _Requirements: All_
-
-- [x] 13.2 Manual testing verification
-
-
-  - Test complete warband creation flow via API
-  - Test complete warband deletion flow via API
-  - Test navigation between list and editor
-  - Test error handling for API failures
-  - Verify all acceptance criteria met
-  - _Requirements: All, 7.1-7.7_
+The implementation satisfies all requirements from the requirements document and follows the design specified in the design document.

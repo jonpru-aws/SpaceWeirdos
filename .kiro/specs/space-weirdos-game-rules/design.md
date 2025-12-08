@@ -136,9 +136,16 @@ interface ValidationError {
   code: string;
 }
 
+interface ValidationWarning {
+  field: string;
+  message: string;
+  code: string;
+}
+
 interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
+  warnings: ValidationWarning[];
 }
 
 // Cost breakdown for transparency
@@ -342,6 +349,10 @@ Before defining the correctness properties, let me analyze each acceptance crite
 - Thoughts: This is a complex constraint involving warband state. We can test this as a property about warband composition.
 - Testable: yes - property
 
+7.5-7.9: Warning when approaching point limits
+- Thoughts: This is about generating warnings (not errors) when a weirdo's cost is within 3 points of their applicable limit. The applicable limit depends on whether a 25-point weirdo already exists in the warband. We can test this as a property that checks warning generation for all weirdos in the warning range, considering warband context.
+- Testable: yes - property
+
 **Requirement 8: Warband Total Limits**
 8.1: WHEN calculating warband total cost THEN the Cost Engine SHALL sum all weirdo costs
 - Thoughts: General rule about cost accumulation.
@@ -405,6 +416,10 @@ After reviewing all properties, I've identified the following consolidations:
 *For any* warband, at most one weirdo may have a cost between 21-25 points, and all other weirdos must have a cost of 20 points or less.
 **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
 
+**Property 7a: Cost approaching limit warnings**
+*For any* weirdo in a warband, when the weirdo's cost is within 3 points of the applicable limit, a warning must be generated without blocking validation. The applicable limit is determined as follows: (1) if no 25-point weirdo exists in the warband, the current weirdo can be 18-20 points (warning for 20-point limit) or 23-25 points (warning for 25-point limit), (2) if a 25-point weirdo already exists and this is a different weirdo, warn at 18-20 points (20-point limit), (3) if a 25-point weirdo already exists and this is that same weirdo, warn at 23-25 points (25-point limit).
+**Validates: Requirements 7.5, 7.6, 7.7, 7.8, 7.9**
+
 **Property 8: Warband point limit enforcement**
 *For any* warband with point limit L, the sum of all weirdo costs must not exceed L for the warband to be valid.
 **Validates: Requirements 8.2, 8.3**
@@ -425,9 +440,9 @@ After reviewing all properties, I've identified the following consolidations:
 
 The system uses a structured approach to error handling:
 
-### Validation Errors
+### Validation Errors and Warnings
 
-Validation errors are collected and returned as structured objects:
+Validation errors and warnings are collected and returned as structured objects:
 
 ```typescript
 interface ValidationError {
@@ -435,7 +450,17 @@ interface ValidationError {
   message: string;    // Human-readable error message
   code: string;       // Machine-readable error code
 }
+
+interface ValidationWarning {
+  field: string;      // e.g., "weirdo.cost"
+  message: string;    // Human-readable warning message
+  code: string;       // Machine-readable warning code
+}
 ```
+
+**Key Distinction:**
+- **Errors** block validation (`valid: false`) and prevent the action
+- **Warnings** inform the user (`valid: true`) but do not prevent the action
 
 **Error Codes:**
 
@@ -446,6 +471,10 @@ interface ValidationError {
 - `COST_EXCEEDED`: Point cost too high
 - `INVALID_TRAIT`: Leader trait on trooper
 - `WARBAND_INVALID`: Warband structure violation
+
+**Warning Codes:**
+
+- `COST_APPROACHING_LIMIT`: Weirdo cost is within 3 points of applicable limit
 
 ### Cost Calculation Errors
 

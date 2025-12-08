@@ -97,6 +97,20 @@
   - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
   - Test that at most one weirdo can be 21-25 points
 
+- [x] 6.2 Add warning generation for approaching cost limits
+  - Update `validateWeirdoCost` method to generate warnings
+  - Add warning when weirdo cost is within 3 points of applicable limit
+  - For weirdos that can be 25 points: warn at 23-25 points
+  - For weirdos limited to 20 points: warn at 18-20 points
+  - Ensure warnings do not block validation (valid remains true)
+  - _Requirements: 7.5, 7.6, 7.7, 7.8_
+
+- [ ]* 6.3 Write property test for cost approaching limit warnings
+  - **Property 7a: Cost approaching limit warnings**
+  - **Validates: Requirements 7.5, 7.6, 7.7, 7.8**
+  - Test that warnings are generated within 3 points of applicable limit
+  - Test that warnings do not affect validation result (valid remains true)
+
 - [x] 7. Implement ValidationService for warband validation
   - Add `validateWarbandStructure` method (name, point limit, leader presence)
   - Add `validateWarbandCost` method (total cost within point limit)

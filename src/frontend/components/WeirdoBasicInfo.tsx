@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Weirdo } from '../../backend/models/types';
+import type { Weirdo } from '../../backend/models/types';
 
 /**
  * WeirdoBasicInfo Component

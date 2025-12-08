@@ -1,16 +1,17 @@
 /**
  * WarbandEditor Styles
  * 
- * Three-section layout with clear visual organization.
- * Requirements: 10.1, 10.2, 10.3, 10.4
+ * Two-section layout with clear visual organization.
+ * Weirdo editor is now a modal overlay.
+ * Requirements: 10.1, 10.2
  */
 
 .warband-editor {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   padding: 1.5rem;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -112,8 +113,7 @@
 
 /* Section styling */
 .warband-editor__properties,
-.warband-editor__weirdos-list,
-.warband-editor__weirdo-editor {
+.warband-editor__weirdos-list {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -122,8 +122,7 @@
 }
 
 .warband-editor__properties h2,
-.warband-editor__weirdos-list h2,
-.warband-editor__weirdo-editor h2 {
+.warband-editor__weirdos-list h2 {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
   color: #333;
@@ -132,16 +131,6 @@
 }
 
 /* Responsive layout for smaller screens */
-@media (max-width: 1200px) {
-  .warband-editor {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .warband-editor__weirdo-editor {
-    grid-column: 1 / -1;
-  }
-}
-
 @media (max-width: 768px) {
   .warband-editor {
     grid-template-columns: 1fr;

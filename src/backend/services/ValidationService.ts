@@ -2,21 +2,22 @@ import {
   Weirdo,
   Warband,
   ValidationError,
+  ValidationWarning,
   ValidationResult,
   WarbandAbility,
   Attributes
-} from '../models/types';
-import { CostEngine } from './CostEngine';
+} from '../models/types.js';
+import { CostEngine } from './CostEngine.js';
 import {
   POINT_LIMITS,
   TROOPER_LIMITS,
   EQUIPMENT_LIMITS
-} from '../constants/costs';
+} from '../constants/costs.js';
 import {
   VALIDATION_MESSAGES,
   getValidationMessage,
   ValidationErrorCode
-} from '../constants/validationMessages';
+} from '../constants/validationMessages.js';
 
 /**
  * Generic validator factory function
@@ -33,7 +34,24 @@ interface ValidatorConfig<T> {
 
 /**
  * Validation Service
- * Enforces all game rules and constraints
+ * 
+ * Provides comprehensive validation for Space Weirdos game rules with context-aware warnings.
+ * Validates individual weirdos and complete warbands against all game constraints.
+ * 
+ * Key responsibilities:
+ * - Validate weirdo attributes, weapons, equipment, and costs
+ * - Enforce warband composition and point limits
+ * - Apply faction-specific rules and modifiers
+ * - Generate context-aware warnings based on warband composition
+ * - Generate structured error messages and warnings for UI display
+ * 
+ * Warning System:
+ * - Warns when weirdo cost is within 3 points of applicable limits
+ * - Adapts warnings based on whether a 25-point weirdo already exists
+ * - Provides clear messaging about which limits apply to each weirdo
+ * 
+ * The service is stateless and can be used across different contexts
+ * (UI validation, API endpoints, data import/export).
  */
 export class ValidationService {
   private costEngine: CostEngine;
@@ -287,7 +305,7 @@ export class ValidationService {
     const weirdoCost = this.costEngine.calculateWeirdoCost(weirdo, warband.ability);
     
     // Check if there's already a 21-25 point weirdo in the warband
-    const has25PointWeirdo = warband.weirdos.some(w => {
+    const has25PointWeirdo = warband.weirdos.some((w: Weirdo) => {
       if (w.id === weirdo.id) return false; // Don't count the current weirdo
       const cost = this.costEngine.calculateWeirdoCost(w, warband.ability);
       return cost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && cost <= TROOPER_LIMITS.SPECIAL_SLOT_MAX;
@@ -316,10 +334,89 @@ export class ValidationService {
   }
 
   /**
+   * Generate warnings for weirdo cost approaching limits
+   * Requirements: 7.5, 7.6, 7.7, 7.8, 7.9
+   * 
+   * Warnings are generated when cost is within 3 points of applicable limit:
+   * - No 25-point weirdo exists: warn at 18-20 (20-limit) or 23-25 (25-limit)
+   * - 25-point weirdo exists (different weirdo): warn at 18-20 (20-limit only)
+   * - 25-point weirdo exists (same weirdo): warn at 23-25 (25-limit)
+   */
+  private generateWeirdoCostWarnings(weirdo: Weirdo, warband: Warband): ValidationWarning[] {
+    const warnings: ValidationWarning[] = [];
+    
+    // Skip warning generation if attributes are not set (will be caught by validation errors)
+    if (!weirdo.attributes) {
+      return warnings;
+    }
+    
+    const weirdoCost = this.costEngine.calculateWeirdoCost(weirdo, warband.ability);
+    const warningThreshold = 3;
+    
+    // Check if this weirdo is in the 21-25 point range (is the 25-point weirdo)
+    const isThis25PointWeirdo = weirdoCost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && 
+                                 weirdoCost <= TROOPER_LIMITS.MAXIMUM_LIMIT;
+    
+    // Check if there's a DIFFERENT 21-25 point weirdo in the warband
+    const hasOther25PointWeirdo = warband.weirdos.some((w: Weirdo) => {
+      if (w.id === weirdo.id) return false; // Don't count the current weirdo
+      const cost = this.costEngine.calculateWeirdoCost(w, warband.ability);
+      return cost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && cost <= TROOPER_LIMITS.MAXIMUM_LIMIT;
+    });
+
+    // Determine which limits to check based on warband context
+    if (hasOther25PointWeirdo) {
+      // Another weirdo is using the 25-point slot, so this weirdo is limited to 20
+      // Warn if within 3 points of 20-point limit (18-20)
+      const pointsFrom20 = TROOPER_LIMITS.STANDARD_LIMIT - weirdoCost;
+      if (pointsFrom20 >= 0 && pointsFrom20 <= warningThreshold) {
+        warnings.push({
+          field: `weirdo.${weirdo.id}.totalCost`,
+          message: `Cost is within ${pointsFrom20} point${pointsFrom20 === 1 ? '' : 's'} of the ${TROOPER_LIMITS.STANDARD_LIMIT}-point limit`,
+          code: 'COST_APPROACHING_LIMIT'
+        });
+      }
+    } else if (isThis25PointWeirdo) {
+      // This weirdo is using the 25-point slot
+      // Warn if within 3 points of 25-point limit (23-25)
+      const pointsFrom25 = TROOPER_LIMITS.MAXIMUM_LIMIT - weirdoCost;
+      if (pointsFrom25 >= 0 && pointsFrom25 <= warningThreshold) {
+        warnings.push({
+          field: `weirdo.${weirdo.id}.totalCost`,
+          message: `Cost is within ${pointsFrom25} point${pointsFrom25 === 1 ? '' : 's'} of the ${TROOPER_LIMITS.MAXIMUM_LIMIT}-point limit`,
+          code: 'COST_APPROACHING_LIMIT'
+        });
+      }
+    } else {
+      // No 25-point weirdo exists yet, so this weirdo could use either limit
+      // Warn if within 3 points of 20-point limit (18-20)
+      const pointsFrom20 = TROOPER_LIMITS.STANDARD_LIMIT - weirdoCost;
+      if (pointsFrom20 >= 0 && pointsFrom20 <= warningThreshold) {
+        warnings.push({
+          field: `weirdo.${weirdo.id}.totalCost`,
+          message: `Cost is within ${pointsFrom20} point${pointsFrom20 === 1 ? '' : 's'} of the ${TROOPER_LIMITS.STANDARD_LIMIT}-point limit`,
+          code: 'COST_APPROACHING_LIMIT'
+        });
+      }
+      // Also warn if within 3 points of 25-point limit (23-25) - could become the 25-point weirdo
+      const pointsFrom25 = TROOPER_LIMITS.MAXIMUM_LIMIT - weirdoCost;
+      if (pointsFrom25 >= 0 && pointsFrom25 <= warningThreshold) {
+        warnings.push({
+          field: `weirdo.${weirdo.id}.totalCost`,
+          message: `Cost is within ${pointsFrom25} point${pointsFrom25 === 1 ? '' : 's'} of the ${TROOPER_LIMITS.MAXIMUM_LIMIT}-point limit (premium weirdo slot)`,
+          code: 'COST_APPROACHING_LIMIT'
+        });
+      }
+    }
+
+    return warnings;
+  }
+
+  /**
    * Validate 25-point weirdo limit (only one allowed)
    */
   private validate25PointWeirdoLimit(warband: Warband): ValidationError | null {
-    const weirdosOver20 = warband.weirdos.filter(w => {
+    const weirdosOver20 = warband.weirdos.filter((w: Weirdo) => {
       const cost = this.costEngine.calculateWeirdoCost(w, warband.ability);
       return cost >= TROOPER_LIMITS.SPECIAL_SLOT_MIN && cost <= TROOPER_LIMITS.SPECIAL_SLOT_MAX;
     });
@@ -370,13 +467,15 @@ export class ValidationService {
   /**
    * Validates a single weirdo against all game rules and constraints.
    * Checks name, attributes, weapons, equipment limits, point limits, and leader traits.
+   * Also generates warnings for costs approaching limits.
    * 
    * @param weirdo - The weirdo to validate
    * @param warband - The warband context (needed for ability modifiers and point limit checks)
-   * @returns Array of validation errors (empty if valid)
+   * @returns Validation result with errors and warnings
    */
-  validateWeirdo(weirdo: Weirdo, warband: Warband): ValidationError[] {
+  validateWeirdo(weirdo: Weirdo, warband: Warband): ValidationResult {
     const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
 
     const nameError = this.validateWeirdoName(weirdo);
     if (nameError) errors.push(nameError);
@@ -399,19 +498,29 @@ export class ValidationService {
     const leaderTraitError = this.validateLeaderTrait(weirdo);
     if (leaderTraitError) errors.push(leaderTraitError);
 
-    return errors;
+    // Generate warnings for cost approaching limits
+    const costWarnings = this.generateWeirdoCostWarnings(weirdo, warband);
+    warnings.push(...costWarnings);
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 
   /**
    * Validates an entire warband against all game rules and constraints.
    * Checks warband-level properties (name, point limit, ability), all weirdos,
    * and warband-level constraints (25-point limit, total cost).
+   * Also collects warnings from individual weirdo validations.
    * 
    * @param warband - The warband to validate
-   * @returns Validation result with valid flag and array of errors
+   * @returns Validation result with valid flag, errors, and warnings
    */
   validateWarband(warband: Warband): ValidationResult {
     const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
 
     // Validate warband-level fields
     const nameError = this.validateWarbandName(warband.name);
@@ -423,10 +532,11 @@ export class ValidationService {
     const abilityError = this.validateWarbandAbility(warband.ability);
     if (abilityError) errors.push(abilityError);
 
-    // Validate each weirdo
+    // Validate each weirdo and collect warnings
     for (const weirdo of warband.weirdos) {
-      const weirdoErrors = this.validateWeirdo(weirdo, warband);
-      errors.push(...weirdoErrors);
+      const weirdoResult = this.validateWeirdo(weirdo, warband);
+      errors.push(...weirdoResult.errors);
+      warnings.push(...weirdoResult.warnings);
     }
 
     // Validate warband-level constraints
@@ -438,7 +548,8 @@ export class ValidationService {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
+      warnings
     };
   }
 
@@ -448,9 +559,9 @@ export class ValidationService {
    * ranged weapon requirements match firepower level.
    * 
    * @param weirdo - The weirdo to validate weapon requirements for
-   * @returns Array of validation errors (empty if valid)
+   * @returns Validation result with errors (no warnings for weapon requirements)
    */
-  validateWeaponRequirements(weirdo: Weirdo): ValidationError[] {
+  validateWeaponRequirements(weirdo: Weirdo): ValidationResult {
     const errors: ValidationError[] = [];
 
     const closeCombatError = this.validateCloseCombatWeaponRequirement(weirdo);
@@ -459,7 +570,11 @@ export class ValidationService {
     const rangedWeaponError = this.validateRangedWeaponRequirement(weirdo);
     if (rangedWeaponError) errors.push(rangedWeaponError);
 
-    return errors;
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
   }
 
   /**
