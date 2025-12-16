@@ -10,6 +10,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { DataRepository } from '../services/DataRepository.js';
+import { ValidationService } from '../services/ValidationService.js';
 import { WarbandImportExportService } from '../services/WarbandImportExportService.js';
 import { ImportExportController } from '../controllers/ImportExportController.js';
 import { ConfigurationManager } from '../config/ConfigurationManager.js';
@@ -20,9 +21,7 @@ import { ConfigurationManager } from '../config/ConfigurationManager.js';
 export function createImportExportRouter(repository: DataRepository): Router {
   const router = Router();
   
-  // Get configuration for file upload limits
-  const configManager = ConfigurationManager.getInstance();
-  const apiConfig = configManager.getApiConfig();
+  // Configuration could be used for file upload limits if needed in the future
   
   // Configure multer for file upload handling
   // Use memory storage for JSON files (they're typically small)
@@ -43,7 +42,11 @@ export function createImportExportRouter(repository: DataRepository): Router {
   });
 
   // Create service and controller instances
-  const importExportService = new WarbandImportExportService(repository);
+  const configManager = ConfigurationManager.getInstance();
+  const costConfig = configManager.getCostConfig();
+  const validationConfig = configManager.getValidationConfig();
+  const validationService = new ValidationService(costConfig, validationConfig);
+  const importExportService = new WarbandImportExportService(repository, validationService);
   const importExportController = new ImportExportController(importExportService);
 
   /**
@@ -84,7 +87,12 @@ export function createImportExportRouter(repository: DataRepository): Router {
         }
       } else if (req.body && typeof req.body === 'object') {
         // Use JSON data from request body
-        jsonData = req.body;
+        // Check if it's already wrapped in warbandData format (from frontend API calls)
+        if ('warbandData' in req.body) {
+          jsonData = req.body.warbandData;
+        } else {
+          jsonData = req.body;
+        }
       } else {
         return res.status(400).json({
           error: 'No data provided',
@@ -152,7 +160,12 @@ export function createImportExportRouter(repository: DataRepository): Router {
         }
       } else if (req.body && typeof req.body === 'object') {
         // Use JSON data from request body
-        jsonData = req.body;
+        // Check if it's already wrapped in warbandData format (from frontend API calls)
+        if ('warbandData' in req.body) {
+          jsonData = req.body.warbandData;
+        } else {
+          jsonData = req.body;
+        }
       } else {
         return res.status(400).json({
           valid: false,

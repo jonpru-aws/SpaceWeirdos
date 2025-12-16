@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+﻿import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import fc from 'fast-check';
 import { EquipmentSelector } from '../src/frontend/components/EquipmentSelector';
@@ -49,7 +49,7 @@ describe('EquipmentSelector Limit Enforcement', () => {
           const isCyborg = warbandAbility === 'Cyborgs';
           const expectedLimit = weirdoType === 'leader' 
             ? (isCyborg ? 3 : 2)
-            : (isCyborg ? 2 : 1);
+            : (isCyborg ? 3 : 1);
 
           // Generate enough equipment items (at least 5 to test limit)
           const availableEquipment = generateEquipment(5);
@@ -117,7 +117,7 @@ describe('EquipmentSelector Limit Enforcement', () => {
           const isCyborg = warbandAbility === 'Cyborgs';
           const expectedLimit = weirdoType === 'leader' 
             ? (isCyborg ? 3 : 2)
-            : (isCyborg ? 2 : 1);
+            : (isCyborg ? 3 : 1);
 
           // Generate enough equipment items
           const availableEquipment = generateEquipment(5);
@@ -180,7 +180,7 @@ describe('EquipmentSelector Limit Enforcement', () => {
           const isCyborg = warbandAbility === 'Cyborgs';
           const expectedLimit = weirdoType === 'leader' 
             ? (isCyborg ? 3 : 2)
-            : (isCyborg ? 2 : 1);
+            : (isCyborg ? 3 : 1);
 
           // Generate enough equipment items
           const availableEquipment = generateEquipment(5);
@@ -248,11 +248,11 @@ describe('EquipmentSelector Limit Enforcement', () => {
           // Calculate limits
           const initialLimit = weirdoType === 'leader' 
             ? (initialAbility === 'Cyborgs' ? 3 : 2)
-            : (initialAbility === 'Cyborgs' ? 2 : 1);
+            : (initialAbility === 'Cyborgs' ? 3 : 1);
           
           const finalLimit = weirdoType === 'leader' 
             ? (finalAbility === 'Cyborgs' ? 3 : 2)
-            : (finalAbility === 'Cyborgs' ? 2 : 1);
+            : (finalAbility === 'Cyborgs' ? 3 : 1);
 
           // Select equipment at the initial limit
           const selectedEquipment = availableEquipment.slice(0, initialLimit);
@@ -321,3 +321,4 @@ describe('EquipmentSelector Limit Enforcement', () => {
     );
   });
 });
+

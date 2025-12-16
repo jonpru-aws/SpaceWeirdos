@@ -15,7 +15,7 @@ import './EquipmentSelector.css';
  * - Leader without Cyborgs: 2
  * - Leader with Cyborgs: 3
  * - Trooper without Cyborgs: 1
- * - Trooper with Cyborgs: 2
+ * - Trooper with Cyborgs: 3
  * 
  * Requirements: 5.4, 5.7, 5.8, 12.3, 12.6, 9.2, 9.6, 1.2, 1.4, 2.2
  */
@@ -121,7 +121,7 @@ const EquipmentSelectorComponent = ({
     if (weirdoType === 'leader') {
       return isCyborg ? 3 : 2;
     } else {
-      return isCyborg ? 2 : 1;
+      return isCyborg ? 3 : 1;
     }
   };
 

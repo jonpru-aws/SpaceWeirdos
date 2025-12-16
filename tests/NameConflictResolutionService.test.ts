@@ -44,7 +44,7 @@ describe('NameConflictResolutionService', () => {
       const result = service.generateUniqueName('Test Warband');
       
       expect(result.success).toBe(true);
-      expect(result.resolvedName).toBe('Test Warband (2)');
+      expect(result.resolvedName).toBe('Test Warband v2');
     });
 
     it('should sanitize the base name before processing', () => {

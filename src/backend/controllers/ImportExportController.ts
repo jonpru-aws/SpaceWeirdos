@@ -198,6 +198,8 @@ export class ImportExportController {
       // Extract warband data from request body
       const { warbandData } = requestBody;
       
+
+      
       if (!warbandData || typeof warbandData !== 'object') {
         throw new ValidationError(
           'Invalid warband data provided',
@@ -205,6 +207,10 @@ export class ImportExportController {
           { details: 'Request body must contain valid warbandData property' }
         );
       }
+
+
+
+
 
       // Validate using service
       const validation = this.importExportService.validateWarbandJson(warbandData);

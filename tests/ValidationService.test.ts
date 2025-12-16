@@ -55,7 +55,7 @@ const testCostConfig: CostConfig = {
     leaderStandard: 2,
     leaderCyborgs: 3,
     trooperStandard: 1,
-    trooperCyborgs: 2
+    trooperCyborgs: 3
   },
   discountValues: {
     mutantDiscount: 1,
@@ -1137,7 +1137,7 @@ const psychicPowerGen = fc.record<PsychicPower>({
             // Calculate expected limit based on type and ability
             const maxEquipment = type === 'leader'
               ? (ability === 'Cyborgs' ? 3 : 2)
-              : (ability === 'Cyborgs' ? 2 : 1);
+              : (ability === 'Cyborgs' ? 3 : 1);
             
             const exceedsLimit = equipment.length > maxEquipment;
             
@@ -1348,6 +1348,59 @@ const psychicPowerGen = fc.record<PsychicPower>({
               id: 'warband-id',
               name: 'Test Warband',
               ability,
+              pointLimit: 75,
+              totalCost: 0,
+              weirdos: [weirdo],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const result = validationService.validateWeirdo(weirdo, warband);
+            const errors = result.errors;
+            return errors.some(e => e.code === 'EQUIPMENT_LIMIT_EXCEEDED');
+          }
+        ),
+        testConfig
+      );
+    });
+
+    it('should enforce equipment limit for troopers with Cyborgs (max 3)', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1 }).filter(s => s.trim().length > 0),
+          fc.array(equipmentGen, { minLength: 4, maxLength: 5 }),
+          (name, equipment) => {
+            const weirdo: Weirdo = {
+              id: 'test-id',
+              name,
+              type: 'trooper',
+              attributes: {
+                speed: 1,
+                defense: '2d6',
+                firepower: 'None',
+                prowess: '2d6',
+                willpower: '2d6'
+              },
+              closeCombatWeapons: [{
+                id: 'weapon-1',
+                name: 'Unarmed',
+                type: 'close',
+                baseCost: 0,
+                maxActions: 1,
+                notes: ''
+              }],
+              rangedWeapons: [],
+              equipment, // More than 3
+              psychicPowers: [],
+              leaderTrait: null,
+              notes: '',
+              totalCost: 0
+            };
+
+            const warband: Warband = {
+              id: 'warband-id',
+              name: 'Test Warband',
+              ability: 'Cyborgs',
               pointLimit: 75,
               totalCost: 0,
               weirdos: [weirdo],

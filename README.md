@@ -1,6 +1,6 @@
 # Space Weirdos Warband Builder
 
-**Version 1.8.0**
+**Version 1.9.0**
 
 A complete web application for creating and managing warbands for the Space Weirdos tabletop game. Built with TypeScript, React, and Express using spec-driven development with formal correctness guarantees.
 
@@ -16,6 +16,7 @@ A complete web application for creating and managing warbands for the Space Weir
 - **Persistent Storage:** In-memory database with JSON file persistence
 - **Intuitive UI:** Three main components for warband list, warband editing, and weirdo customization
 - **RESTful API:** Full Express backend with comprehensive endpoints
+- **Code Duplication Analysis:** Advanced static analysis system for identifying and optimizing code duplication across TypeScript/JavaScript codebases
 
 ## Import/Export System
 
@@ -54,6 +55,39 @@ For detailed troubleshooting, see [Import/Export Troubleshooting Guide](docs/IMP
 - Warband abilities with cost modifiers (Heavily Armed, Mutants, Soldiers, Cyborgs, etc.)
 - Point limit enforcement (20 points for troopers, one 25-point weirdo allowed)
 
+## Code Quality & Analysis
+
+### Code Duplication Analysis System
+
+Version 1.9.0 introduces a comprehensive code duplication analysis system that provides:
+
+- **Advanced Static Analysis:** Multi-algorithm detection of exact, functional, pattern, and configuration duplications
+- **Specialized Analyzers:** Domain-specific analysis for singletons, services, caches, validation, and configuration management
+- **Intelligent Recommendations:** Impact analysis, complexity estimation, and step-by-step optimization strategies
+- **Quality Metrics:** Duplication percentage, maintainability index, and technical debt ratio calculations
+
+**Analysis Results:**
+- **101 source files** analyzed containing **36,162 lines of code**
+- **73 duplication patterns** identified with potential savings of **3,840 lines of code**
+- **Optimization roadmap** with 4-phase implementation plan over 26 weeks
+
+**Usage:**
+```bash
+# Run comprehensive analysis
+npm run analyze:codebase
+
+# Run Space Weirdos specific analysis
+npm run analyze:space-weirdos
+
+# Generate detailed HTML report
+npm run analyze:space-weirdos -- --detailed-report --output-format="html"
+```
+
+For detailed analysis documentation, see:
+- [Code Duplication Analysis Architecture](docs/CODE-DUPLICATION-ANALYSIS-ARCHITECTURE.md)
+- [Code Duplication Analysis Usage Guide](docs/CODE-DUPLICATION-ANALYSIS-USAGE.md)
+- [Analysis Findings Report](docs/implementation-notes/code-duplication-analysis-findings.md)
+
 ## Testing
 
 - **160+ Tests:** Comprehensive test coverage including unit, integration, and property-based tests
@@ -61,6 +95,7 @@ For detailed troubleshooting, see [Import/Export Troubleshooting Guide](docs/IMP
 - **Property-Based Testing:** 25+ correctness properties with minimum 50 iterations each
 - **Unit Tests:** All services, components, and API endpoints
 - **Integration Tests:** Complete workflows and error handling scenarios
+- **Analysis Testing:** Property-based testing for code duplication analysis accuracy
 
 TypeScript/React/Express application with property-based testing and spec-driven development.
 
@@ -220,12 +255,22 @@ This project was built using spec-driven development methodology with formal cor
 
 For detailed information about the project:
 
+### Core Documentation
 - **Configuration Guide:** [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Comprehensive configuration management system guide
 - **Features Guide:** [docs/FEATURES.md](docs/FEATURES.md) - Complete feature overview including import/export system
 - **API Documentation:** [docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md) - Backend API endpoints and data structures
-- **Import/Export Troubleshooting:** [docs/IMPORT-EXPORT-TROUBLESHOOTING.md](docs/IMPORT-EXPORT-TROUBLESHOOTING.md) - Comprehensive troubleshooting guide
 - **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design patterns
 - **Warning System:** [docs/WARNING-SYSTEM.md](docs/WARNING-SYSTEM.md) - Context-aware warning system guide
+
+### Code Quality & Analysis
+- **Code Duplication Analysis Architecture:** [docs/CODE-DUPLICATION-ANALYSIS-ARCHITECTURE.md](docs/CODE-DUPLICATION-ANALYSIS-ARCHITECTURE.md) - Complete analysis system architecture
+- **Code Duplication Analysis Usage:** [docs/CODE-DUPLICATION-ANALYSIS-USAGE.md](docs/CODE-DUPLICATION-ANALYSIS-USAGE.md) - Comprehensive usage guide and CLI reference
+- **Analysis Findings:** [docs/implementation-notes/code-duplication-analysis-findings.md](docs/implementation-notes/code-duplication-analysis-findings.md) - Detailed analysis results and recommendations
+- **Optimization Summary:** [docs/implementation-notes/code-duplication-optimization-summary.md](docs/implementation-notes/code-duplication-optimization-summary.md) - Executive summary of optimization opportunities
+- **Implementation Roadmap:** [docs/implementation-notes/code-duplication-optimization-roadmap.md](docs/implementation-notes/code-duplication-optimization-roadmap.md) - Detailed implementation plan
+
+### Troubleshooting & Support
+- **Import/Export Troubleshooting:** [docs/IMPORT-EXPORT-TROUBLESHOOTING.md](docs/IMPORT-EXPORT-TROUBLESHOOTING.md) - Comprehensive troubleshooting guide
 - **Testing:** [TESTING.md](TESTING.md) - Testing guidelines and strategies
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md) - Recent updates and changes
 - **Specifications:** `.kiro/specs/` - Detailed feature specifications
@@ -361,6 +406,28 @@ This codebase has undergone comprehensive refactoring to improve maintainability
 - Migration guides for refactored code
 
 ## Recent Updates
+
+### Version 1.9.0 - Code Duplication Analysis System
+
+**Major Quality Enhancement:**
+- **Comprehensive Static Analysis:** Advanced code duplication detection across 101 source files
+- **Multi-Type Detection:** Exact match, functional, pattern, configuration, validation, cache, and error handling analysis
+- **Specialized Analyzers:** Domain-specific analysis for singletons, services, caches, validation, and configuration management
+- **Intelligent Recommendations:** Impact analysis, complexity estimation, risk assessment, and optimization strategies
+- **Quality Metrics:** Detailed analysis revealing 10.6% duplication with path to <5% through systematic optimization
+
+**Analysis Capabilities:**
+- Command-line interface with configurable analysis options
+- Multiple output formats (JSON, HTML, Markdown, Console)
+- Integration with CI/CD pipelines and development workflow
+- Real-time quality monitoring and threshold-based quality gates
+- Comprehensive documentation and implementation roadmap
+
+**Key Findings:**
+- 73 duplication patterns identified across 36,162 lines of code
+- 3,840 lines of potential savings through optimization
+- 2 critical issues requiring immediate attention (configuration fragmentation, validation proliferation)
+- 4-phase optimization roadmap with 458 hours estimated effort over 26 weeks
 
 ### Version 1.8.0 - Centralized Configuration Management System
 

@@ -155,7 +155,7 @@ describe('EquipmentSelector Component', () => {
       );
 
       // Check limit display
-      expect(screen.getByText('Selected: 1/2')).toBeInTheDocument();
+      expect(screen.getByText('Selected: 1/3')).toBeInTheDocument();
 
       // Second checkbox should NOT be disabled
       const checkboxes = screen.getAllByRole('checkbox');

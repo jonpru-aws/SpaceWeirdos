@@ -162,13 +162,12 @@ export interface ImportWarbandRequest {
 
 /**
  * Response from POST /api/warbands/import (import warband)
+ * Note: The backend returns the warband directly, not wrapped in a data property
  */
 export interface ImportWarbandResponse {
   success: boolean;
-  data: {
-    warband: Warband;
-    warnings?: string[];
-  };
+  message: string;
+  warband: Warband;
 }
 
 /**
@@ -180,27 +179,26 @@ export interface ValidateImportRequest {
 
 /**
  * Response from POST /api/warbands/validate-import (validate import data)
+ * Note: The backend returns the validation result directly, not wrapped in a data property
  */
 export interface ValidateImportResponse {
-  success: boolean;
-  data: {
-    valid: boolean;
-    errors: Array<{
-      field: string;
-      message: string;
-      code: string;
-      expected?: string;
-      received?: unknown;
-    }>;
-    warnings: Array<{
-      field: string;
-      message: string;
-      code: string;
-    }>;
-    nameConflict?: {
-      existingName: string;
-      conflictsWith: string;
-    };
+  valid: boolean;
+  errors: Array<{
+    field: string;
+    message: string;
+    code: string;
+    expected?: string;
+    received?: unknown;
+  }>;
+  warnings: Array<{
+    field: string;
+    message: string;
+    code: string;
+  }>;
+  categories?: Record<string, Array<{ field: string; message: string; code: string }>>;
+  nameConflict?: {
+    existingName: string;
+    conflictsWith: string;
   };
 }
 

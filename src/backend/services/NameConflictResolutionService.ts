@@ -7,7 +7,6 @@
  * Requirements: 5.4, 8.5
  */
 
-import { Warband } from '../models/types.js';
 import { DataRepository } from './DataRepository.js';
 
 /**
@@ -232,7 +231,7 @@ export class NameConflictResolutionService {
     // Keep trying until we find a unique name
     while (this.isNameTaken(candidateName, existingNames)) {
       counter++;
-      candidateName = `${baseName} (${counter})`;
+      candidateName = `${baseName} v${counter}`;
       
       // Safety check to prevent infinite loops
       if (counter > 1000) {

@@ -695,7 +695,7 @@ export class ConfigurationManager {
         leaderStandard: this.parseNumber(process.env.EQUIPMENT_LIMIT_LEADER_STANDARD, 2, 'EQUIPMENT_LIMIT_LEADER_STANDARD'),
         leaderCyborgs: this.parseNumber(process.env.EQUIPMENT_LIMIT_LEADER_CYBORGS, 3, 'EQUIPMENT_LIMIT_LEADER_CYBORGS'),
         trooperStandard: this.parseNumber(process.env.EQUIPMENT_LIMIT_TROOPER_STANDARD, 1, 'EQUIPMENT_LIMIT_TROOPER_STANDARD'),
-        trooperCyborgs: this.parseNumber(process.env.EQUIPMENT_LIMIT_TROOPER_CYBORGS, 2, 'EQUIPMENT_LIMIT_TROOPER_CYBORGS')
+        trooperCyborgs: this.parseNumber(process.env.EQUIPMENT_LIMIT_TROOPER_CYBORGS, 3, 'EQUIPMENT_LIMIT_TROOPER_CYBORGS')
       },
       discountValues: {
         mutantDiscount: this.parseNumber(process.env.DISCOUNT_MUTANT, 1, 'DISCOUNT_MUTANT'),
@@ -1048,7 +1048,7 @@ export class ConfigurationManager {
         leaderStandard: 2,
         leaderCyborgs: 3,
         trooperStandard: 1,
-        trooperCyborgs: 2
+        trooperCyborgs: 3
       },
       discountValues: {
         mutantDiscount: 1,
@@ -2150,7 +2150,7 @@ export class ConfigurationManager {
             leaderStandard: this.extractLegacyValue(legacyConfig, ['EQUIPMENT_LIMITS.leaderStandard', 'equipmentLimits.leaderStandard'], 2),
             leaderCyborgs: this.extractLegacyValue(legacyConfig, ['EQUIPMENT_LIMITS.leaderCyborgs', 'equipmentLimits.leaderCyborgs'], 3),
             trooperStandard: this.extractLegacyValue(legacyConfig, ['EQUIPMENT_LIMITS.trooperStandard', 'equipmentLimits.trooperStandard'], 1),
-            trooperCyborgs: this.extractLegacyValue(legacyConfig, ['EQUIPMENT_LIMITS.trooperCyborgs', 'equipmentLimits.trooperCyborgs'], 2)
+            trooperCyborgs: this.extractLegacyValue(legacyConfig, ['EQUIPMENT_LIMITS.trooperCyborgs', 'equipmentLimits.trooperCyborgs'], 3)
           },
           discountValues: {
             mutantDiscount: this.extractLegacyValue(legacyConfig, ['DISCOUNT_VALUES.mutantDiscount', 'discountValues.mutantDiscount'], 1),

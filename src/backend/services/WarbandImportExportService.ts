@@ -18,7 +18,6 @@ import { NameConflictResolutionService } from './NameConflictResolutionService.j
 import { UniqueIdGenerator } from './UniqueIdGenerator.js';
 
 import path from 'path';
-import { randomUUID } from 'crypto';
 
 /**
  * Export data structure with metadata
@@ -182,19 +181,28 @@ export class WarbandImportExportService {
       // Type assertion safe after validation
       const exportedWarband = jsonData as ExportedWarband;
 
-      // Check for name conflicts using the name conflict resolution service
+      // Automatically resolve name conflicts by appending version numbers
+      let finalName = exportedWarband.name;
       const nameConflict = this.nameConflictService.checkNameConflict(exportedWarband.name);
       
       if (nameConflict) {
-        return {
-          success: false,
-          nameConflict: true,
-          conflictingName: exportedWarband.name
-        };
+        const nameResolution = this.nameConflictService.generateUniqueName(exportedWarband.name);
+        
+        if (!nameResolution.success) {
+          return {
+            success: false,
+            error: nameResolution.error || 'Failed to resolve name conflict'
+          };
+        }
+        
+        finalName = nameResolution.resolvedName!;
       }
 
-      // Sanitize and prepare warband for import
-      const sanitizedWarband = this.sanitizeWarbandForImport(exportedWarband);
+      // Sanitize and prepare warband for import with resolved name
+      const sanitizedWarband = this.sanitizeWarbandForImport({
+        ...exportedWarband,
+        name: finalName
+      });
 
       // Generate unique ID for the warband
       const warbandIdResult = this.idGenerator.generateWarbandId({
@@ -376,6 +384,8 @@ export class WarbandImportExportService {
     const errors: Array<{ field: string; message: string; code: string }> = [];
     const warnings: Array<{ field: string; message: string; code: string }> = [];
 
+
+
     // Basic type validation
     if (!jsonData || typeof jsonData !== 'object') {
       errors.push({
@@ -412,12 +422,40 @@ export class WarbandImportExportService {
     
     for (const field of requiredFields) {
       if (!(field in data) || data[field] === undefined || data[field] === null) {
+        let message = `Required field '${field}' is missing`;
+        
+        // Provide more helpful error messages
+        switch (field) {
+          case 'name':
+            message = 'Warband name is required. Make sure your file contains a "name" field with the warband name.';
+            break;
+          case 'pointLimit':
+            message = 'Point limit is required. Make sure your file contains a "pointLimit" field (75 or 125).';
+            break;
+          case 'weirdos':
+            message = 'Weirdos array is required. Make sure your file contains a "weirdos" field with an array of warband members.';
+            break;
+        }
+        
         errors.push({
           field,
-          message: `Required field '${field}' is missing`,
+          message,
           code: 'MISSING_REQUIRED_FIELD'
         });
       }
+    }
+    
+    // If all required fields are missing, it might not be a valid warband file
+    const missingCount = requiredFields.filter(field => 
+      !(field in data) || data[field] === undefined || data[field] === null
+    ).length;
+    
+    if (missingCount === requiredFields.length) {
+      errors.push({
+        field: 'file',
+        message: 'This file does not appear to be a valid warband export. Please make sure you are importing a file that was exported from the Space Weirdos Warband Builder.',
+        code: 'INVALID_WARBAND_FILE'
+      });
     }
   }
 
@@ -886,22 +924,58 @@ export class WarbandImportExportService {
     if (!attributes || typeof attributes !== 'object') {
       // Return default attributes if invalid
       return {
-        speed: 5,
-        defense: 5,
-        firepower: 5,
-        prowess: 5,
-        willpower: 5
+        speed: 1,
+        defense: '2d6',
+        firepower: 'None',
+        prowess: '2d6',
+        willpower: '2d6'
       };
     }
 
     const attrs = attributes as Record<string, unknown>;
     return {
-      speed: this.sanitizeNumber(attrs.speed, 1, 10),
-      defense: this.sanitizeNumber(attrs.defense, 1, 10),
-      firepower: this.sanitizeNumber(attrs.firepower, 1, 10),
-      prowess: this.sanitizeNumber(attrs.prowess, 1, 10),
-      willpower: this.sanitizeNumber(attrs.willpower, 1, 10)
+      speed: this.sanitizeSpeedAttribute(attrs.speed),
+      defense: this.sanitizeDiceAttribute(attrs.defense),
+      firepower: this.sanitizeFirepowerAttribute(attrs.firepower),
+      prowess: this.sanitizeDiceAttribute(attrs.prowess),
+      willpower: this.sanitizeDiceAttribute(attrs.willpower)
     };
+  }
+
+  /**
+   * Sanitizes speed attribute (1-3)
+   */
+  private sanitizeSpeedAttribute(speed: unknown): 1 | 2 | 3 {
+    if (typeof speed === 'number' && [1, 2, 3].includes(speed)) {
+      return speed as 1 | 2 | 3;
+    }
+    if (typeof speed === 'string') {
+      const parsed = parseInt(speed, 10);
+      if ([1, 2, 3].includes(parsed)) {
+        return parsed as 1 | 2 | 3;
+      }
+    }
+    return 1; // Default to lowest speed
+  }
+
+  /**
+   * Sanitizes dice attributes (defense, prowess, willpower)
+   */
+  private sanitizeDiceAttribute(dice: unknown): '2d6' | '2d8' | '2d10' {
+    if (typeof dice === 'string' && ['2d6', '2d8', '2d10'].includes(dice)) {
+      return dice as '2d6' | '2d8' | '2d10';
+    }
+    return '2d6'; // Default to lowest dice
+  }
+
+  /**
+   * Sanitizes firepower attribute
+   */
+  private sanitizeFirepowerAttribute(firepower: unknown): 'None' | '2d8' | '2d10' {
+    if (typeof firepower === 'string' && ['None', '2d8', '2d10'].includes(firepower)) {
+      return firepower as 'None' | '2d8' | '2d10';
+    }
+    return 'None'; // Default to no firepower
   }
 
   /**
@@ -914,7 +988,7 @@ export class WarbandImportExportService {
 
     // Get maximum weirdos limit from configuration
     const costConfig = this.configManager.getCostConfig();
-    const maxWeirdos = costConfig.trooperLimits.standard; // Use trooper limit as reasonable maximum
+    const maxWeirdos = costConfig.trooperLimits.standardLimit; // Use trooper limit as reasonable maximum
     
     return weirdos
       .slice(0, maxWeirdos)
@@ -931,8 +1005,7 @@ export class WarbandImportExportService {
     }
 
     // Get maximum weapons limit from configuration
-    const costConfig = this.configManager.getCostConfig();
-    const maxWeapons = costConfig.equipmentLimits.maxWeaponsPerWeirdo || 10;
+    const maxWeapons = 10; // Reasonable limit for weapons per weirdo
     
     return weapons
       .slice(0, maxWeapons)
@@ -970,8 +1043,7 @@ export class WarbandImportExportService {
     }
 
     // Get maximum equipment limit from configuration
-    const costConfig = this.configManager.getCostConfig();
-    const maxEquipment = costConfig.equipmentLimits.maxEquipmentPerWeirdo || 10;
+    const maxEquipment = 10; // Reasonable limit for equipment per weirdo
     
     return equipment
       .slice(0, maxEquipment)
@@ -1009,8 +1081,7 @@ export class WarbandImportExportService {
     }
 
     // Get maximum psychic powers limit from configuration
-    const costConfig = this.configManager.getCostConfig();
-    const maxPowers = costConfig.equipmentLimits.maxPsychicPowersPerWeirdo || 5;
+    const maxPowers = 5; // Reasonable limit for psychic powers per weirdo
     
     return powers
       .slice(0, maxPowers)
@@ -1042,7 +1113,7 @@ export class WarbandImportExportService {
   /**
    * Sanitizes leader trait
    */
-  private sanitizeLeaderTrait(trait: unknown): string | null {
+  private sanitizeLeaderTrait(trait: unknown): LeaderTrait | null {
     if (trait === null || trait === undefined) {
       return null;
     }
@@ -1053,7 +1124,7 @@ export class WarbandImportExportService {
         const gameData = this.loadGameDataSync();
         const sanitizedTrait = this.sanitizeString(trait, 100);
         if (gameData.leaderTraits.includes(sanitizedTrait as LeaderTrait)) {
-          return sanitizedTrait;
+          return sanitizedTrait as LeaderTrait;
         }
       } catch (error) {
         console.warn('Failed to validate leader trait:', error);

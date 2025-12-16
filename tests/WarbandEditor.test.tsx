@@ -286,7 +286,7 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async operations
@@ -357,7 +357,7 @@ describe('Warband Editor Components', () => {
       updateSpy.mockClear();
       validateSpy.mockClear();
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async validation
@@ -418,7 +418,7 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async save
@@ -477,7 +477,7 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async save
@@ -524,7 +524,7 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async save
@@ -575,7 +575,7 @@ describe('Warband Editor Components', () => {
         )
       );
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async validation
@@ -645,7 +645,7 @@ describe('Warband Editor Components', () => {
       // Wait for warband to load
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const saveButton = screen.getByText('Save Warband');
+      const saveButton = screen.getByLabelText('Save warband');
       saveButton.click();
 
       // Wait for async save

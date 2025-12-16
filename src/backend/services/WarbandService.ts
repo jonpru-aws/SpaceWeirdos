@@ -48,14 +48,17 @@ export class WarbandService {
       name: data.name,
       ability: data.ability,
       pointLimit: data.pointLimit,
-      totalCost: 0, // Will be calculated by repository
+      totalCost: 0, // Will be recalculated below
       weirdos: data.weirdos || [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
+    // Recalculate all costs before saving
+    const warbandWithCosts = this.recalculateAllCosts(warband);
+
     // Save to repository (generates ID and timestamps)
-    return this.repository.saveWarband(warband);
+    return this.repository.saveWarband(warbandWithCosts);
   }
 
   /**

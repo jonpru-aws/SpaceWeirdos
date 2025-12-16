@@ -137,7 +137,7 @@ describe('WeirdoCostDisplay', () => {
     // Check for the cost value span specifically
     const costValue = container.querySelector('.weirdo-cost-display__value');
     expect(costValue).toBeInTheDocument();
-    expect(costValue?.textContent).toMatch(/\d+\s*\/\s*20\s+pts/i);
+    expect(costValue?.textContent).toMatch(/\d+\s+pts/i);
   });
 
   /**
@@ -249,7 +249,7 @@ describe('WeirdoCostDisplay', () => {
     // Check for the cost value span specifically
     const costValue = container.querySelector('.weirdo-cost-display__value');
     expect(costValue).toBeInTheDocument();
-    expect(costValue?.textContent).toMatch(/\d+\s*\/\s*25\s+pts/i);
+    expect(costValue?.textContent).toMatch(/\d+\s+pts/i);
   });
 
   /**

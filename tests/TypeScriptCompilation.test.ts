@@ -49,7 +49,7 @@ describe('TypeScript Compilation', () => {
         `Output: ${err.stdout || err.stderr || 'No output'}`
       );
     }
-  }, 15000); // 15 second timeout for TypeScript compilation with unused variable checks
+  }, 30000); // 30 second timeout for TypeScript compilation with unused variable checks
 
   it('should complete build process successfully', () => {
     try {

@@ -181,7 +181,7 @@ const logLevel = envConfig.logLevel;
 - `EQUIPMENT_LIMIT_LEADER_STANDARD` - Leader equipment limit (default: 2)
 - `EQUIPMENT_LIMIT_LEADER_CYBORGS` - Leader equipment limit with Cyborgs (default: 3)
 - `EQUIPMENT_LIMIT_TROOPER_STANDARD` - Trooper equipment limit (default: 1)
-- `EQUIPMENT_LIMIT_TROOPER_CYBORGS` - Trooper equipment limit with Cyborgs (default: 2)
+- `EQUIPMENT_LIMIT_TROOPER_CYBORGS` - Trooper equipment limit with Cyborgs (default: 3)
 - `DISCOUNT_MUTANT` - Mutant discount value (default: 1)
 - `DISCOUNT_HEAVILY_ARMED` - Heavily armed discount value (default: 1)
 

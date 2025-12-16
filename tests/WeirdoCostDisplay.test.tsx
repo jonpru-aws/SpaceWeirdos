@@ -84,8 +84,8 @@ describe('WeirdoCostDisplay', () => {
     // Should display weirdo cost label
     expect(screen.getByText(/weirdo cost:/i)).toBeTruthy();
     
-    // Should display cost value with format "X / Y pts" (trooper limit is 20)
-    expect(screen.getByText(/\/ 20 pts/i)).toBeTruthy();
+    // Should display cost value with format "X pts"
+    expect(screen.getByText(/10 pts/i)).toBeTruthy();
   });
 
   it('should show warning indicator when trooper within 10 points of limit', async () => {

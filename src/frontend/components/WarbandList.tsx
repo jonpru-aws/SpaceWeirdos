@@ -363,6 +363,8 @@ export function WarbandList({
       }, 2000);
 
       // Reload the warband list to show the new warband
+      // Force a fresh reload by clearing the current state first
+      setWarbands([]);
       await loadWarbands();
 
       // Notify parent component of success

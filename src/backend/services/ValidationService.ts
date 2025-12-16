@@ -307,7 +307,7 @@ export class ValidationService {
   /**
    * Level 3: Game data validation - checks references to game data files
    */
-  private validateGameDataReferences(warband: Warband, errors: CategorizedValidationError[], warnings: ValidationWarning[]): void {
+  private validateGameDataReferences(warband: Warband, errors: CategorizedValidationError[], _warnings: ValidationWarning[]): void {
     // This would typically validate against loaded game data
     // For now, we'll add basic validation structure
     

@@ -16,6 +16,8 @@ Welcome to the documentation for the Space Weirdos Warband Builder! This directo
 - **[Frontend-Backend API Separation](FRONTEND-BACKEND-API-SEPARATION.md)** - API-based architecture guide
   - [Quick Reference](API-SEPARATION-QUICK-REFERENCE.md) - Common patterns and usage
 - **[UI Design System](UI-DESIGN-SYSTEM.md)** - CSS design tokens, base styles, and utilities
+- **[Code Duplication Analysis Architecture](CODE-DUPLICATION-ANALYSIS-ARCHITECTURE.md)** - Complete analysis system architecture and design
+- **[Code Duplication Analysis Usage](CODE-DUPLICATION-ANALYSIS-USAGE.md)** - Comprehensive usage guide and CLI reference
 - **[Implementation Notes](implementation-notes/)** - Feature implementation details and summaries
 - **[Testing Guide](../TESTING.md)** - Testing strategies and guidelines
 - **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
@@ -23,6 +25,7 @@ Welcome to the documentation for the Space Weirdos Warband Builder! This directo
 ### Project Information
 - **[Changelog](../CHANGELOG.md)** - Version history and recent updates
 - **[Release Notes](release-notes/)** - Detailed release notes by version
+  - **[v1.9.0 Release Notes](release-notes/v1.9.0.md)** - Code Duplication Analysis System
   - **[v1.8.0 Release Notes](release-notes/v1.8.0.md)** - Centralized Configuration Management System
   - **[v1.0.0 Release Notes](release-notes/v1.0.0.md)** - Initial major release
 - **[Main README](../README.md)** - Project overview and getting started
@@ -38,6 +41,7 @@ Comprehensive overview of all features including:
 - Context-aware validation and warnings
 - User interface components
 - Game rules implementation
+- Code duplication analysis and optimization tools
 
 ### Warning System Guide
 Detailed explanation of the intelligent warning system:
@@ -100,6 +104,28 @@ The UI provides immediate visual feedback:
 - Sticky displays that remain visible
 - Smooth animations and transitions
 
+### Code Duplication Analysis System
+
+Advanced static analysis capabilities for code quality improvement:
+
+**What It Does:**
+- Analyzes TypeScript/JavaScript codebases for duplication patterns
+- Identifies exact matches, functional duplications, and architectural patterns
+- Provides specialized analysis for singletons, services, caches, and validation logic
+- Generates actionable optimization recommendations with impact analysis
+
+**Key Features:**
+- Multi-algorithm detection (exact, functional, pattern, configuration)
+- Configurable analysis scope and similarity thresholds
+- Command-line interface with multiple output formats
+- Integration with CI/CD pipelines and development workflow
+- Comprehensive quality metrics and technical debt analysis
+
+**Analysis Results:**
+- 101 source files analyzed containing 36,162 lines of code
+- 73 duplication patterns identified with 3,840 lines of potential savings
+- 4-phase optimization roadmap with detailed implementation guidance
+
 ## Getting Started
 
 ### For Users
@@ -127,9 +153,10 @@ The UI provides immediate visual feedback:
 
 ## Project Status
 
-**Current Version**: 1.8.0
+**Current Version**: 1.9.0
 
 **Recent Updates**:
+- ✅ **v1.9.0**: Code Duplication Analysis System with advanced static analysis capabilities
 - ✅ **v1.8.0**: Centralized Configuration Management System with environment-specific optimization
 - ✅ **v1.7.0**: Import/export system with comprehensive validation
 - ✅ Context-aware warning system implemented

@@ -32,11 +32,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Speed levels with base costs: 1 (0 pts), 2 (1 pt), 3 (2 pts)
+      // Speed levels with base costs: 1 (0 pts), 2 (1 pt), 3 (3 pts)
       // Note: options[0] is the placeholder
       expect(options[1].text).toContain('1 (0 pts)');
       expect(options[2].text).toContain('2 (1 pts)');
-      expect(options[3].text).toContain('3 (2 pts)');
+      expect(options[3].text).toContain('3 (3 pts)');
     });
 
     it('should call onChange with correct speed value', () => {
@@ -76,11 +76,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Defense levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
+      // Defense levels with base costs: 2d6 (2 pts), 2d8 (4 pts), 2d10 (8 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (0 pts)');
-      expect(options[2].text).toContain('2d8 (1 pts)');
-      expect(options[3].text).toContain('2d10 (2 pts)');
+      expect(options[1].text).toContain('2d6 (2 pts)');
+      expect(options[2].text).toContain('2d8 (4 pts)');
+      expect(options[3].text).toContain('2d10 (8 pts)');
     });
 
     it('should call onChange with correct defense value', () => {
@@ -120,11 +120,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Firepower levels with base costs: None (0 pts), 2d8 (1 pt), 2d10 (2 pts)
+      // Firepower levels with base costs: None (0 pts), 2d8 (2 pts), 2d10 (4 pts)
       // Note: options[0] is the placeholder
       expect(options[1].text).toContain('None (0 pts)');
-      expect(options[2].text).toContain('2d8 (1 pts)');
-      expect(options[3].text).toContain('2d10 (2 pts)');
+      expect(options[2].text).toContain('2d8 (2 pts)');
+      expect(options[3].text).toContain('2d10 (4 pts)');
     });
 
     it('should call onChange with correct firepower value', () => {
@@ -164,11 +164,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Prowess levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
+      // Prowess levels with base costs: 2d6 (2 pts), 2d8 (4 pts), 2d10 (6 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (0 pts)');
-      expect(options[2].text).toContain('2d8 (1 pts)');
-      expect(options[3].text).toContain('2d10 (2 pts)');
+      expect(options[1].text).toContain('2d6 (2 pts)');
+      expect(options[2].text).toContain('2d8 (4 pts)');
+      expect(options[3].text).toContain('2d10 (6 pts)');
     });
 
     it('should call onChange with correct prowess value', () => {
@@ -208,11 +208,11 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const options = Array.from(select.options);
 
-      // Willpower levels with base costs: 2d6 (0 pts), 2d8 (1 pt), 2d10 (2 pts)
+      // Willpower levels with base costs: 2d6 (2 pts), 2d8 (4 pts), 2d10 (6 pts)
       // Note: options[0] is the placeholder
-      expect(options[1].text).toContain('2d6 (0 pts)');
-      expect(options[2].text).toContain('2d8 (1 pts)');
-      expect(options[3].text).toContain('2d10 (2 pts)');
+      expect(options[1].text).toContain('2d6 (2 pts)');
+      expect(options[2].text).toContain('2d8 (4 pts)');
+      expect(options[3].text).toContain('2d10 (6 pts)');
     });
 
     it('should call onChange with correct willpower value', () => {
@@ -274,8 +274,8 @@ describe('AttributeSelector Component', () => {
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       const option2d8 = Array.from(select.options).find(opt => opt.value === '2d8');
 
-      // Shows base cost (1 pt)
-      expect(option2d8?.text).toContain('2d8 (1 pts)');
+      // Shows base cost (4 pts for defense 2d8)
+      expect(option2d8?.text).toContain('2d8 (4 pts)');
       expect(option2d8?.text).not.toContain('was');
     });
   });

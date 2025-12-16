@@ -312,7 +312,7 @@ export class ErrorCategorizationService {
   /**
    * Generates user-friendly error messages
    */
-  private generateUserFriendlyMessage(code: ValidationErrorCode, context?: Record<string, unknown>): string {
+  private generateUserFriendlyMessage(code: ValidationErrorCode, _context?: Record<string, unknown>): string {
     switch (code) {
       case 'WARBAND_NAME_REQUIRED':
         return 'Your warband needs a name to be saved.';
@@ -333,18 +333,18 @@ export class ErrorCategorizationService {
         return 'Weirdos with ranged weapons need Firepower of 2d8 or 2d10.';
       
       case 'EQUIPMENT_LIMIT_EXCEEDED':
-        const type = context?.type || 'weirdo';
-        const limit = context?.limit || 'allowed';
+        const type = _context?.type || 'weirdo';
+        const limit = _context?.limit || 'allowed';
         return `This ${type} has too much equipment. Maximum ${limit} items allowed.`;
       
       case 'TROOPER_POINT_LIMIT_EXCEEDED':
-        const cost = context?.cost || 'current';
-        const pointLimit = context?.limit || 'maximum';
+        const cost = _context?.cost || 'current';
+        const pointLimit = _context?.limit || 'maximum';
         return `This trooper costs ${cost} points, but the limit is ${pointLimit} points.`;
       
       case 'WARBAND_POINT_LIMIT_EXCEEDED':
-        const totalCost = context?.totalCost || 'current';
-        const warbandLimit = context?.pointLimit || 'maximum';
+        const totalCost = _context?.totalCost || 'current';
+        const warbandLimit = _context?.pointLimit || 'maximum';
         return `Your warband costs ${totalCost} points, but the limit is ${warbandLimit} points.`;
       
       case 'MULTIPLE_25_POINT_WEIRDOS':
@@ -364,7 +364,7 @@ export class ErrorCategorizationService {
   /**
    * Generates actionable suggestions for validation errors
    */
-  private generateSuggestions(code: ValidationErrorCode, field: string, context?: Record<string, unknown>): string[] {
+  private generateSuggestions(code: ValidationErrorCode, _field: string, context?: Record<string, unknown>): string[] {
     switch (code) {
       case 'WARBAND_NAME_REQUIRED':
         return ['Enter a name for your warband in the name field'];
@@ -436,7 +436,7 @@ export class ErrorCategorizationService {
   /**
    * File error message generation
    */
-  private generateFileErrorMessage(code: string, context: Record<string, unknown>): string {
+  private generateFileErrorMessage(code: string, _context: Record<string, unknown>): string {
     switch (code) {
       case 'FILE_TOO_LARGE':
         const maxSize = this.configManager.getFileOperationConfig().maxFileSizeBytes;
@@ -459,7 +459,7 @@ export class ErrorCategorizationService {
   /**
    * File error suggestions
    */
-  private generateFileErrorSuggestions(code: string, context: Record<string, unknown>): string[] {
+  private generateFileErrorSuggestions(code: string, _context: Record<string, unknown>): string[] {
     switch (code) {
       case 'FILE_TOO_LARGE':
         return [
@@ -524,7 +524,7 @@ export class ErrorCategorizationService {
   /**
    * Network error suggestions
    */
-  private generateNetworkErrorSuggestions(code: string, context: Record<string, unknown>): string[] {
+  private generateNetworkErrorSuggestions(code: string, _context: Record<string, unknown>): string[] {
     switch (code) {
       case 'NETWORK_TIMEOUT':
         return [

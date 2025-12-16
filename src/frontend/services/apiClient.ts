@@ -467,7 +467,7 @@ export const apiClient = {
       method: 'POST',
       body: request,
     });
-    return response.data.warband;
+    return response.warband;
   },
 
   /**
@@ -493,11 +493,26 @@ export const apiClient = {
       conflictsWith: string;
     };
   }> {
-    const response = await fetchWithRetry<ValidateImportResponse>('/warbands/validate-import', {
+    const response = await fetchWithRetry<{
+      valid: boolean;
+      errors: Array<{
+        field: string;
+        message: string;
+        code: string;
+        expected?: string;
+        received?: unknown;
+      }>;
+      warnings: Array<{
+        field: string;
+        message: string;
+        code: string;
+      }>;
+      categories?: Record<string, Array<{ field: string; message: string; code: string }>>;
+    }>('/warbands/validate-import', {
       method: 'POST',
       body: request,
     });
-    return response.data;
+    return response;
   },
 };
 

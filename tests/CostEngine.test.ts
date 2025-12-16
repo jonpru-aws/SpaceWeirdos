@@ -36,7 +36,7 @@ const testCostConfig: CostConfig = {
     leaderStandard: 2,
     leaderCyborgs: 3,
     trooperStandard: 1,
-    trooperCyborgs: 2
+    trooperCyborgs: 3
   },
   discountValues: {
     mutantDiscount: 1,
