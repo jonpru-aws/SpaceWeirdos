@@ -553,21 +553,20 @@ export function WarbandList({
           <p>No warbands found. Create your first warband to get started!</p>
           <div className="button-container">
             <button 
-              onClick={onLearnAboutClick}
-              className="btn btn-secondary"
-              aria-label="Learn about Space Weirdos game and warband builder"
-            >
-              About Space Weirdos
-            </button>
-            <button 
               onClick={handleImportWarband}
-              className="btn btn-secondary"
+              className="btn btn-primary"
               disabled={!!importState}
               aria-label="Import warband from JSON file"
             >
               {importState ? 'Importing...' : 'Import Warband'}
             </button>
             <button 
+              onClick={onLearnAboutClick}
+              className="btn btn-secondary"
+              aria-label="Learn about the Space Weirdos Warband Builder"
+            >
+              About Space Weirdos
+            </button>            <button 
               onClick={onCreateWarband}
               className="btn btn-primary"
               aria-label="Create your first warband"
@@ -586,19 +585,19 @@ export function WarbandList({
       <h1>Space Weirdos Warbands</h1>
       <div className="warband-list-actions">
         <button 
-          onClick={onLearnAboutClick}
-          className="btn btn-secondary"
-          aria-label="Learn about Space Weirdos game and warband builder"
-        >
-          About Space Weirdos
-        </button>
-        <button 
           onClick={handleImportWarband}
-          className="btn btn-secondary"
+          className="btn btn-primary"
           aria-label="Import warband from JSON file"
           disabled={!!importState}
         >
           {importState ? 'Importing...' : 'Import Warband'}
+        </button>
+        <button 
+          onClick={onLearnAboutClick}
+          className="btn btn-secondary"
+          aria-label="Learn about the Space Weirdos Warband Builder"
+        >
+          About Space Weirdos
         </button>
         <button 
           onClick={onCreateWarband}

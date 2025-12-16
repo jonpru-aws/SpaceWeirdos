@@ -176,7 +176,7 @@ export function LearnAboutPopup({
     >
       <div className="learn-about-content" ref={dialogRef}>
         <div className="learn-about-header">
-          <h2 id="learn-about-title">Learn About Space Weirdos</h2>
+          <h2 id="learn-about-title">Learn about the Space Weirdos Warband Builder</h2>
           <button 
             onClick={onClose}
             className="learn-about-close-button"
@@ -188,6 +188,11 @@ export function LearnAboutPopup({
         </div>
 
         <div className="learn-about-body" id="learn-about-description">
+          {/* Attribution Header - Always Displayed */}
+          <div className="learn-about-attribution">
+            <p>With respect and admiration to Space Weirdos by Garske Games</p>
+          </div>
+
           {loading && (
             <div className="learn-about-loading">
               <p>Loading game information...</p>

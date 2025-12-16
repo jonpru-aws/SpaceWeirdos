@@ -19,7 +19,7 @@
 .warband-editor__actions {
   grid-column: 1 / -1;
   display: flex;
-  align-items: left;
+  align-items: right;
   padding: 2rem;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-default);
@@ -28,8 +28,10 @@
 }
 
 .warband-editor__actions-right {
+  align-items: right;
   display: flex;
   gap: 1rem;
+  padding-left: 1rem;
 }
 
 .back-button,
@@ -50,6 +52,7 @@
   border-radius: 0;
   margin-left: 0.5rem;
   margin-right: 0.5rem;
+  padding-left: 0.5rem;
 }
 
 .back-button {

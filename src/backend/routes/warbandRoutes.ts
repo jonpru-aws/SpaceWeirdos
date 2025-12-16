@@ -766,7 +766,7 @@ export function createWarbandRouter(repository: DataRepository): Router {
       console.error('README content not available:', error);
       res.status(500).json({
         success: false,
-        error: 'Server loading error'
+        error: 'Unable to load README.md file. Please ensure the file exists and is accessible.'
       });
     }
   });

@@ -194,11 +194,6 @@ export class ReadmeContentService {
       this.state.lastFetched = new Date();
       this.state.error = null;
 
-      // Log warning if fallback content was used
-      if (data.warning) {
-        console.warn('README Content Service:', data.warning);
-      }
-
       return content;
 
     } catch (error: unknown) {
@@ -207,13 +202,7 @@ export class ReadmeContentService {
       
       console.error('Failed to fetch README content:', error);
       
-      // If we have cached content, return it despite the error
-      if (this.state.content) {
-        console.warn('Using stale cached content due to fetch error');
-        return this.state.content;
-      }
-
-      // No cached content available, throw the error
+      // Always throw the error - no fallback behavior
       throw new ApiError(errorMessage);
       
     } finally {

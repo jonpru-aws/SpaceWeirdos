@@ -168,12 +168,12 @@ function App() {
         error: null
       }));
     } catch (error: unknown) {
-      // Show simple error message
+      // Show error message when README content cannot be loaded
       setPopupState(prev => ({
         ...prev,
         content: null,
         loading: false,
-        error: 'System loading error'
+        error: 'Unable to load README.md file information. Please check that the README.md file exists and is accessible.'
       }));
     }
   };

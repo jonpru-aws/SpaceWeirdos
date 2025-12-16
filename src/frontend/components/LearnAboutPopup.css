@@ -170,6 +170,22 @@
   border-bottom-color: var(--color-primary-800);
 }
 
+/* Attribution Section */
+.learn-about-attribution {
+  text-align: center;
+  padding: 0 0 0.5rem 0;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 1.5rem;
+}
+
+.learn-about-attribution p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
 /* Loading and Error States */
 .learn-about-loading,
 .learn-about-error {

@@ -73,8 +73,8 @@ export class ReadmeParser {
           continue;
         }
 
-        // Extract version (look for **Version X.X.X** pattern)
-        if (trimmedLine.startsWith('**Version ')) {
+        // Extract version (look for **Version X.X.X** pattern) - only capture the first one
+        if (trimmedLine.startsWith('**Version ') && !version) {
           const versionMatch = trimmedLine.match(/\*\*Version ([^*]+)\*\*/);
           if (versionMatch) {
             version = 'Version ' + versionMatch[1];

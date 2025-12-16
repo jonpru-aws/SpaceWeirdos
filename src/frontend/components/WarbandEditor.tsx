@@ -143,9 +143,18 @@ export function WarbandEditor({
       {/* Action buttons */}
       <div className="warband-editor__actions">
         <button onClick={onBack} className="back-button">
-          ← Back to List
+          ← Back to Warband List
         </button>
         <div className="warband-editor__actions-right">
+          {currentWarband.id && (
+            <button 
+              onClick={handleDeleteRequest} 
+              className="delete-button"
+              aria-label="Delete warband"
+            >
+              Delete
+            </button>
+          )}
           <button 
             onClick={handleSave} 
             className="save-button"
@@ -153,15 +162,6 @@ export function WarbandEditor({
           >
             Save
           </button>
-          {currentWarband.id && (
-            <button 
-              onClick={handleDeleteRequest} 
-              className="delete-button"
-              aria-label="Delete warband"
-            >
-              Delete Warband
-            </button>
-          )}
         </div>
       </div>
 

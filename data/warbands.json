@@ -174,9 +174,38 @@
     "name": "New Warband",
     "ability": null,
     "pointLimit": 75,
-    "totalCost": 0,
-    "weirdos": [],
+    "totalCost": 10,
+    "weirdos": [
+      {
+        "id": "temp-1765860339441",
+        "name": "New Trooper",
+        "type": "trooper",
+        "attributes": {
+          "speed": 1,
+          "defense": "2d6",
+          "firepower": "None",
+          "prowess": "2d6",
+          "willpower": "2d10"
+        },
+        "closeCombatWeapons": [
+          {
+            "id": "unarmed",
+            "name": "Unarmed",
+            "type": "close",
+            "baseCost": 0,
+            "maxActions": 3,
+            "notes": "-1DT to Power rolls"
+          }
+        ],
+        "rangedWeapons": [],
+        "equipment": [],
+        "psychicPowers": [],
+        "leaderTrait": null,
+        "notes": "",
+        "totalCost": 10
+      }
+    ],
     "createdAt": "2025-12-16T03:49:40.473Z",
-    "updatedAt": "2025-12-16T03:49:40.473Z"
+    "updatedAt": "2025-12-16T04:45:50.613Z"
   }
 ]
